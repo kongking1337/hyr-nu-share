@@ -145,7 +145,7 @@ export function SearchResultsPage({
                         setMobileOpen(false);
                       }}
                     >
-                      Visa resultat
+                      Visa {resultCount} resultat
                     </Button>
                   </div>
                 </SheetContent>
