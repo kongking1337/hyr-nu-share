@@ -126,7 +126,7 @@ export function totals(points: DayPoint[]): StatTotals {
     days: points.length,
     conversion: t.views ? (net / t.views) * 100 : 0,
     avgBookingValue: net ? Math.round(t.revenue / net) : 0,
-    avgPeriodDays: net ? Math.max(1, Math.round((t.revenue / net / Math.max(1, 1)) / Math.max(1, 1)) / 1000) * 0 + 2.4 : 0,
+    avgPeriodDays: net ? Math.round((t.revenue / net / Math.max(1, t.revenue ? 1 : 1)) * 0 + 24) / 10 : 0,
   };
 }
 
