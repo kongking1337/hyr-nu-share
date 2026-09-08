@@ -18,6 +18,8 @@ import { CATEGORY_ATTRIBUTES } from "@/lib/search/attributes";
 import { kr } from "@/lib/pricing";
 import { qualityLabel, scoreListing } from "@/lib/listing-quality";
 import { getPriceAdvice } from "@/lib/price-advice";
+import { PriceInsightsCard } from "@/components/offers/PriceInsightsCard";
+import { VALIDITY_OPTIONS } from "@/lib/offers";
 import {
   DEMO_IDENTIFICATIONS,
   STATUS_LABEL,
@@ -75,6 +77,13 @@ function ListingWizard() {
   const [vehicle, setVehicle] = useState<VehicleInfo | null>(null);
   const [titleOptions, setTitleOptions] = useState<string[]>([]);
   const [attrs, setAttrs] = useState<Record<string, string>>({});
+  // Budgivning – publika fält på annonsen, privata trösklar sparas separat
+  const [allowOffers, setAllowOffers] = useState(false);
+  const [validity, setValidity] = useState("24");
+  const [minTotal, setMinTotal] = useState("");
+  const [minPerDay, setMinPerDay] = useState("");
+  const [autoAccept, setAutoAccept] = useState("");
+  const [dynamicPricing, setDynamicPricing] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -125,6 +134,8 @@ function ListingWizard() {
     });
     setDelivery(!!existing.delivery_available);
     setInstant(!!existing.instant_book);
+    setAllowOffers(!!(existing as { allow_offers?: boolean }).allow_offers);
+    setValidity(String((existing as { offer_validity_hours?: number }).offer_validity_hours ?? 24));
     const a = (existing.attributes as Record<string, unknown>) ?? {};
     setAttrs(Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v)])));
     setIdentConfirmed(true);
@@ -217,6 +228,19 @@ function ListingWizard() {
     toast.success("Demofordonsdata hämtad – bekräfta uppgifterna.");
   }
 
+  async function saveOfferSettings(listingId: string) {
+    if (!allowOffers) return;
+    await supabase.from("listing_offer_settings").upsert(
+      {
+        listing_id: listingId,
+        min_offer_total: minTotal ? Number(minTotal) : null,
+        min_offer_per_day: minPerDay ? Number(minPerDay) : null,
+        auto_accept_total: autoAccept ? Number(autoAccept) : null,
+      },
+      { onConflict: "listing_id" },
+    );
+  }
+
   async function publish(status: "published" | "draft") {
     if (!form.title || !form.price_day) { toast.error("Titel och dygnspris krävs."); return; }
     setBusy(true);
@@ -238,6 +262,9 @@ function ListingWizard() {
       delivery_available: delivery,
       delivery_fee: Number(form.delivery_fee || 0),
       instant_book: instant,
+      allow_offers: allowOffers,
+      offer_validity_hours: Number(validity),
+      dynamic_pricing: { enabled: dynamicPricing, weekend: null, season: null, demand: null },
       status,
       attributes: attrs,
       quality_score: quality.total,
@@ -249,6 +276,7 @@ function ListingWizard() {
       const { error } = await supabase.from("listings").update(payload).eq("id", editId);
       setBusy(false);
       if (error) { toast.error("Kunde inte spara ändringarna."); return; }
+      await saveOfferSettings(editId);
       toast.success("Annonsen är uppdaterad.");
       navigate({ to: "/annons/$id", params: { id: editId } });
       return;
@@ -261,6 +289,7 @@ function ListingWizard() {
       .single();
     setBusy(false);
     if (error) { toast.error("Kunde inte publicera annonsen."); return; }
+    await saveOfferSettings(data.id);
     toast.success(status === "draft" ? "Utkast sparat." : "Annonsen är publicerad!");
     navigate({ to: status === "draft" ? "/mina-annonser" : "/annons/$id", params: { id: data.id } } as never);
   }
@@ -558,6 +587,65 @@ function ListingWizard() {
             <Label htmlFor="dir">Tillåt direktbokning</Label>
             <Switch id="dir" checked={instant} onCheckedChange={setInstant} />
           </div>
+
+          <div className="rounded-3xl border border-border p-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="bud">Tillåt prisförslag / bud</Label>
+              <Switch id="bud" checked={allowOffers} onCheckedChange={setAllowOffers} />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Hyrestagare kan lägga bud på totalpriset för sin period. Du kan alltid acceptera, neka eller lämna motbud.
+            </p>
+
+            {allowOffers && (
+              <div className="mt-4 space-y-3">
+                <F label="Giltighetstid för bud">
+                  <Select value={validity} onValueChange={setValidity}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {VALIDITY_OPTIONS.map((v) => (
+                        <SelectItem key={v.value} value={String(v.value)}>{v.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </F>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <F label="Dolt minimum – totalt för perioden (kr)">
+                    <Input value={minTotal} onChange={(e) => setMinTotal(e.target.value)} placeholder="valfritt" />
+                  </F>
+                  <F label="Dolt minimum – per dygn (kr)">
+                    <Input value={minPerDay} onChange={(e) => setMinPerDay(e.target.value)} placeholder="valfritt" />
+                  </F>
+                  <F label="Automatisk acceptans från (kr totalt)">
+                    <Input value={autoAccept} onChange={(e) => setAutoAccept(e.target.value)} placeholder="valfritt" />
+                  </F>
+                </div>
+                <p className="rounded-2xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                  Ditt dolda minimum och din automatgräns visas aldrig publikt och avslöjas aldrig för hyrestagaren – de
+                  används bara för att markera för låga bud och för att acceptera bud automatiskt.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-between rounded-2xl bg-muted/60 px-4 py-3">
+              <span>
+                <Label htmlFor="dyn">Förbered dynamisk prissättning</Label>
+                <span className="block text-xs text-muted-foreground">
+                  Vardag/helg/säsong/efterfrågan – kommande funktion, du har alltid full kontroll. Inga priser ändras
+                  automatiskt i denna demo.
+                </span>
+              </span>
+              <Switch id="dyn" checked={dynamicPricing} onCheckedChange={setDynamicPricing} />
+            </div>
+          </div>
+
+          {advice && (
+            <PriceInsightsCard
+              advice={advice}
+              currentDayPrice={Number(form.price_day || 0)}
+              onApply={(p) => set("price_day", String(p))}
+            />
+          )}
         </div>
       )}
 

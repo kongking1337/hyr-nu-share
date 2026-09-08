@@ -44,6 +44,10 @@ export type UnifiedResult = {
   deliveryFee: number;
   pickupAvailable: boolean;
   instantBook: boolean;
+  /** Interna annonser: uthyraren tar emot prisförslag/bud */
+  allowOffers?: boolean;
+  /** Timmar ett bud är giltigt (0 = ingen tidsgräns) */
+  offerValidityHours?: number;
   /** Endast externa resultat: länk till erbjudandet hos källan */
   externalUrl?: string;
   availableFrom?: string | null;

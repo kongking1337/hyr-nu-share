@@ -5,6 +5,9 @@ import { Image as ImageIcon, Send, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { OfferCard, type OfferAction } from "@/components/offers/OfferCard";
+import type { OfferRow } from "@/lib/offers";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/meddelanden")({
@@ -42,12 +45,23 @@ function MessagesPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("messages")
-        .select("*")
+        .select("*, offers(*)")
         .eq("conversation_id", active!)
         .order("created_at");
       return data ?? [];
     },
   });
+
+  async function respondOffer(id: string, action: OfferAction, amount?: number) {
+    const { error } = await supabase.rpc("respond_offer", {
+      _offer_id: id,
+      _action: action,
+      ...(amount ? { _amount: amount } : {}),
+    });
+    if (error) { toast.error("Åtgärden kunde inte genomföras."); return; }
+    toast.success(action === "accept" ? "Bud accepterat – bokningen är skapad." : "Uppdaterat.");
+    refetch();
+  }
 
   async function send() {
     if (!text.trim() || !active) return;
@@ -90,7 +104,21 @@ function MessagesPage() {
 
         <div className="flex min-h-[420px] flex-col rounded-3xl border border-border p-4">
           <div className="flex-1 space-y-2 overflow-y-auto">
-            {(messages ?? []).map((m) => (
+            {(messages ?? []).map((m) => {
+              const offer = (m as { offers?: OfferRow | null }).offers ?? null;
+              if (offer) {
+                return (
+                  <div key={m.id} className="max-w-[90%]">
+                    <OfferCard
+                      offer={offer}
+                      role={offer.owner_id === user?.id ? "owner" : "renter"}
+                      compact
+                      onAction={(a, amt) => respondOffer(offer.id, a, amt)}
+                    />
+                  </div>
+                );
+              }
+              return (
               <div
                 key={m.id}
                 className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
@@ -105,7 +133,8 @@ function MessagesPage() {
                 {m.image_url && <img src={m.image_url} alt="" className="mb-1 rounded-xl" />}
                 {m.body}
               </div>
-            ))}
+              );
+            })}
             {!active && <p className="text-sm text-muted-foreground">Välj en konversation till vänster.</p>}
           </div>
           <div className="mt-3 flex gap-2">

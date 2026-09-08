@@ -265,8 +265,44 @@ export type Database = {
           },
         ]
       }
+      listing_offer_settings: {
+        Row: {
+          auto_accept_total: number | null
+          created_at: string
+          listing_id: string
+          min_offer_per_day: number | null
+          min_offer_total: number | null
+          updated_at: string
+        }
+        Insert: {
+          auto_accept_total?: number | null
+          created_at?: string
+          listing_id: string
+          min_offer_per_day?: number | null
+          min_offer_total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          auto_accept_total?: number | null
+          created_at?: string
+          listing_id?: string
+          min_offer_per_day?: number | null
+          min_offer_total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_offer_settings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
+          allow_offers: boolean
           area: string | null
           attributes: Json
           booking_count: number
@@ -279,6 +315,7 @@ export type Database = {
           delivery_fee: number
           deposit: number
           description: string
+          dynamic_pricing: Json
           favorite_count: number
           id: string
           images: string[]
@@ -286,6 +323,7 @@ export type Database = {
           insurance_fee: number
           lat: number
           lng: number
+          offer_validity_hours: number
           owner_id: string | null
           owner_name: string
           owner_type: Database["public"]["Enums"]["account_type"]
@@ -307,6 +345,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          allow_offers?: boolean
           area?: string | null
           attributes?: Json
           booking_count?: number
@@ -319,6 +358,7 @@ export type Database = {
           delivery_fee?: number
           deposit?: number
           description?: string
+          dynamic_pricing?: Json
           favorite_count?: number
           id?: string
           images?: string[]
@@ -326,6 +366,7 @@ export type Database = {
           insurance_fee?: number
           lat?: number
           lng?: number
+          offer_validity_hours?: number
           owner_id?: string | null
           owner_name?: string
           owner_type?: Database["public"]["Enums"]["account_type"]
@@ -347,6 +388,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          allow_offers?: boolean
           area?: string | null
           attributes?: Json
           booking_count?: number
@@ -359,6 +401,7 @@ export type Database = {
           delivery_fee?: number
           deposit?: number
           description?: string
+          dynamic_pricing?: Json
           favorite_count?: number
           id?: string
           images?: string[]
@@ -366,6 +409,7 @@ export type Database = {
           insurance_fee?: number
           lat?: number
           lng?: number
+          offer_validity_hours?: number
           owner_id?: string | null
           owner_name?: string
           owner_type?: Database["public"]["Enums"]["account_type"]
@@ -411,6 +455,7 @@ export type Database = {
           id: string
           image_url: string | null
           kind: string
+          offer_id: string | null
           sender_id: string | null
         }
         Insert: {
@@ -420,6 +465,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           kind?: string
+          offer_id?: string | null
           sender_id?: string | null
         }
         Update: {
@@ -429,6 +475,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           kind?: string
+          offer_id?: string | null
           sender_id?: string | null
         }
         Relationships: [
@@ -437,6 +484,105 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          actor: string
+          amount: number
+          booking_id: string | null
+          conversation_id: string | null
+          created_at: string
+          days: number
+          end_date: string
+          expires_at: string | null
+          id: string
+          list_total: number
+          listing_id: string
+          message: string | null
+          owner_id: string | null
+          parent_id: string | null
+          renter_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["offer_status"]
+          updated_at: string
+        }
+        Insert: {
+          actor?: string
+          amount?: number
+          booking_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          days?: number
+          end_date: string
+          expires_at?: string | null
+          id?: string
+          list_total?: number
+          listing_id: string
+          message?: string | null
+          owner_id?: string | null
+          parent_id?: string | null
+          renter_id: string
+          start_date: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string
+        }
+        Update: {
+          actor?: string
+          amount?: number
+          booking_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          days?: number
+          end_date?: string
+          expires_at?: string | null
+          id?: string
+          list_total?: number
+          listing_id?: string
+          message?: string | null
+          owner_id?: string | null
+          parent_id?: string | null
+          renter_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
             referencedColumns: ["id"]
           },
         ]
@@ -633,12 +779,34 @@ export type Database = {
           start_date: string
         }[]
       }
+      expire_stale_offers: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      place_offer: {
+        Args: {
+          _amount: number
+          _days: number
+          _end: string
+          _list_total: number
+          _listing_id: string
+          _message?: string
+          _start: string
+        }
+        Returns: Json
+      }
+      respond_offer: {
+        Args: {
+          _action: string
+          _amount?: number
+          _message?: string
+          _offer_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
@@ -650,6 +818,13 @@ export type Database = {
         | "declined"
         | "cancelled"
         | "completed"
+      offer_status:
+        | "active"
+        | "countered"
+        | "accepted"
+        | "declined"
+        | "expired"
+        | "withdrawn"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -785,6 +960,14 @@ export const Constants = {
         "declined",
         "cancelled",
         "completed",
+      ],
+      offer_status: [
+        "active",
+        "countered",
+        "accepted",
+        "declined",
+        "expired",
+        "withdrawn",
       ],
     },
   },

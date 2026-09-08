@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { rowToUnified } from "@/lib/providers/internal";
 import { kr, quote } from "@/lib/pricing";
+import { OfferPanel } from "@/components/offers/OfferPanel";
 
 export const Route = createFileRoute("/annons/$id")({
   head: () => ({
@@ -124,6 +125,11 @@ function ListingPage() {
               <span className="flex items-center gap-1">
                 <BadgeCheck className="h-4 w-4" /> {listing.ownerType === "company" ? "Företag" : "Privatperson"} · {listing.ownerName}
               </span>
+              {listing.allowOffers && (
+                <span className="flex items-center gap-1 rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-semibold text-foreground">
+                  Bud välkomna
+                </span>
+              )}
               {listing.instantBook && <span className="flex items-center gap-1 text-primary"><Zap className="h-4 w-4" /> Direktbokning</span>}
               {listing.deliveryAvailable && <span className="flex items-center gap-1"><Truck className="h-4 w-4" /> Leverans {kr(listing.deliveryFee)}</span>}
             </div>
@@ -236,6 +242,17 @@ function ListingPage() {
           <Button className="w-full rounded-full" onClick={book} disabled={overlaps}>
             {listing.instantBook ? "Boka direkt" : "Skicka bokningsförfrågan"}
           </Button>
+          {listing.allowOffers && (
+            <OfferPanel
+              listingId={listing.id}
+              listTotal={q.total}
+              days={days}
+              start={start}
+              end={end}
+              validityHours={listing.offerValidityHours ?? 24}
+              disabled={overlaps}
+            />
+          )}
           <p className="text-[11px] text-muted-foreground">
             Betalning sker i nästa steg via Stripe Connect (serviceavgift, utbetalning, deposition och
             återbetalning). Betalningar är inte aktiverade i denna demo.

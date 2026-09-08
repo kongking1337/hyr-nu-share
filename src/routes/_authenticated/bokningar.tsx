@@ -72,6 +72,9 @@ function BookingsPage() {
               <div className="text-right">
                 <p className="font-display text-lg font-semibold">{kr(Number(b.total_price))}</p>
                 <span className="rounded-full bg-muted px-2.5 py-1 text-[11px]">{STATUS[b.status] ?? b.status}</span>
+                {(b.message ?? "").includes("bud") && (
+                  <span className="ml-1 rounded-full bg-accent/25 px-2.5 py-1 text-[11px]">Pris via bud</span>
+                )}
               </div>
               {["requested", "confirmed"].includes(b.status) && (
                 <Button variant="outline" size="sm" className="rounded-full" onClick={() => cancel(b.id)}>

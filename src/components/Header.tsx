@@ -96,6 +96,7 @@ export function Header() {
                   { to: "/sok", label: "Sök & jämför" },
                   { to: "/hyr-ut", label: "+ Hyr ut" },
                   { to: "/mina-annonser", label: "Mina annonser" },
+                  { to: "/bud", label: "Mina bud" },
                   { to: "/bokningar", label: "Bokningar" },
                   { to: "/meddelanden", label: "Meddelanden" },
                   { to: "/favoriter", label: "Favoriter" },

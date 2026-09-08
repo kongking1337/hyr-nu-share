@@ -85,6 +85,18 @@ function AccountPage() {
       </div>
 
       <Link
+        to="/bud"
+        className="mt-6 flex items-center justify-between rounded-3xl border border-border p-5 transition-colors hover:bg-muted/60"
+      >
+        <span>
+          <span className="block font-display text-lg font-semibold">Mina bud</span>
+          <span className="block text-sm text-muted-foreground">
+            Prisförslag och motbud för dina uthyrningar och hyror.
+          </span>
+        </span>
+      </Link>
+
+      <Link
         to="/mina-annonser"
         className="mt-6 flex items-center justify-between rounded-3xl border border-border p-5 transition-colors hover:bg-muted/60"
       >
