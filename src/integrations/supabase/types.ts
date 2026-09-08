@@ -268,15 +268,18 @@ export type Database = {
       listings: {
         Row: {
           area: string | null
+          attributes: Json
           booking_count: number
           category_slug: string
           city: string
+          clicks_count: number
           company_id: string | null
           created_at: string
           delivery_available: boolean
           delivery_fee: number
           deposit: number
           description: string
+          favorite_count: number
           id: string
           images: string[]
           instant_book: boolean
@@ -291,23 +294,32 @@ export type Database = {
           price_hour: number | null
           price_month: number | null
           price_week: number | null
+          published_at: string
+          quality_score: number | null
           rating: number
+          request_count: number
           review_count: number
           service_fee_pct: number
+          share_count: number
           status: string
           title: string
+          vehicle: Json | null
+          views_count: number
         }
         Insert: {
           area?: string | null
+          attributes?: Json
           booking_count?: number
           category_slug: string
           city: string
+          clicks_count?: number
           company_id?: string | null
           created_at?: string
           delivery_available?: boolean
           delivery_fee?: number
           deposit?: number
           description?: string
+          favorite_count?: number
           id?: string
           images?: string[]
           instant_book?: boolean
@@ -322,23 +334,32 @@ export type Database = {
           price_hour?: number | null
           price_month?: number | null
           price_week?: number | null
+          published_at?: string
+          quality_score?: number | null
           rating?: number
+          request_count?: number
           review_count?: number
           service_fee_pct?: number
+          share_count?: number
           status?: string
           title: string
+          vehicle?: Json | null
+          views_count?: number
         }
         Update: {
           area?: string | null
+          attributes?: Json
           booking_count?: number
           category_slug?: string
           city?: string
+          clicks_count?: number
           company_id?: string | null
           created_at?: string
           delivery_available?: boolean
           delivery_fee?: number
           deposit?: number
           description?: string
+          favorite_count?: number
           id?: string
           images?: string[]
           instant_book?: boolean
@@ -353,11 +374,17 @@ export type Database = {
           price_hour?: number | null
           price_month?: number | null
           price_week?: number | null
+          published_at?: string
+          quality_score?: number | null
           rating?: number
+          request_count?: number
           review_count?: number
           service_fee_pct?: number
+          share_count?: number
           status?: string
           title?: string
+          vehicle?: Json | null
+          views_count?: number
         }
         Relationships: [
           {
