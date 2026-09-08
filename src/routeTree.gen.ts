@@ -24,6 +24,7 @@ import { Route as AuthenticatedMinaAnnonserRouteImport } from './routes/_authent
 import { Route as AnnonsIdRouteImport } from './routes/annons.$id'
 import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
 import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
+import { Route as AuthenticatedAnnonserIdStatistikRouteImport } from './routes/_authenticated/annonser.$id.statistik'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -101,6 +102,12 @@ const HyraStadKategoriRoute = HyraStadKategoriRouteImport.update({
   path: '/hyra/$stad/$kategori',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAnnonserIdStatistikRoute =
+  AuthenticatedAnnonserIdStatistikRouteImport.update({
+    id: '/annonser/$id/statistik',
+    path: '/annonser/$id/statistik',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
+  '/annonser/$id/statistik': typeof AuthenticatedAnnonserIdStatistikRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
+  '/annonser/$id/statistik': typeof AuthenticatedAnnonserIdStatistikRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +160,7 @@ export interface FileRoutesById {
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
+  '/_authenticated/annonser/$id/statistik': typeof AuthenticatedAnnonserIdStatistikRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
+    | '/annonser/$id/statistik'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
+    | '/annonser/$id/statistik'
   id:
     | '__root__'
     | '/'
@@ -202,6 +214,7 @@ export interface FileRouteTypes {
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
+    | '/_authenticated/annonser/$id/statistik'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -322,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HyraStadKategoriRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/annonser/$id/statistik': {
+      id: '/_authenticated/annonser/$id/statistik'
+      path: '/annonser/$id/statistik'
+      fullPath: '/annonser/$id/statistik'
+      preLoaderRoute: typeof AuthenticatedAnnonserIdStatistikRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -333,6 +353,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKontoRoute: typeof AuthenticatedKontoRoute
   AuthenticatedMeddelandenRoute: typeof AuthenticatedMeddelandenRoute
   AuthenticatedMinaAnnonserRoute: typeof AuthenticatedMinaAnnonserRoute
+  AuthenticatedAnnonserIdStatistikRoute: typeof AuthenticatedAnnonserIdStatistikRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -343,6 +364,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKontoRoute: AuthenticatedKontoRoute,
   AuthenticatedMeddelandenRoute: AuthenticatedMeddelandenRoute,
   AuthenticatedMinaAnnonserRoute: AuthenticatedMinaAnnonserRoute,
+  AuthenticatedAnnonserIdStatistikRoute: AuthenticatedAnnonserIdStatistikRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
