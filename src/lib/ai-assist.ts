@@ -16,7 +16,7 @@ export const STATUS_LABEL: Record<DataStatus, string> = {
   unknown: "OKÄND",
 };
 
-export type Field<T = string> = { value: T | null; status: DataStatus; note?: string };
+export type Field<T = string> = { value: T | null; status: DataStatus; note?: string | undefined };
 
 export const field = <T,>(value: T | null, status: DataStatus, note?: string): Field<T> => ({ value, status, note });
 
@@ -184,7 +184,13 @@ export const maskVin = (vin: string) => (vin.length < 6 ? "•••" : `${vin.s
 export const VEHICLE_CATEGORIES = ["bil", "slapvagn", "mc", "husbil"];
 
 /** Bygger rubrikförslag enbart av bekräftade uppgifter. */
-export function buildTitles(input: { brand?: string; model?: string; productType?: string; city?: string; extras?: string[] }): string[] {
+export function buildTitles(input: {
+  brand?: string | undefined;
+  model?: string | undefined;
+  productType?: string | undefined;
+  city?: string | undefined;
+  extras?: string[] | undefined;
+}): string[] {
   const core = [input.brand, input.model].filter(Boolean).join(" ");
   const type = input.productType ?? "";
   const extra = (input.extras ?? []).filter(Boolean)[0];
@@ -198,15 +204,15 @@ export function buildTitles(input: { brand?: string; model?: string; productType
 
 /** Bygger en beskrivning av bekräftade fakta – inget hittas på. */
 export function buildDescription(input: {
-  seed?: string;
-  brand?: string;
-  model?: string;
-  productType?: string;
-  city?: string;
-  condition?: string;
-  includes?: string[];
-  delivery?: boolean;
-  deposit?: number;
+  seed?: string | undefined;
+  brand?: string | undefined;
+  model?: string | undefined;
+  productType?: string | undefined;
+  city?: string | undefined;
+  condition?: string | undefined;
+  includes?: string[] | undefined;
+  delivery?: boolean | undefined;
+  deposit?: number | undefined;
 }): string {
   const lines: string[] = [];
   if (input.seed) lines.push(input.seed);

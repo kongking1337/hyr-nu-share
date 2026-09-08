@@ -34,7 +34,8 @@ import {
 } from "@/lib/ai-assist";
 
 export const Route = createFileRoute("/_authenticated/hyr-ut")({
-  validateSearch: (s: Record<string, unknown>) => ({ id: typeof s['id'] === "string" ? (s['id'] as string) : undefined }),
+  validateSearch: (s: Record<string, unknown>): { id?: string } =>
+    typeof s['id'] === "string" ? { id: s['id'] as string } : {},
   head: () => ({
     meta: [
       { title: "Hyr ut din grej – Hyrkoll" },
@@ -168,7 +169,7 @@ function ListingWizard() {
   function generateTitle() {
     const opts = ident
       ? ident.titles
-      : buildTitles({ brand: attrs['marke'], model: ident?.model, productType: form.category_slug, city: form.city });
+      : buildTitles({ brand: attrs['marke'], productType: form.category_slug, city: form.city });
     setTitleOptions(opts);
     if (opts[0]) set("title", opts[0]);
   }

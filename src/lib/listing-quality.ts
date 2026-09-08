@@ -20,7 +20,7 @@ export type QualityInput = {
   attributes?: Record<string, unknown>;
 };
 
-export type QualityPart = { key: string; label: string; score: number; max: number; tip?: string };
+export type QualityPart = { key: string; label: string; score: number; max: number; tip?: string | undefined };
 
 export type Quality = { total: number; parts: QualityPart[]; tips: string[] };
 
