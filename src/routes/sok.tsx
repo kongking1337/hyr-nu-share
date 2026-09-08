@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SearchExperience } from "@/components/SearchExperience";
 
-type SokSearch = { q?: string };
+type SokSearch = { q: string };
 
 export const Route = createFileRoute("/sok")({
   validateSearch: (search: Record<string, unknown>): SokSearch => ({
-    q: typeof search.q === "string" ? search.q : undefined,
+    q: typeof search["q"] === "string" ? (search["q"] as string) : "",
   }),
   head: () => ({
     meta: [
