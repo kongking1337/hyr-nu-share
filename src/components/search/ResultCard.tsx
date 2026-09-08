@@ -58,8 +58,14 @@ export function ResultCard({
   const cheapest = [...group.offers].sort((a, b) => quote(a, days).total - quote(b, days).total)[0]!;
 
   async function favorite() {
-    if (!internal) return toast.info("Externa demoresultat kan inte sparas ännu.");
-    if (!user) return toast.info("Logga in för att spara favoriter.");
+    if (!internal) {
+      toast.info("Externa demoresultat kan inte sparas ännu.");
+      return;
+    }
+    if (!user) {
+      toast.info("Logga in för att spara favoriter.");
+      return;
+    }
     const { error } = await supabase.from("favorites").insert({ user_id: user.id, listing_id: r.id });
     toast[error ? "error" : "success"](error ? "Kunde inte spara" : "Sparad i favoriter");
   }

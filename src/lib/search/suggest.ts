@@ -122,7 +122,7 @@ export function suggest(query: string, limit = 8): Suggestion[] {
           label: sub.name,
           kind: "subcategory",
           category: cat,
-          hint: CATEGORY_SYNONYMS[cat]?.name,
+          ...(CATEGORY_SYNONYMS[cat]?.name ? { hint: CATEGORY_SYNONYMS[cat]!.name } : {}),
           s: s - 5,
         });
     }

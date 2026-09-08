@@ -30,7 +30,7 @@ function ComparePage() {
         <p className="mt-3 text-muted-foreground">
           Lägg till produkter från sökresultaten med jämför-ikonen så visas de här.
         </p>
-        <Button asChild className="mt-6 rounded-full"><Link to="/sok">Till sökningen</Link></Button>
+        <Button asChild className="mt-6 rounded-full"><Link to="/sok" search={{}}>Till sökningen</Link></Button>
       </div>
     );
   }

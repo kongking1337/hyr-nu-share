@@ -94,7 +94,7 @@ const num = (v: unknown, d: number) => {
 };
 const bool = (v: unknown, d: boolean) => (v === true || v === "true" ? true : v === false || v === "false" ? false : d);
 
-export function validateSearchParams(search: Record<string, unknown>): SearchParams {
+export function validateSearchParams(search: Partial<Record<keyof SearchParams, unknown>>): SearchParams {
   return {
     q: str(search["q"], DEFAULTS.q),
     location: str(search["location"], DEFAULTS.location),
@@ -123,7 +123,7 @@ export function validateSearchParams(search: Record<string, unknown>): SearchPar
 }
 
 /** Tar bort defaultvärden så URL:en förblir kort och läsbar. */
-export function cleanParams(p: Partial<SearchParams>): Record<string, unknown> {
+export function cleanParams(p: Partial<SearchParams>): Partial<SearchParams> {
   const out: Record<string, unknown> = {};
   (Object.keys(DEFAULTS) as Array<keyof SearchParams>).forEach((k) => {
     const v = p[k];
@@ -131,5 +131,5 @@ export function cleanParams(p: Partial<SearchParams>): Record<string, unknown> {
     if (v === DEFAULTS[k]) return;
     out[k] = v;
   });
-  return out;
+  return out as Partial<SearchParams>;
 }
