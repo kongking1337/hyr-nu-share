@@ -16,6 +16,9 @@ import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as SokRouteImport } from './routes/sok'
 import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
 import { Route as AuthenticatedFavoriterRouteImport } from './routes/_authenticated/favoriter'
+import { Route as AuthenticatedHyrUtRouteImport } from './routes/_authenticated/hyr-ut'
+import { Route as AuthenticatedKontoRouteImport } from './routes/_authenticated/konto'
+import { Route as AuthenticatedMeddelandenRouteImport } from './routes/_authenticated/meddelanden'
 import { Route as AnnonsIdRouteImport } from './routes/annons.$id'
 import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
 import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
@@ -54,6 +57,22 @@ const AuthenticatedFavoriterRoute = AuthenticatedFavoriterRouteImport.update({
   path: '/favoriter',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHyrUtRoute = AuthenticatedHyrUtRouteImport.update({
+  id: '/hyr-ut',
+  path: '/hyr-ut',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedKontoRoute = AuthenticatedKontoRouteImport.update({
+  id: '/konto',
+  path: '/konto',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMeddelandenRoute =
+  AuthenticatedMeddelandenRouteImport.update({
+    id: '/meddelanden',
+    path: '/meddelanden',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AnnonsIdRoute = AnnonsIdRouteImport.update({
   id: '/annons/$id',
   path: '/annons/$id',
@@ -77,6 +96,9 @@ export interface FileRoutesByFullPath {
   '/sok': typeof SokRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
+  '/hyr-ut': typeof AuthenticatedHyrUtRoute
+  '/konto': typeof AuthenticatedKontoRoute
+  '/meddelanden': typeof AuthenticatedMeddelandenRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -88,6 +110,9 @@ export interface FileRoutesByTo {
   '/sok': typeof SokRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
+  '/hyr-ut': typeof AuthenticatedHyrUtRoute
+  '/konto': typeof AuthenticatedKontoRoute
+  '/meddelanden': typeof AuthenticatedMeddelandenRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -101,6 +126,9 @@ export interface FileRoutesById {
   '/sok': typeof SokRoute
   '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
   '/_authenticated/favoriter': typeof AuthenticatedFavoriterRoute
+  '/_authenticated/hyr-ut': typeof AuthenticatedHyrUtRoute
+  '/_authenticated/konto': typeof AuthenticatedKontoRoute
+  '/_authenticated/meddelanden': typeof AuthenticatedMeddelandenRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -114,6 +142,9 @@ export interface FileRouteTypes {
     | '/sok'
     | '/bokningar'
     | '/favoriter'
+    | '/hyr-ut'
+    | '/konto'
+    | '/meddelanden'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -125,6 +156,9 @@ export interface FileRouteTypes {
     | '/sok'
     | '/bokningar'
     | '/favoriter'
+    | '/hyr-ut'
+    | '/konto'
+    | '/meddelanden'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -137,6 +171,9 @@ export interface FileRouteTypes {
     | '/sok'
     | '/_authenticated/bokningar'
     | '/_authenticated/favoriter'
+    | '/_authenticated/hyr-ut'
+    | '/_authenticated/konto'
+    | '/_authenticated/meddelanden'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -204,6 +241,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFavoriterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/hyr-ut': {
+      id: '/_authenticated/hyr-ut'
+      path: '/hyr-ut'
+      fullPath: '/hyr-ut'
+      preLoaderRoute: typeof AuthenticatedHyrUtRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/konto': {
+      id: '/_authenticated/konto'
+      path: '/konto'
+      fullPath: '/konto'
+      preLoaderRoute: typeof AuthenticatedKontoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/meddelanden': {
+      id: '/_authenticated/meddelanden'
+      path: '/meddelanden'
+      fullPath: '/meddelanden'
+      preLoaderRoute: typeof AuthenticatedMeddelandenRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/annons/$id': {
       id: '/annons/$id'
       path: '/annons/$id'
@@ -231,11 +289,17 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBokningarRoute: typeof AuthenticatedBokningarRoute
   AuthenticatedFavoriterRoute: typeof AuthenticatedFavoriterRoute
+  AuthenticatedHyrUtRoute: typeof AuthenticatedHyrUtRoute
+  AuthenticatedKontoRoute: typeof AuthenticatedKontoRoute
+  AuthenticatedMeddelandenRoute: typeof AuthenticatedMeddelandenRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBokningarRoute: AuthenticatedBokningarRoute,
   AuthenticatedFavoriterRoute: AuthenticatedFavoriterRoute,
+  AuthenticatedHyrUtRoute: AuthenticatedHyrUtRoute,
+  AuthenticatedKontoRoute: AuthenticatedKontoRoute,
+  AuthenticatedMeddelandenRoute: AuthenticatedMeddelandenRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
