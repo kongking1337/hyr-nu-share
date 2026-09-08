@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SokRouteImport } from './routes/sok'
+import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
+import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SokRoute = SokRouteImport.update({
+  id: '/sok',
+  path: '/sok',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HyraKategoriRoute = HyraKategoriRouteImport.update({
+  id: '/hyra/$kategori',
+  path: '/hyra/$kategori',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HyraStadKategoriRoute = HyraStadKategoriRouteImport.update({
+  id: '/hyra/$stad/$kategori',
+  path: '/hyra/$stad/$kategori',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sok': typeof SokRoute
+  '/hyra/$kategori': typeof HyraKategoriRoute
+  '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sok': typeof SokRoute
+  '/hyra/$kategori': typeof HyraKategoriRoute
+  '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sok': typeof SokRoute
+  '/hyra/$kategori': typeof HyraKategoriRoute
+  '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/sok' | '/hyra/$kategori' | '/hyra/$stad/$kategori'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/sok' | '/hyra/$kategori' | '/hyra/$stad/$kategori'
+  id: '__root__' | '/' | '/sok' | '/hyra/$kategori' | '/hyra/$stad/$kategori'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SokRoute: typeof SokRoute
+  HyraKategoriRoute: typeof HyraKategoriRoute
+  HyraStadKategoriRoute: typeof HyraStadKategoriRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sok': {
+      id: '/sok'
+      path: '/sok'
+      fullPath: '/sok'
+      preLoaderRoute: typeof SokRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hyra/$kategori': {
+      id: '/hyra/$kategori'
+      path: '/hyra/$kategori'
+      fullPath: '/hyra/$kategori'
+      preLoaderRoute: typeof HyraKategoriRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hyra/$stad/$kategori': {
+      id: '/hyra/$stad/$kategori'
+      path: '/hyra/$stad/$kategori'
+      fullPath: '/hyra/$stad/$kategori'
+      preLoaderRoute: typeof HyraStadKategoriRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SokRoute: SokRoute,
+  HyraKategoriRoute: HyraKategoriRoute,
+  HyraStadKategoriRoute: HyraStadKategoriRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
