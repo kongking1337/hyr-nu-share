@@ -111,7 +111,7 @@ function Index() {
           {CATEGORIES.map(({ slug, name, Icon }) => (
             <Link
               key={slug}
-              to="/hyra/$kategori" search={{}}
+              to="/hyra/$kategori" search={DEFAULTS}
               params={{ kategori: slug }}
               className="group flex flex-col gap-3 rounded-3xl border border-border bg-card p-5 transition-colors hover:border-primary"
             >
@@ -127,7 +127,7 @@ function Index() {
       <section className="mx-auto max-w-6xl px-4 pb-16">
         <div className="flex items-end justify-between">
           <h2 className="font-display text-2xl font-semibold">Rekommenderat just nu</h2>
-          <Link to="/sok" search={{}} className="text-sm text-primary hover:underline">
+          <Link to="/sok" search={DEFAULTS} className="text-sm text-primary hover:underline">
             Visa alla
           </Link>
         </div>
