@@ -10,6 +10,8 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { Header } from "@/components/Header";
+import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -77,11 +79,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Hyrkoll – hyr saker av grannar och företag" },
+      {
+        name: "description",
+        content:
+          "Hyrkoll jämför uthyrning av släpvagnar, verktyg, kameror och mer – hitta lägsta totalpris nära dig.",
+      },
+      { name: "author", content: "Hyrkoll" },
+      { property: "og:title", content: "Hyrkoll – jämför uthyrning i Sverige" },
+      { property: "og:description", content: "Sök, jämför totalpris och boka saker att hyra." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -92,6 +98,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Space+Grotesk:wght@500;600;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -120,7 +132,20 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <Header />
+      <main className="min-h-[70vh]">
+        <Outlet />
+      </main>
+      <footer className="mt-16 border-t border-border py-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 text-sm text-muted-foreground">
+          <p className="font-display text-base font-semibold text-foreground">Hyrkoll</p>
+          <p>
+            Jämför uthyrning från privatpersoner och företag. Externa resultat är demodata tills
+            officiella integrationer är på plats. Betalningar är inte aktiverade i denna demo.
+          </p>
+        </div>
+      </footer>
+      <Toaster position="top-center" />
     </QueryClientProvider>
   );
 }
