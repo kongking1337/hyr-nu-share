@@ -59,6 +59,13 @@ export function SearchResultsPage({
     return dedupe(sorted);
   }, [results, params, center, days]);
 
+  // Medianpris per dygn bland träffarna – underlag för marknadsindikatorn på korten
+  const marketDay = useMemo(() => {
+    const prices = groups.map((g) => g.primary.priceDay).filter((p) => p > 0).sort((a, b) => a - b);
+    if (prices.length < 3) return null;
+    return prices[Math.floor(prices.length / 2)] ?? null;
+  }, [groups]);
+
   const visible = groups.slice(0, params.page * PAGE_SIZE);
   const chipCount = activeChips(params).length;
 
@@ -222,6 +229,8 @@ export function SearchResultsPage({
                     group={g}
                     days={days}
                     priceBase={params.priceBase}
+                    marketDay={marketDay}
+                    marketSample={groups.length}
                     layout={params.view === "grid" ? "grid" : "list"}
                     distance={
                       center.nationwide ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)

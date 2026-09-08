@@ -16,6 +16,7 @@ import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as SokRouteImport } from './routes/sok'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
+import { Route as AuthenticatedBudRouteImport } from './routes/_authenticated/bud'
 import { Route as AuthenticatedFavoriterRouteImport } from './routes/_authenticated/favoriter'
 import { Route as AuthenticatedHyrUtRouteImport } from './routes/_authenticated/hyr-ut'
 import { Route as AuthenticatedKontoRouteImport } from './routes/_authenticated/konto'
@@ -58,6 +59,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedBokningarRoute = AuthenticatedBokningarRouteImport.update({
   id: '/bokningar',
   path: '/bokningar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBudRoute = AuthenticatedBudRouteImport.update({
+  id: '/bud',
+  path: '/bud',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFavoriterRoute = AuthenticatedFavoriterRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/sok': typeof SokRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
+  '/bud': typeof AuthenticatedBudRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
   '/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/konto': typeof AuthenticatedKontoRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/sok': typeof SokRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
+  '/bud': typeof AuthenticatedBudRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
   '/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/konto': typeof AuthenticatedKontoRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/sok': typeof SokRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
+  '/_authenticated/bud': typeof AuthenticatedBudRoute
   '/_authenticated/favoriter': typeof AuthenticatedFavoriterRoute
   '/_authenticated/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/_authenticated/konto': typeof AuthenticatedKontoRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/sok'
     | '/admin'
     | '/bokningar'
+    | '/bud'
     | '/favoriter'
     | '/hyr-ut'
     | '/konto'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/sok'
     | '/admin'
     | '/bokningar'
+    | '/bud'
     | '/favoriter'
     | '/hyr-ut'
     | '/konto'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/sok'
     | '/_authenticated/admin'
     | '/_authenticated/bokningar'
+    | '/_authenticated/bud'
     | '/_authenticated/favoriter'
     | '/_authenticated/hyr-ut'
     | '/_authenticated/konto'
@@ -279,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBokningarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/bud': {
+      id: '/_authenticated/bud'
+      path: '/bud'
+      fullPath: '/bud'
+      preLoaderRoute: typeof AuthenticatedBudRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/favoriter': {
       id: '/_authenticated/favoriter'
       path: '/favoriter'
@@ -348,6 +367,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBokningarRoute: typeof AuthenticatedBokningarRoute
+  AuthenticatedBudRoute: typeof AuthenticatedBudRoute
   AuthenticatedFavoriterRoute: typeof AuthenticatedFavoriterRoute
   AuthenticatedHyrUtRoute: typeof AuthenticatedHyrUtRoute
   AuthenticatedKontoRoute: typeof AuthenticatedKontoRoute
@@ -359,6 +379,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBokningarRoute: AuthenticatedBokningarRoute,
+  AuthenticatedBudRoute: AuthenticatedBudRoute,
   AuthenticatedFavoriterRoute: AuthenticatedFavoriterRoute,
   AuthenticatedHyrUtRoute: AuthenticatedHyrUtRoute,
   AuthenticatedKontoRoute: AuthenticatedKontoRoute,

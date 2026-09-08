@@ -31,6 +31,8 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     delivery_fee: number;
     pickup_available: boolean;
     instant_book: boolean;
+    allow_offers?: boolean;
+    offer_validity_hours?: number;
   };
   return {
     id: r.id,
@@ -59,6 +61,8 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     deliveryFee: Number(r.delivery_fee),
     pickupAvailable: r.pickup_available,
     instantBook: r.instant_book,
+    allowOffers: !!r.allow_offers,
+    offerValidityHours: Number(r.offer_validity_hours ?? 24),
   };
 }
 

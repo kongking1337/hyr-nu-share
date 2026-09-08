@@ -10,6 +10,8 @@ import { Bars, FunnelChart, Sparkline } from "@/components/dashboard/Charts";
 import { RANGES, funnel, searchRank, seriesFor, totals, type RangeKey } from "@/lib/listing-analytics";
 import { qualityLabel, scoreListing } from "@/lib/listing-quality";
 import { getPriceAdvice } from "@/lib/price-advice";
+import { DATA_WEIGHT_NOTE, offerStats, type OfferRow } from "@/lib/offers";
+import { DEMO_ALL_OFFERS } from "@/lib/demo-offers";
 
 export const Route = createFileRoute("/_authenticated/annonser/$id/statistik")({
   head: () => ({
@@ -53,6 +55,8 @@ function ListingStats() {
   const t = useMemo(() => totals(points), [points]);
 
   if (!listing) return <div className="mx-auto max-w-5xl px-4 py-10 text-sm text-muted-foreground">Hämtar annons …</div>;
+
+  const bidStats = offerStats(DEMO_ALL_OFFERS as unknown as OfferRow[]);
 
   const q = scoreListing({
     images: listing.images ?? [],
@@ -197,6 +201,19 @@ function ListingStats() {
             Rekommendationerna är beräknade lokalt utifrån annonsens innehåll och demostatistik – de är förslag, inte fakta.
           </p>
         </div>
+      </div>
+
+      <div className="mt-6 rounded-3xl border border-border p-5">
+        <h2 className="font-display text-lg font-semibold">Budstatistik (aggregerad och anonymiserad)</h2>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Fact label="Snitt accepterat pris" value={kr(bidStats.avgAccepted)} />
+          <Fact label="Snitt utgångsbud" value={kr(bidStats.avgStart)} />
+          <Fact label="Snittrabatt" value={`${bidStats.avgDiscountPct} %`} />
+          <Fact label="Andel accepterade bud" value={`${bidStats.acceptRate} %`} />
+          <Fact label="Accepterade motbud" value={`${bidStats.counterAcceptRate} %`} />
+          <Fact label="Underlag" value={`${bidStats.sample} bud`} />
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">{DATA_WEIGHT_NOTE}</p>
       </div>
     </div>
   );

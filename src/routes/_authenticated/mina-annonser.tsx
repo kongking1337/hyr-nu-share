@@ -167,6 +167,9 @@ function MyListings() {
               <Sparkles className="mr-1 h-4 w-4" /> Fyll på med demoannonser
             </Button>
           )}
+          <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/bud" })}>
+            Mina bud
+          </Button>
           <Button className="rounded-full" onClick={() => navigate({ to: "/hyr-ut" })}>
             + Ny annons
           </Button>

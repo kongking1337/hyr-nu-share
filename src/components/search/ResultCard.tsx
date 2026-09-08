@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Heart, Layers, MapPin, Star, Zap } from "lucide-react";
+import { ExternalLink, Gavel, Heart, Layers, MapPin, Sparkles, Star, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { advertisedPrice, priceBaseLabel } from "@/lib/search/filter-sort";
 import type { PriceBase } from "@/lib/search/params";
 import type { ResultGroup } from "@/lib/search/dedupe";
 import type { UnifiedResult } from "@/lib/providers/types";
+import { marketIndicator } from "@/lib/price-insights";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -41,12 +42,17 @@ export function ResultCard({
   distance,
   priceBase,
   layout,
+  marketDay,
+  marketSample,
 }: {
   group: ResultGroup;
   days: number;
   distance: number | null;
   priceBase: PriceBase;
   layout: "grid" | "list";
+  /** Medianpris per dygn bland jämförbara träffar – underlag för marknadsindikatorn */
+  marketDay?: number | null;
+  marketSample?: number;
 }) {
   const r = group.primary;
   const [openOffers, setOpenOffers] = useState(false);
@@ -54,6 +60,8 @@ export function ResultCard({
   const q = quote(r, days);
   const ads = advertisedPrice(r, priceBase, days);
   const internal = r.source.kind === "internal";
+
+  const indicator = marketIndicator(r.priceDay, marketDay, marketSample ?? 0);
 
   const cheapest = [...group.offers].sort((a, b) => quote(a, days).total - quote(b, days).total)[0]!;
 
@@ -81,6 +89,11 @@ export function ResultCard({
       />
       <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
         <SourceTag r={r} />
+        {r.allowOffers && (
+          <span className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-foreground">
+            <Gavel className="h-3 w-3" /> Bud välkomna
+          </span>
+        )}
         {group.sources > 1 && (
           <span className="flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
             <Layers className="h-3 w-3" /> Finns på {group.sources} plattformar
@@ -140,6 +153,21 @@ export function ResultCard({
         </div>
       </div>
 
+      {indicator && (
+        <p
+          className={cn(
+            "flex items-center gap-1 text-[11px] font-medium",
+            indicator.tone === "good" && "text-emerald-600 dark:text-emerald-400",
+            indicator.tone === "high" && "text-amber-600 dark:text-amber-400",
+            indicator.tone === "neutral" && "text-muted-foreground",
+          )}
+          title="AI-uppskattning baserad på jämförbara egna annonser och märkta demokällor."
+        >
+          <Sparkles className="h-3 w-3" /> {indicator.label}
+          {indicator.estimate && <span className="text-muted-foreground"> · uppskattning</span>}
+        </p>
+      )}
+
       {group.sources > 1 && (
         <div className="rounded-2xl border border-dashed border-border p-2.5">
           <button
@@ -176,7 +204,15 @@ export function ResultCard({
               Visa & boka
             </Link>
           </Button>
-        ) : (
+        ) : null}
+        {internal && r.allowOffers ? (
+          <Button asChild variant="outline" className="rounded-full">
+            <Link to="/annons/$id" params={{ id: r.id }}>
+              Lägg bud
+            </Link>
+          </Button>
+        ) : null}
+        {!internal && (
           <Button asChild variant="secondary" className="flex-1 rounded-full">
             <a href={r.externalUrl} target="_blank" rel="noopener noreferrer">
               Visa erbjudande <ExternalLink className="ml-1 h-3.5 w-3.5" />
