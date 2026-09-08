@@ -20,6 +20,7 @@ import { Route as AuthenticatedFavoriterRouteImport } from './routes/_authentica
 import { Route as AuthenticatedHyrUtRouteImport } from './routes/_authenticated/hyr-ut'
 import { Route as AuthenticatedKontoRouteImport } from './routes/_authenticated/konto'
 import { Route as AuthenticatedMeddelandenRouteImport } from './routes/_authenticated/meddelanden'
+import { Route as AuthenticatedMinaAnnonserRouteImport } from './routes/_authenticated/mina-annonser'
 import { Route as AnnonsIdRouteImport } from './routes/annons.$id'
 import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
 import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
@@ -79,6 +80,12 @@ const AuthenticatedMeddelandenRoute =
     path: '/meddelanden',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMinaAnnonserRoute =
+  AuthenticatedMinaAnnonserRouteImport.update({
+    id: '/mina-annonser',
+    path: '/mina-annonser',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AnnonsIdRoute = AnnonsIdRouteImport.update({
   id: '/annons/$id',
   path: '/annons/$id',
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/konto': typeof AuthenticatedKontoRoute
   '/meddelanden': typeof AuthenticatedMeddelandenRoute
+  '/mina-annonser': typeof AuthenticatedMinaAnnonserRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -121,6 +129,7 @@ export interface FileRoutesByTo {
   '/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/konto': typeof AuthenticatedKontoRoute
   '/meddelanden': typeof AuthenticatedMeddelandenRoute
+  '/mina-annonser': typeof AuthenticatedMinaAnnonserRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -138,6 +147,7 @@ export interface FileRoutesById {
   '/_authenticated/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/_authenticated/konto': typeof AuthenticatedKontoRoute
   '/_authenticated/meddelanden': typeof AuthenticatedMeddelandenRoute
+  '/_authenticated/mina-annonser': typeof AuthenticatedMinaAnnonserRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/hyr-ut'
     | '/konto'
     | '/meddelanden'
+    | '/mina-annonser'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/hyr-ut'
     | '/konto'
     | '/meddelanden'
+    | '/mina-annonser'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hyr-ut'
     | '/_authenticated/konto'
     | '/_authenticated/meddelanden'
+    | '/_authenticated/mina-annonser'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -281,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeddelandenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mina-annonser': {
+      id: '/_authenticated/mina-annonser'
+      path: '/mina-annonser'
+      fullPath: '/mina-annonser'
+      preLoaderRoute: typeof AuthenticatedMinaAnnonserRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/annons/$id': {
       id: '/annons/$id'
       path: '/annons/$id'
@@ -312,6 +332,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHyrUtRoute: typeof AuthenticatedHyrUtRoute
   AuthenticatedKontoRoute: typeof AuthenticatedKontoRoute
   AuthenticatedMeddelandenRoute: typeof AuthenticatedMeddelandenRoute
+  AuthenticatedMinaAnnonserRoute: typeof AuthenticatedMinaAnnonserRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -321,6 +342,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHyrUtRoute: AuthenticatedHyrUtRoute,
   AuthenticatedKontoRoute: AuthenticatedKontoRoute,
   AuthenticatedMeddelandenRoute: AuthenticatedMeddelandenRoute,
+  AuthenticatedMinaAnnonserRoute: AuthenticatedMinaAnnonserRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
