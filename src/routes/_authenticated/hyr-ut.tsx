@@ -50,7 +50,7 @@ function CreateListing() {
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   async function publish() {
-    if (!form.title || !form.price_day) return toast.error("Titel och dagspris krävs.");
+    if (!form.title || !form.price_day) { toast.error("Titel och dagspris krävs."); return; }
     setBusy(true);
     const city = CITIES.find((c) => c.name === form.city)!;
     const images = form.images
@@ -83,7 +83,7 @@ function CreateListing() {
       .select("id")
       .single();
     setBusy(false);
-    if (error) return toast.error("Kunde inte publicera annonsen.");
+    if (error) { toast.error("Kunde inte publicera annonsen."); return; }
     toast.success("Annonsen är publicerad!");
     navigate({ to: "/annons/$id", params: { id: data.id } });
   }

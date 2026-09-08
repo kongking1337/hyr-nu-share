@@ -60,7 +60,7 @@ function AccountPage() {
 
   async function saveCompany() {
     const { error } = await supabase.from("companies").insert({ ...company, owner_id: user!.id });
-    if (error) return toast.error("Kunde inte spara företaget");
+    if (error) { toast.error("Kunde inte spara företaget"); return; }
     toast.success("Företagsprofil skapad");
     refetch();
   }

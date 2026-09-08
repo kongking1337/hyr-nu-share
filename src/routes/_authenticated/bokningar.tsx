@@ -42,7 +42,7 @@ function BookingsPage() {
 
   async function cancel(id: string) {
     const { error } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", id);
-    if (error) return toast.error("Kunde inte avboka");
+    if (error) { toast.error("Kunde inte avboka"); return; }
     toast.success("Bokningen är avbokad");
     refetch();
   }

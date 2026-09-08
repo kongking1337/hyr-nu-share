@@ -179,7 +179,7 @@ function ListingPage() {
             size="sm"
             className="text-muted-foreground"
             onClick={async () => {
-              if (!user) return toast.info("Logga in för att rapportera.");
+              if (!user) { toast.info("Logga in för att rapportera."); return; }
               await supabase.from("reports").insert({
                 reporter_id: user.id,
                 target_type: "listing",
