@@ -10,9 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as SokRouteImport } from './routes/sok'
+import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
+import { Route as AuthenticatedFavoriterRouteImport } from './routes/_authenticated/favoriter'
 import { Route as AnnonsIdRouteImport } from './routes/annons.$id'
 import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
 import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
@@ -20,6 +23,10 @@ import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kateg
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -36,6 +43,16 @@ const SokRoute = SokRouteImport.update({
   id: '/sok',
   path: '/sok',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBokningarRoute = AuthenticatedBokningarRouteImport.update({
+  id: '/bokningar',
+  path: '/bokningar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFavoriterRoute = AuthenticatedFavoriterRouteImport.update({
+  id: '/favoriter',
+  path: '/favoriter',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AnnonsIdRoute = AnnonsIdRouteImport.update({
   id: '/annons/$id',
@@ -58,6 +75,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/bokningar': typeof AuthenticatedBokningarRoute
+  '/favoriter': typeof AuthenticatedFavoriterRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -67,6 +86,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/bokningar': typeof AuthenticatedBokningarRoute
+  '/favoriter': typeof AuthenticatedFavoriterRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -74,9 +95,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
+  '/_authenticated/favoriter': typeof AuthenticatedFavoriterRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -88,6 +112,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/jamfor'
     | '/sok'
+    | '/bokningar'
+    | '/favoriter'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -97,15 +123,20 @@ export interface FileRouteTypes {
     | '/auth'
     | '/jamfor'
     | '/sok'
+    | '/bokningar'
+    | '/favoriter'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/auth'
     | '/jamfor'
     | '/sok'
+    | '/_authenticated/bokningar'
+    | '/_authenticated/favoriter'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -113,6 +144,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   JamforRoute: typeof JamforRoute
   SokRoute: typeof SokRoute
@@ -128,6 +160,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -150,6 +189,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/sok'
       preLoaderRoute: typeof SokRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/bokningar': {
+      id: '/_authenticated/bokningar'
+      path: '/bokningar'
+      fullPath: '/bokningar'
+      preLoaderRoute: typeof AuthenticatedBokningarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/favoriter': {
+      id: '/_authenticated/favoriter'
+      path: '/favoriter'
+      fullPath: '/favoriter'
+      preLoaderRoute: typeof AuthenticatedFavoriterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/annons/$id': {
       id: '/annons/$id'
@@ -175,8 +228,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBokningarRoute: typeof AuthenticatedBokningarRoute
+  AuthenticatedFavoriterRoute: typeof AuthenticatedFavoriterRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBokningarRoute: AuthenticatedBokningarRoute,
+  AuthenticatedFavoriterRoute: AuthenticatedFavoriterRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   JamforRoute: JamforRoute,
   SokRoute: SokRoute,
