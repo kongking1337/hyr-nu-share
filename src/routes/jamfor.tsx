@@ -1,3 +1,4 @@
+import { DEFAULTS } from "@/lib/search/params";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ function ComparePage() {
         <p className="mt-3 text-muted-foreground">
           Lägg till produkter från sökresultaten med jämför-ikonen så visas de här.
         </p>
-        <Button asChild className="mt-6 rounded-full"><Link to="/sok">Till sökningen</Link></Button>
+        <Button asChild className="mt-6 rounded-full"><Link to="/sok" search={DEFAULTS}>Till sökningen</Link></Button>
       </div>
     );
   }

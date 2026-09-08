@@ -1,28 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { SearchExperience } from "@/components/SearchExperience";
-
-type SokSearch = { q?: string | undefined };
+import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
+import { SearchResultsPage } from "@/components/search/SearchResultsPage";
+import { DEFAULTS, validateSearchParams } from "@/lib/search/params";
+import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 
 export const Route = createFileRoute("/sok")({
-  validateSearch: (search: Record<string, unknown>): SokSearch => ({
-    q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
-  }),
+  validateSearch: validateSearchParams,
+  search: { middlewares: [stripSearchParams(DEFAULTS)] },
   head: () => ({
     meta: [
       { title: "Sök och jämför uthyrning – Hyrkoll" },
       {
         name: "description",
         content:
-          "Jämför totalpris, avgifter, deposition och avstånd för uthyrning från privatpersoner, företag och externa källor.",
+          "Sök på vanlig svenska, filtrera på kategori, plats, radie, datum och pris – och sortera på verkligt totalpris för din hyresperiod.",
       },
       { property: "og:title", content: "Sök och jämför uthyrning – Hyrkoll" },
       { property: "og:description", content: "Sortera på verklig totalkostnad." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: SearchPage,
 });
 
 function SearchPage() {
-  const { q } = Route.useSearch();
-  return <SearchExperience initialText={q ?? ""} />;
+  const params = Route.useSearch();
+  const { patch, reset } = useUrlSearchState(params);
+  return <SearchResultsPage params={params} patch={patch} reset={reset} />;
 }

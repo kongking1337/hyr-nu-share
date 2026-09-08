@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Baby, Camera, Flower2, HardHat, MapPin, PartyPopper, Search, Tent, Truck, Wrench } from "lucide-react";
+import { Baby, Camera, Flower2, HardHat, PartyPopper, Tent, Truck, Wrench } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ListingCard } from "@/components/ListingCard";
+import { SearchBar } from "@/components/search/SearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { rowToUnified } from "@/lib/providers/internal";
 import { EXAMPLE_QUERIES } from "@/lib/search-parse";
+import { interpretQuery } from "@/lib/search/parse-query";
+import { pushRecentSearch } from "@/lib/search/suggest";
+import { DEFAULTS, cleanParams } from "@/lib/search/params";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,8 +40,7 @@ const CATEGORIES = [
 
 function Index() {
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
-  const [place, setPlace] = useState("");
+  const [location, setLocation] = useState("hela-sverige");
 
   const { data: featured } = useQuery({
     queryKey: ["featured"],
@@ -54,13 +55,27 @@ function Index() {
     },
   });
 
-  const go = (text: string) =>
-    navigate({ to: "/sok", search: { q: `${text} ${place}`.trim() } as never });
+  function go(next: { q: string; location: string; radius: number; category?: string; sub?: string }) {
+    const intent = interpretQuery(next.q);
+    pushRecentSearch(next.q);
+    setLocation(next.location);
+    void navigate({
+      to: "/sok",
+      search: cleanParams({
+        ...DEFAULTS,
+        ...intent.patch,
+        q: next.q,
+        location: next.location !== "hela-sverige" ? next.location : (intent.patch.location ?? next.location),
+        radius: next.radius,
+        ...(next.category ? { category: next.category, sub: next.sub ?? "all" } : {}),
+      }) as never,
+    });
+  }
 
   return (
     <div>
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-primary/8 to-transparent">
-        <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:py-20">
+        <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:py-20">
           <p className="mb-3 inline-flex rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary">
             Sveriges jämförelsesökmotor för uthyrning
           </p>
@@ -72,51 +87,15 @@ function Index() {
             totalkostnad.
           </p>
 
-          <form
-            className="mt-7 space-y-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              go(q);
-            }}
-          >
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="T.ex. högtryckstvätt nära Solna över helgen"
-                className="h-16 rounded-3xl border-2 pl-12 text-base shadow-sm"
-              />
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={place}
-                  onChange={(e) => setPlace(e.target.value)}
-                  placeholder="Plats"
-                  className="h-12 rounded-2xl pl-11"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 rounded-2xl"
-                onClick={() => setPlace("Stockholm")}
-              >
-                Nära mig
-              </Button>
-              <Button type="submit" className="h-12 rounded-2xl px-8">
-                Sök & jämför
-              </Button>
-            </div>
-          </form>
+          <div className="mt-7 text-left">
+            <SearchBar q="" location={location} radius={25} onSubmit={go} />
+          </div>
 
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {EXAMPLE_QUERIES.map((e) => (
+            {["Billig släpvagn nära mig", "PS5 i Stockholm under helgen", "Partytält för 50 personer", ...EXAMPLE_QUERIES].map((e) => (
               <button
                 key={e}
-                onClick={() => go(e)}
+                onClick={() => go({ q: e, location, radius: 25 })}
                 className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
               >
                 {e}
@@ -132,7 +111,7 @@ function Index() {
           {CATEGORIES.map(({ slug, name, Icon }) => (
             <Link
               key={slug}
-              to="/hyra/$kategori"
+              to="/hyra/$kategori" search={DEFAULTS}
               params={{ kategori: slug }}
               className="group flex flex-col gap-3 rounded-3xl border border-border bg-card p-5 transition-colors hover:border-primary"
             >
@@ -148,7 +127,7 @@ function Index() {
       <section className="mx-auto max-w-6xl px-4 pb-16">
         <div className="flex items-end justify-between">
           <h2 className="font-display text-2xl font-semibold">Rekommenderat just nu</h2>
-          <Link to="/sok" className="text-sm text-primary hover:underline">
+          <Link to="/sok" search={DEFAULTS} className="text-sm text-primary hover:underline">
             Visa alla
           </Link>
         </div>
