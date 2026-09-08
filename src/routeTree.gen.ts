@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as SokRouteImport } from './routes/sok'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
 import { Route as AuthenticatedFavoriterRouteImport } from './routes/_authenticated/favoriter'
 import { Route as AuthenticatedHyrUtRouteImport } from './routes/_authenticated/hyr-ut'
@@ -46,6 +47,11 @@ const SokRoute = SokRouteImport.update({
   id: '/sok',
   path: '/sok',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBokningarRoute = AuthenticatedBokningarRouteImport.update({
   id: '/bokningar',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
   '/hyr-ut': typeof AuthenticatedHyrUtRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
   '/hyr-ut': typeof AuthenticatedHyrUtRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
   '/_authenticated/favoriter': typeof AuthenticatedFavoriterRoute
   '/_authenticated/hyr-ut': typeof AuthenticatedHyrUtRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/jamfor'
     | '/sok'
+    | '/admin'
     | '/bokningar'
     | '/favoriter'
     | '/hyr-ut'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/jamfor'
     | '/sok'
+    | '/admin'
     | '/bokningar'
     | '/favoriter'
     | '/hyr-ut'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/jamfor'
     | '/sok'
+    | '/_authenticated/admin'
     | '/_authenticated/bokningar'
     | '/_authenticated/favoriter'
     | '/_authenticated/hyr-ut'
@@ -226,6 +238,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sok'
       preLoaderRoute: typeof SokRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bokningar': {
       id: '/_authenticated/bokningar'
@@ -287,6 +306,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBokningarRoute: typeof AuthenticatedBokningarRoute
   AuthenticatedFavoriterRoute: typeof AuthenticatedFavoriterRoute
   AuthenticatedHyrUtRoute: typeof AuthenticatedHyrUtRoute
@@ -295,6 +315,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBokningarRoute: AuthenticatedBokningarRoute,
   AuthenticatedFavoriterRoute: AuthenticatedFavoriterRoute,
   AuthenticatedHyrUtRoute: AuthenticatedHyrUtRoute,
