@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import { SearchResultsPage } from "@/components/search/SearchResultsPage";
-import { validateSearchParams } from "@/lib/search/params";
+import { DEFAULTS, validateSearchParams } from "@/lib/search/params";
 import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 
 export const Route = createFileRoute("/sok")({
   validateSearch: validateSearchParams,
+  search: { middlewares: [stripSearchParams(DEFAULTS)] },
   head: () => ({
     meta: [
       { title: "Sök och jämför uthyrning – Hyrkoll" },

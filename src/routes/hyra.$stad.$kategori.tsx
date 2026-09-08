@@ -1,12 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import { SearchResultsPage } from "@/components/search/SearchResultsPage";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { cityBySlug } from "@/lib/geo";
-import { validateSearchParams } from "@/lib/search/params";
+import { DEFAULTS, validateSearchParams } from "@/lib/search/params";
 import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 
 export const Route = createFileRoute("/hyra/$stad/$kategori")({
   validateSearch: validateSearchParams,
+  search: { middlewares: [stripSearchParams(DEFAULTS)] },
   head: ({ params }) => {
     const city = cityBySlug(params.stad)?.name ?? params.stad;
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;

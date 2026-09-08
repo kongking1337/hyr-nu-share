@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import { SearchResultsPage } from "@/components/search/SearchResultsPage";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
-import { validateSearchParams } from "@/lib/search/params";
+import { DEFAULTS, validateSearchParams } from "@/lib/search/params";
 import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 
 export const Route = createFileRoute("/hyra/$kategori")({
   validateSearch: validateSearchParams,
+  search: { middlewares: [stripSearchParams(DEFAULTS)] },
   head: ({ params }) => {
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;
     const title = `Hyra ${name.toLowerCase()} – jämför priser | Hyrkoll`;
