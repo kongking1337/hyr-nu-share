@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SearchExperience } from "@/components/SearchExperience";
+import { SearchResultsPage } from "@/components/search/SearchResultsPage";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { cityBySlug } from "@/lib/geo";
+import { validateSearchParams } from "@/lib/search/params";
+import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 
 export const Route = createFileRoute("/hyra/$stad/$kategori")({
+  validateSearch: validateSearchParams,
   head: ({ params }) => {
     const city = cityBySlug(params.stad)?.name ?? params.stad;
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;
@@ -15,6 +18,8 @@ export const Route = createFileRoute("/hyra/$stad/$kategori")({
         { name: "description", content: description },
         { property: "og:title", content: title },
         { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
       ],
     };
   },
@@ -23,14 +28,18 @@ export const Route = createFileRoute("/hyra/$stad/$kategori")({
 
 function CityCategoryPage() {
   const { stad, kategori } = Route.useParams();
-  const city = cityBySlug(stad)?.name ?? "Stockholm";
+  const search = Route.useSearch();
+  const city = cityBySlug(stad);
+  const params = { ...search, category: kategori, location: city?.slug ?? search.location };
+  const { patch, reset } = useUrlSearchState(params);
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
-    <SearchExperience
-      initialCategory={kategori}
-      initialCity={city}
-      initialText={`${name} ${city}`}
-      title={`Hyra ${name.toLowerCase()} i ${city}`}
+    <SearchResultsPage
+      params={params}
+      patch={patch}
+      reset={reset}
+      heading={`Hyra ${name.toLowerCase()} i ${city?.name ?? stad}`}
+      intro={`Se lediga ${name.toLowerCase()} nära ${city?.name ?? stad} med verkligt totalpris, avstånd och betyg.`}
     />
   );
 }
