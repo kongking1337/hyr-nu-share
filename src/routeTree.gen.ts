@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as SokRouteImport } from './routes/sok'
+import { Route as AnnonsIdRouteImport } from './routes/annons.$id'
 import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
 import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
 
@@ -19,9 +22,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JamforRoute = JamforRouteImport.update({
+  id: '/jamfor',
+  path: '/jamfor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SokRoute = SokRouteImport.update({
   id: '/sok',
   path: '/sok',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnnonsIdRoute = AnnonsIdRouteImport.update({
+  id: '/annons/$id',
+  path: '/annons/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HyraKategoriRoute = HyraKategoriRouteImport.update({
@@ -37,34 +55,68 @@ const HyraStadKategoriRoute = HyraStadKategoriRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/jamfor': typeof JamforRoute
   '/sok': typeof SokRoute
+  '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sok' | '/hyra/$kategori' | '/hyra/$stad/$kategori'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/jamfor'
+    | '/sok'
+    | '/annons/$id'
+    | '/hyra/$kategori'
+    | '/hyra/$stad/$kategori'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sok' | '/hyra/$kategori' | '/hyra/$stad/$kategori'
-  id: '__root__' | '/' | '/sok' | '/hyra/$kategori' | '/hyra/$stad/$kategori'
+  to:
+    | '/'
+    | '/auth'
+    | '/jamfor'
+    | '/sok'
+    | '/annons/$id'
+    | '/hyra/$kategori'
+    | '/hyra/$stad/$kategori'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/jamfor'
+    | '/sok'
+    | '/annons/$id'
+    | '/hyra/$kategori'
+    | '/hyra/$stad/$kategori'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  JamforRoute: typeof JamforRoute
   SokRoute: typeof SokRoute
+  AnnonsIdRoute: typeof AnnonsIdRoute
   HyraKategoriRoute: typeof HyraKategoriRoute
   HyraStadKategoriRoute: typeof HyraStadKategoriRoute
 }
@@ -78,11 +130,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jamfor': {
+      id: '/jamfor'
+      path: '/jamfor'
+      fullPath: '/jamfor'
+      preLoaderRoute: typeof JamforRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sok': {
       id: '/sok'
       path: '/sok'
       fullPath: '/sok'
       preLoaderRoute: typeof SokRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/annons/$id': {
+      id: '/annons/$id'
+      path: '/annons/$id'
+      fullPath: '/annons/$id'
+      preLoaderRoute: typeof AnnonsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hyra/$kategori': {
@@ -104,7 +177,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  JamforRoute: JamforRoute,
   SokRoute: SokRoute,
+  AnnonsIdRoute: AnnonsIdRoute,
   HyraKategoriRoute: HyraKategoriRoute,
   HyraStadKategoriRoute: HyraStadKategoriRoute,
 }
