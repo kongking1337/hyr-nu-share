@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, Menu, MessageSquare, Moon, Plus, Scale, Sun, User } from "lucide-react";
+import { Heart, LayoutList, Menu, MessageSquare, Moon, Plus, Scale, Sun, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -66,6 +66,13 @@ export function Header() {
               <MessageSquare className="h-5 w-5" />
             </Button>
           </Link>
+          {user && (
+            <Link to="/mina-annonser" className="hidden md:block">
+              <Button variant="ghost" size="sm" className="rounded-full">
+                <LayoutList className="mr-1 h-4 w-4" /> Mina annonser
+              </Button>
+            </Link>
+          )}
           <Link to="/hyr-ut" className="hidden sm:block">
             <Button className="rounded-full" size="sm">
               <Plus className="mr-1 h-4 w-4" /> Hyr ut
@@ -88,6 +95,7 @@ export function Header() {
                 {[
                   { to: "/sok", label: "Sök & jämför" },
                   { to: "/hyr-ut", label: "+ Hyr ut" },
+                  { to: "/mina-annonser", label: "Mina annonser" },
                   { to: "/bokningar", label: "Bokningar" },
                   { to: "/meddelanden", label: "Meddelanden" },
                   { to: "/favoriter", label: "Favoriter" },

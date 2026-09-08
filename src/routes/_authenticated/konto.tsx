@@ -84,6 +84,19 @@ function AccountPage() {
         </Button>
       </div>
 
+      <Link
+        to="/mina-annonser"
+        className="mt-6 flex items-center justify-between rounded-3xl border border-border p-5 transition-colors hover:bg-muted/60"
+      >
+        <span>
+          <span className="block font-display text-lg font-semibold">Mina annonser</span>
+          <span className="block text-sm text-muted-foreground">
+            Dashboard med visningar, klick, bokningar, intäkter och snabbåtgärder.
+          </span>
+        </span>
+        <span className="text-sm text-primary">Öppna →</span>
+      </Link>
+
       <Tabs defaultValue="profil" className="mt-7">
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
