@@ -8,6 +8,7 @@ export type Center = { lat: number; lng: number; label: string; nationwide: bool
 
 export const LOCATIONS = [
   { slug: "hela-sverige", name: "Hela Sverige" },
+  { slug: "nara-mig", name: "Nära mig" },
   ...CITIES.map((c) => ({ slug: c.slug, name: c.name })),
 ];
 
