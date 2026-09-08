@@ -1,13 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Baby, Camera, Flower2, HardHat, MapPin, PartyPopper, Search, Tent, Truck, Wrench } from "lucide-react";
+import { Baby, Camera, Flower2, HardHat, PartyPopper, Tent, Truck, Wrench } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ListingCard } from "@/components/ListingCard";
+import { SearchBar } from "@/components/search/SearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { rowToUnified } from "@/lib/providers/internal";
 import { EXAMPLE_QUERIES } from "@/lib/search-parse";
+import { interpretQuery } from "@/lib/search/parse-query";
+import { pushRecentSearch } from "@/lib/search/suggest";
+import { DEFAULTS, cleanParams } from "@/lib/search/params";
 
 export const Route = createFileRoute("/")({
   head: () => ({
