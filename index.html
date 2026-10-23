@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyr – annonser för uthyrning</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a href="#/" class="logo">hyr<span>.</span></a>
+  <nav>
+    <a href="#/post" class="postlink">skapa annons</a>
+    <a href="#/saved">sparade (<span id="savedCount">0</span>)</a>
+    <a href="#/about">om</a>
+  </nav>
+  <form id="searchForm" role="search">
+    <select id="cityFilter" aria-label="Stad"></select>
+    <input id="q" type="search" placeholder="sök annonser" aria-label="Sök">
+    <button>sök</button>
+  </form>
+</header>
+<main id="app"></main>
+<footer>© Hyr · <a href="#/about">om</a> · <a href="#/post">skapa annons</a> · Visa inga personuppgifter offentligt i onödan</footer>
+<script src="app.js"></script>
+</body>
+</html>
