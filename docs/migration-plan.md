@@ -7,7 +7,7 @@ Target setup:
 
 | Part | Today | After the move |
 |---|---|---|
-| Code | GitHub `kongking1337/hyr-nu-share`, a **fork** of the friend's repo (Lovable syncs with the friend's original, not the fork) | The same repo, ideally detached from the fork network (see Step 0) |
+| Code | GitHub `kongking1337/hyr-nu-share` (Marcus's account), a public **fork** of the friend's public repo. Lovable syncs with the friend's original, not the fork | The same repo, or a private copy (see Step 0) |
 | Hosting | Lovable | **Cloudflare Workers** |
 | Database, login, files | Lovable Cloud (Supabase project `iorgzgobyhhhqfhhetro`, owned by Lovable) | **Our own Supabase project** (EU / Stockholm) |
 | Google sign-in | Lovable's OAuth broker (`@lovable.dev/cloud-auth-js`) | Supabase Auth + our own Google OAuth client |
@@ -38,17 +38,20 @@ Target setup:
 
 1. **Ask whether they can just give you access.** Lovable can invite you to the
    workspace or move the project. If that works, no migration is needed.
-2. **GitHub repo**: `kongking1337/hyr-nu-share` is a fork of the friend's repo.
-   It's a full copy with all history, so we can host from it. Things to know:
+2. **GitHub repo**: `kongking1337/hyr-nu-share` is Marcus's account, and it's a fork
+   of the friend's **public** repo. It's a full copy with all history, so we can
+   host straight from it.
+   - **It won't disappear.** If the friend deletes their public repo or makes it
+     private, the fork stays.
    - **Lovable doesn't sync with the fork.** Lovable pushes to the friend's
      original. To get those changes, use *Sync fork* on GitHub, or merge
      upstream like in `568e5a8`. Our pushes to the fork never reach Lovable.
-   - **If the friend's repo is private, the fork can disappear.** GitHub deletes
-     private forks when the original is deleted or your access is removed. Make an
-     independent copy before launch, in either of two ways:
-     - Ask GitHub Support to detach the fork. This keeps the repo and its settings.
-     - Create a new empty repo and push all history to it:
-       `git push --mirror <new-repo-url>`. Then reconnect the server and Cloudflare to the new repo.
+   - **The fork is public, and GitHub doesn't let you make forks private.**
+     So anyone can read the code. That's fine as long as no secrets are committed
+     (today `.env` only has public keys). To make the code private, create a new
+     **private** repo and push all history to it: `git push --mirror <new-repo-url>`.
+     Then point the server and Cloudflare at the new repo. Or ask GitHub Support
+     to detach the fork, and then switch it to private.
    - When opening pull requests, check the base repo. GitHub suggests the friend's repo by default.
 3. **Existing data**: if there are real users or listings, ask the friend to
    export them (tables as CSV) from Lovable Cloud. If it's all demo data, start
