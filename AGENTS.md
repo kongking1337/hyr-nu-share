@@ -1,10 +1,15 @@
-<!-- LOVABLE:BEGIN -->
 > [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+> Pushes to `main` on GitHub deploy the site (Cloudflare Workers Builds, Worker
+> `hyrkoll`), so keep `main` in a working state: `npm run build` must pass.
+> Don't rewrite published git history (force pushing, or rebasing/amending/squashing
+> commits that are already pushed).
+
+- Stack: TanStack Start + React, hosted on Cloudflare Workers. Database and login:
+  our own Supabase project (ref in `supabase/config.toml`).
+- `.env` is checked in on purpose and holds only public values (Supabase URL and
+  publishable key). Secret keys (service role, SMTP, Google client secret) go in the
+  Supabase/Cloudflare dashboards, never in git.
+- Schema changes: add a migration in `supabase/migrations/`, apply it to the
+  Supabase project, then update `src/integrations/supabase/types.ts`.
+- The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just
+  the Vite config package and stays. Background: `docs/migration-plan.md`.

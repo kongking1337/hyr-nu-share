@@ -132,8 +132,11 @@ Status 2026-10-24: the new Supabase project is `hbbrlhajhlnwgrrkmdgs`. All 5 mig
       `.output/server/wrangler.json`). It must match the Worker's name in Cloudflare.
 - [x] `bun.lock` now points only at the public npm registry. Some Supabase packages used to
       point at Lovable's private npm cache.
-- [ ] Optional cleanup: Lovable leftovers (see above), `.lovable/`, and the Lovable notes in
-      `README.md` / `AGENTS.md`
+- [x] Cleanup: removed `previewAuthStorage.ts`, `lovable-error-reporting.ts`, `cron-auth.ts`,
+      `.lovable/`, the `@Lovable` twitter tag, the "Lovable Cloud" error texts and unused
+      `bunfig.toml` excludes; rewrote the Lovable notes in `README.md` / `AGENTS.md`
+- [x] Types: `src/integrations/supabase/types.ts` checked against the new project (all 16
+      tables and their columns answer via the API), so no regeneration needed
 - [ ] Optional: Sentry for error monitoring, instead of `lovable-error-reporting`
 
 ## Step 4: deploy to Cloudflare Workers

@@ -2,7 +2,7 @@
 
 Skapa en komplett MVP för en modern, originell svensk marknadsplats och jämförelsesökmotor för uthyrning av fysiska saker mellan privatpersoner och företag. Kärnflöde: sökning → jämförelse → lägsta totalpris → bokning. Använd ett eget varumärke och visuellt uttryck, utan att kopiera Hygglo. Prioritera mobil-först, minimalistisk svensk tech-känsla, mycket whitespace, rundade produktkort, stora bilder, tydlig typografi samt light/dark mode.
 
-Aktivera Lovable Cloud för autentisering och beständig data. Bygg en praktiskt fungerande MVP med:
+Använd Supabase för autentisering och beständig data. Bygg en praktiskt fungerande MVP med:
 - Startsida: stor naturligt språk-baserad sökruta “Vad vill du hyra?”, plats/Nära mig, populära kategorier och rekommendationer.
 - Sök/resultat: kombinera egna annonser med externa mock-provider-resultat. Märk källa tydligt: “På [plattform]” respektive “Från extern webbplats”. Visa extern URL med knappen “Visa erbjudande”. Implementera endast mock-data för externa källor nu och skapa en modulär provider/connector-struktur med gemensamt internt resultatformat, avsett för framtida officiella API:er, feeds eller affiliate-integrationer. Ingen scraping eller kringgående av åtkomstkontroller.
 - Period- och prisjämförelse: datum/period, normalisering av timme/dag/vecka/månad, grundpris, jämförbart dagspris, totalpris, avgifter, leverans, deposition och försäkring när tillgängligt. Sortera på verklig totalkostnad.
@@ -21,23 +21,22 @@ Aktivera Lovable Cloud för autentisering och beständig data. Bygg en praktiskt
 
 Fyll produkten med realistiska svenska exempeldata så alla viktiga flöden kan provas. Bygg sökparsing för exempel som “Jag behöver en högtryckstvätt nära Solna över helgen” och “Billigaste släpvagnen inom 20 km från Göteborg på lördag” med synonymer/stavfel som MVP-logik. Var transparent i produkten om vilka externa resultat som är demo/mock och vilka integrationer som kräver avtal.
 
-This project was built with [Lovable](https://lovable.dev).
+## Teknik
 
-## Build with Lovable
+- **Webbplats**: TanStack Start + React, på Cloudflare Workers (Worker `hyrkoll`). Varje push till `main` på GitHub driftsätts automatiskt.
+- **Databas och inloggning**: eget Supabase-projekt (EU/Stockholm). E-post/lösenord och Google-inloggning går direkt via Supabase Auth.
+- `.env` innehåller bara publika värden (Supabase-URL och publishable key). Hemliga nycklar ligger i Supabase- och Cloudflare-panelerna, aldrig i git.
+- Projektet byggdes ursprungligen i Lovable. Flytten finns beskriven i [`docs/migration-plan.md`](docs/migration-plan.md).
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/2029ab71-7852-4807-9128-2aa3a6625120).
+## Utveckling
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Du behöver Node.js och npm ([installera med nvm](https://github.com/nvm-sh/nvm#installing-and-updating)).
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
+git clone https://github.com/kongking1337/hyr-nu-share.git
+cd hyr-nu-share
 npm i
 npm run dev
 ```
+
+Bygg som på Cloudflare: `npm run build` (resultatet hamnar i `.output/`).
