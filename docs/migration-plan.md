@@ -14,6 +14,32 @@ Target setup:
 | Email (confirmation, password reset) | Lovable Cloud defaults | Supabase Auth + custom SMTP (Resend / Postmark / Brevo) |
 | Domain / DNS | none | Our domain, DNS on Cloudflare |
 
+## Connection map
+
+```
+GitHub (kongking1337/hyr-nu-share) ──push to main──> Cloudflare Workers ──serves──> visitors
+                                                          │   ▲
+                                         Supabase URL +   │   │ domain (DNS on Cloudflare)
+                                         publishable key  ▼   │
+Google Cloud OAuth ──client ID/secret──> Supabase (database + login) <──SMTP── Resend / Postmark
+                                              │
+                                              └── Site URL / Redirect URLs = the site's address
+```
+
+| # | Connection | Where | What goes in |
+|---|---|---|---|
+| 1 | Database | Supabase → SQL Editor (or CLI) | The 5 files in `supabase/migrations/`, in name order |
+| 2 | App → Supabase | `.env` in the repo | Project URL and publishable key (public values, OK in git) |
+| 3 | GitHub → Cloudflare | Workers & Pages → Create → Import a repository | Repo, build and deploy commands (Step 4) |
+| 4 | Supabase → site | Authentication → URL Configuration | Site URL and Redirect URLs = the workers.dev address, later the domain |
+| 5 | Domain → site | Registrar: nameservers → Cloudflare. Worker → Domains & Routes | Custom domain |
+| 6 | Email | Resend/Postmark: verify domain (DNS records in Cloudflare) → Supabase: Authentication → SMTP | SMTP host, port, user, API key as password, sender address |
+| 7 | Google login | Google Cloud → Credentials → OAuth client (Web) → Supabase: Authentication → Providers → Google | Google: redirect URI `https://<ref>.supabase.co/auth/v1/callback`. Supabase: client ID and secret. Plus the code change in Step 3 |
+
+1–4 are enough for a working site with email login. 5–7 can come afterwards.
+Secret keys (service role, SMTP/API keys, Google client secret) go straight into
+the Supabase/Cloudflare dashboards, never into git or chat.
+
 ## What depends on Lovable (checked 2026-10-24)
 
 - **Database**: 5 migrations in `supabase/migrations/` (tables, RLS policies,
@@ -72,7 +98,8 @@ Target setup:
 
 1. Create the project, region **EU North (Stockholm)**. Free plan is fine for
    testing, Pro (~$25/month: backups, never paused) before launch.
-2. Apply the migrations:
+2. Apply the migrations. Easiest: paste each file from `supabase/migrations/`,
+   in name order, into Supabase's **SQL Editor** and run it. Or with the CLI:
    ```sh
    npx supabase login
    npx supabase link --project-ref <NEW_PROJECT_REF>
@@ -96,8 +123,11 @@ Target setup:
       `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } })`,
       then remove `src/integrations/lovable/` and `@lovable.dev/cloud-auth-js`
 - [ ] Point at the new Supabase project: `supabase/config.toml` (`project_id`) and
-      the env variables. Stop tracking `.env` in git and add a `.env.example`.
-- [ ] Set a fixed Worker name instead of the auto-generated `kongking1337-hyr-nu-share`
+      `.env` (URL, publishable key, project ID). These are public values, so it's
+      fine to keep them in git, and Cloudflare's build then needs no variables.
+      Secret keys never go in `.env`.
+- [ ] Set a fixed Worker name instead of the auto-generated `kongking1337-hyr-nu-share`.
+      The name in `wrangler.json` must match the Worker's name in Cloudflare.
 - [ ] Optional cleanup: Lovable leftovers (see above), `.lovable/`, and the Lovable notes in
       `README.md` / `AGENTS.md`
 - [ ] Optional: Sentry for error monitoring, instead of `lovable-error-reporting`
@@ -109,12 +139,12 @@ Recommended: **Workers Builds** linked to the GitHub repo, so every push to `mai
 - Build command: `npm run build`
 - Deploy command: `npx wrangler deploy --config .output/server/wrangler.json`
   (or `npx nitro deploy --prebuilt`, which the build itself suggests). Check this on the first deploy.
-- Variables:
-  - **Build-time** (baked into the browser code): `VITE_SUPABASE_URL`,
-    `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`
-  - **Runtime** (server-side rendering): `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
-  - **Runtime secret, only once server code needs it**: `SUPABASE_SERVICE_ROLE_KEY`.
-    Never put it in `VITE_*` or in git.
+- Variables: **none needed to start**. The public Supabase values come from
+  `.env` at build time, and today no server code reads `process.env`.
+  - Later, when server functions use `requireSupabaseAuth` / `client.server.ts`, add these
+    under the Worker's *Settings → Variables and Secrets*: `SUPABASE_URL` and
+    `SUPABASE_PUBLISHABLE_KEY`, plus `SUPABASE_SERVICE_ROLE_KEY` as a **secret**.
+    Never put the service role key in `VITE_*` or in git.
 - Test on the `*.workers.dev` URL first, then add the domain under the Worker's
   *Custom Domains*.
 
