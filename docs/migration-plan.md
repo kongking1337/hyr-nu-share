@@ -30,7 +30,7 @@ Google Cloud OAuth ──client ID/secret──> Supabase (database + login) <�
 |---|---|---|---|
 | 1 | Database | Supabase → SQL Editor (or CLI) | The 5 files in `supabase/migrations/`, in name order |
 | 2 | App → Supabase | `.env` in the repo | Project URL and publishable key (public values, OK in git) |
-| 3 | GitHub → Cloudflare | Workers & Pages → Create → Import a repository | Repo, build and deploy commands (Step 4) |
+| 3 | GitHub → Cloudflare | Workers & Pages → Create → Import a repository | Repo, Worker name `hyrkoll`, build command (Step 4) |
 | 4 | Supabase → site | Authentication → URL Configuration | Site URL and Redirect URLs = the workers.dev address, later the domain |
 | 5 | Domain → site | Registrar: nameservers → Cloudflare. Worker → Domains & Routes | Custom domain |
 | 6 | Email | Resend/Postmark: verify domain (DNS records in Cloudflare) → Supabase: Authentication → SMTP | SMTP host, port, user, API key as password, sender address |
@@ -119,15 +119,19 @@ the Supabase/Cloudflare dashboards, never into git or chat.
 
 ## Step 3: code changes (small, Claude can do them)
 
-- [ ] Replace the Lovable Google login in `src/routes/auth.tsx` with
+Status 2026-10-24: the new Supabase project is `hbbrlhajhlnwgrrkmdgs`. All 5 migrations are applied (checked via the API).
+
+- [x] Replace the Lovable Google login in `src/routes/auth.tsx` with
       `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } })`,
       then remove `src/integrations/lovable/` and `@lovable.dev/cloud-auth-js`
-- [ ] Point at the new Supabase project: `supabase/config.toml` (`project_id`) and
+- [x] Point at the new Supabase project: `supabase/config.toml` (`project_id`) and
       `.env` (URL, publishable key, project ID). These are public values, so it's
       fine to keep them in git, and Cloudflare's build then needs no variables.
       Secret keys never go in `.env`.
-- [ ] Set a fixed Worker name instead of the auto-generated `kongking1337-hyr-nu-share`.
-      The name in `wrangler.json` must match the Worker's name in Cloudflare.
+- [x] Fixed Worker name `hyrkoll` in `wrangler.jsonc` (the build merges it into
+      `.output/server/wrangler.json`). It must match the Worker's name in Cloudflare.
+- [x] `bun.lock` now points only at the public npm registry. Some Supabase packages used to
+      point at Lovable's private npm cache.
 - [ ] Optional cleanup: Lovable leftovers (see above), `.lovable/`, and the Lovable notes in
       `README.md` / `AGENTS.md`
 - [ ] Optional: Sentry for error monitoring, instead of `lovable-error-reporting`
@@ -136,9 +140,11 @@ the Supabase/Cloudflare dashboards, never into git or chat.
 
 Recommended: **Workers Builds** linked to the GitHub repo, so every push to `main` deploys.
 
+- Worker name: `hyrkoll`
 - Build command: `npm run build`
-- Deploy command: `npx wrangler deploy --config .output/server/wrangler.json`
-  (or `npx nitro deploy --prebuilt`, which the build itself suggests). Check this on the first deploy.
+- Deploy command: `npx wrangler deploy` (the default). Wrangler follows
+  `.wrangler/deploy/config.json`, which the build writes, to `.output/server/wrangler.json`.
+  Verified with `wrangler deploy --dry-run` (~530 KB gzip, under the free plan's limit).
 - Variables: **none needed to start**. The public Supabase values come from
   `.env` at build time, and today no server code reads `process.env`.
   - Later, when server functions use `requireSupabaseAuth` / `client.server.ts`, add these
@@ -148,8 +154,7 @@ Recommended: **Workers Builds** linked to the GitHub repo, so every push to `mai
 - Test on the `*.workers.dev` URL first, then add the domain under the Worker's
   *Custom Domains*.
 
-Manual alternative: `npm run build`, then `npx wrangler deploy --config .output/server/wrangler.json`
-from your own machine.
+Manual alternative: `npm run build`, then `npx wrangler deploy` from your own machine.
 
 ## Step 5: test before switching over
 

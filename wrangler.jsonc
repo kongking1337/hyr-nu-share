@@ -1,0 +1,6 @@
+// Cloudflare Worker settings. The build (nitro) merges this into
+// .output/server/wrangler.json, which is what `wrangler deploy` uploads.
+// The name must match the Worker's name in the Cloudflare dashboard.
+{
+  "name": "hyrkoll"
+}
