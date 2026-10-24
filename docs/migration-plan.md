@@ -7,7 +7,7 @@ Target setup:
 
 | Part | Today | After the move |
 |---|---|---|
-| Code | GitHub `kongking1337/hyr-nu-share`, synced with Lovable | Same repo, or a copy we own, *not* synced with Lovable |
+| Code | GitHub `kongking1337/hyr-nu-share`, a **fork** of the friend's repo (Lovable syncs with the friend's original, not the fork) | The same repo, ideally detached from the fork network (see Step 0) |
 | Hosting | Lovable | **Cloudflare Workers** |
 | Database, login, files | Lovable Cloud (Supabase project `iorgzgobyhhhqfhhetro`, owned by Lovable) | **Our own Supabase project** (EU / Stockholm) |
 | Google sign-in | Lovable's OAuth broker (`@lovable.dev/cloud-auth-js`) | Supabase Auth + our own Google OAuth client |
@@ -38,15 +38,24 @@ Target setup:
 
 1. **Ask whether they can just give you access.** Lovable can invite you to the
    workspace or move the project. If that works, no migration is needed.
-2. **GitHub repo**: make sure you have admin access to
-   `kongking1337/hyr-nu-share`, or have it transferred to you. Otherwise create
-   your own repo from it.
+2. **GitHub repo**: `kongking1337/hyr-nu-share` is a fork of the friend's repo.
+   It's a full copy with all history, so we can host from it. Things to know:
+   - **Lovable doesn't sync with the fork.** Lovable pushes to the friend's
+     original. To get those changes, use *Sync fork* on GitHub, or merge
+     upstream like in `568e5a8`. Our pushes to the fork never reach Lovable.
+   - **If the friend's repo is private, the fork can disappear.** GitHub deletes
+     private forks when the original is deleted or your access is removed. Make an
+     independent copy before launch, in either of two ways:
+     - Ask GitHub Support to detach the fork. This keeps the repo and its settings.
+     - Create a new empty repo and push all history to it:
+       `git push --mirror <new-repo-url>`. Then reconnect the server and Cloudflare to the new repo.
+   - When opening pull requests, check the base repo. GitHub suggests the friend's repo by default.
 3. **Existing data**: if there are real users or listings, ask the friend to
    export them (tables as CSV) from Lovable Cloud. If it's all demo data, start
    from an empty database. Users will most likely have to sign up again, because
    password hashes usually can't be exported.
-4. **After the move**: ask the friend to disconnect the Lovable project from the
-   GitHub repo, so edits in Lovable don't land on `main` anymore.
+4. **After the move**: if the friend keeps editing in Lovable, the two
+   versions will drift apart. Agree on where development happens from now on.
 
 ## Step 1: create accounts (in your own name, with 2FA)
 
