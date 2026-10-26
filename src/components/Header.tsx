@@ -23,6 +23,13 @@ export function Header() {
     queryFn: async () => (await supabase.rpc("unread_conversation_count")).data ?? 0,
   });
 
+  const { data: openReports = 0 } = useQuery({
+    queryKey: ["admin-report-count", user?.id],
+    enabled: isAdmin,
+    refetchInterval: 120_000,
+    queryFn: async () => (await supabase.rpc("admin_open_report_count")).data ?? 0,
+  });
+
   const mobileLinks = [
     { to: "/sok", label: "Sök" },
     { to: "/ny-annons", label: "+ Lägg upp annons" },
@@ -30,7 +37,7 @@ export function Header() {
     { to: "/meddelanden", label: unread ? `Meddelanden (${unread} olästa)` : "Meddelanden" },
     { to: "/favoriter", label: "Favoriter" },
     { to: user ? "/konto" : "/auth", label: user ? "Mitt konto" : "Logga in" },
-    ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
+    ...(isAdmin ? [{ to: "/admin", label: openReports ? `Moderering (${openReports})` : "Moderering" }] : []),
   ];
 
   return (
@@ -54,6 +61,13 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
+          {isAdmin && (
+            <Link to="/admin" className="hidden sm:block">
+              <Button variant={openReports ? "destructive" : "ghost"} size="sm" className="rounded-full">
+                Moderering{openReports ? ` (${openReports})` : ""}
+              </Button>
+            </Link>
+          )}
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Växla mörkt läge">
             {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>

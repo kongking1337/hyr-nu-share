@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MAX_MESSAGE_LENGTH, sendMessage } from "@/lib/messages";
 import { photoUrl } from "@/lib/photos";
+import { userMessage } from "@/lib/db-errors";
+import { ReportDialog } from "@/components/ReportDialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/meddelanden")({
@@ -91,8 +93,8 @@ function MessagesPage() {
       setText("");
       await refetch();
       void queryClient.invalidateQueries({ queryKey: ["conversations"] });
-    } catch {
-      toast.error("Meddelandet kunde inte skickas. Försök igen.");
+    } catch (e) {
+      toast.error(userMessage(e, "Meddelandet kunde inte skickas. Försök igen."));
     } finally {
       setSending(false);
     }
@@ -194,6 +196,9 @@ function MessagesPage() {
                     ? `${current.counterpart_name} · ${current.i_am_seller ? "intresserad av din annons" : "annonsör"}`
                     : ""}
                 </p>
+              </div>
+              <div className="ml-auto shrink-0">
+                <ReportDialog targetType="conversation" targetId={active} label="Anmäl" />
               </div>
             </div>
           )}

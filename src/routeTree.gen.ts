@@ -12,9 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as IntegritetRouteImport } from './routes/integritet'
 import { Route as JamforRouteImport } from './routes/jamfor'
+import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as NyttLosenordRouteImport } from './routes/nytt-losenord'
 import { Route as SokRouteImport } from './routes/sok'
+import { Route as VillkorRouteImport } from './routes/villkor'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
 import { Route as AuthenticatedBudRouteImport } from './routes/_authenticated/bud'
@@ -42,9 +45,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IntegritetRoute = IntegritetRouteImport.update({
+  id: '/integritet',
+  path: '/integritet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JamforRoute = JamforRouteImport.update({
   id: '/jamfor',
   path: '/jamfor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KontaktRoute = KontaktRouteImport.update({
+  id: '/kontakt',
+  path: '/kontakt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NyttLosenordRoute = NyttLosenordRouteImport.update({
@@ -55,6 +68,11 @@ const NyttLosenordRoute = NyttLosenordRouteImport.update({
 const SokRoute = SokRouteImport.update({
   id: '/sok',
   path: '/sok',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VillkorRoute = VillkorRouteImport.update({
+  id: '/villkor',
+  path: '/villkor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -124,9 +142,12 @@ const AuthenticatedAnnonserIdStatistikRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/integritet': typeof IntegritetRoute
   '/jamfor': typeof JamforRoute
+  '/kontakt': typeof KontaktRoute
   '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
+  '/villkor': typeof VillkorRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/bud': typeof AuthenticatedBudRoute
@@ -143,9 +164,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/integritet': typeof IntegritetRoute
   '/jamfor': typeof JamforRoute
+  '/kontakt': typeof KontaktRoute
   '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
+  '/villkor': typeof VillkorRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/bud': typeof AuthenticatedBudRoute
@@ -164,9 +188,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/integritet': typeof IntegritetRoute
   '/jamfor': typeof JamforRoute
+  '/kontakt': typeof KontaktRoute
   '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
+  '/villkor': typeof VillkorRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
   '/_authenticated/bud': typeof AuthenticatedBudRoute
@@ -185,9 +212,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/integritet'
     | '/jamfor'
+    | '/kontakt'
     | '/nytt-losenord'
     | '/sok'
+    | '/villkor'
     | '/admin'
     | '/bokningar'
     | '/bud'
@@ -204,9 +234,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/integritet'
     | '/jamfor'
+    | '/kontakt'
     | '/nytt-losenord'
     | '/sok'
+    | '/villkor'
     | '/admin'
     | '/bokningar'
     | '/bud'
@@ -224,9 +257,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/integritet'
     | '/jamfor'
+    | '/kontakt'
     | '/nytt-losenord'
     | '/sok'
+    | '/villkor'
     | '/_authenticated/admin'
     | '/_authenticated/bokningar'
     | '/_authenticated/bud'
@@ -245,9 +281,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  IntegritetRoute: typeof IntegritetRoute
   JamforRoute: typeof JamforRoute
+  KontaktRoute: typeof KontaktRoute
   NyttLosenordRoute: typeof NyttLosenordRoute
   SokRoute: typeof SokRoute
+  VillkorRoute: typeof VillkorRoute
   AnnonsIdRoute: typeof AnnonsIdRoute
   HyraKategoriRoute: typeof HyraKategoriRoute
   HyraStadKategoriRoute: typeof HyraStadKategoriRoute
@@ -276,11 +315,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/integritet': {
+      id: '/integritet'
+      path: '/integritet'
+      fullPath: '/integritet'
+      preLoaderRoute: typeof IntegritetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jamfor': {
       id: '/jamfor'
       path: '/jamfor'
       fullPath: '/jamfor'
       preLoaderRoute: typeof JamforRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kontakt': {
+      id: '/kontakt'
+      path: '/kontakt'
+      fullPath: '/kontakt'
+      preLoaderRoute: typeof KontaktRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nytt-losenord': {
@@ -295,6 +348,13 @@ declare module '@tanstack/react-router' {
       path: '/sok'
       fullPath: '/sok'
       preLoaderRoute: typeof SokRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/villkor': {
+      id: '/villkor'
+      path: '/villkor'
+      fullPath: '/villkor'
+      preLoaderRoute: typeof VillkorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -415,9 +475,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  IntegritetRoute: IntegritetRoute,
   JamforRoute: JamforRoute,
+  KontaktRoute: KontaktRoute,
   NyttLosenordRoute: NyttLosenordRoute,
   SokRoute: SokRoute,
+  VillkorRoute: VillkorRoute,
   AnnonsIdRoute: AnnonsIdRoute,
   HyraKategoriRoute: HyraKategoriRoute,
   HyraStadKategoriRoute: HyraStadKategoriRoute,

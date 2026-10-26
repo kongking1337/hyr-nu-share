@@ -908,3 +908,260 @@ test("users can delete their own account, which removes their data but nobody el
     aliceListingsBefore,
   );
 });
+
+// --- Moderation -------------------------------------------------------------------
+
+const reportAs = (who, type, target, reason = "Bedrägeri") =>
+  as(
+    who,
+    "INSERT INTO public.reports (reporter_id, target_type, target_id, reason) VALUES ($1, $2, $3, $4) RETURNING id",
+    [who.id, type, target, reason],
+  );
+
+test("one open report per person and target; conversations only by their participants", async () => {
+  await assert.rejects(reportAs(u.bob, "listing", u.alice.listingId));
+  await assert.rejects(reportAs(u.mallory, "conversation", u.bob.contactConversationId));
+  const [r] = await reportAs(
+    u.bob,
+    "conversation",
+    u.bob.contactConversationId,
+    "Ber om förskottsbetalning",
+  );
+  u.bob.conversationReportId = r.id;
+});
+
+test("only admins see reports, all listings and reported conversations", async () => {
+  for (const sql of [
+    "SELECT * FROM public.admin_reports()",
+    "SELECT * FROM public.admin_listings()",
+    "SELECT * FROM public.admin_blocked_users()",
+  ]) {
+    assert.deepEqual(await as(u.bob, sql), []);
+  }
+  assert.deepEqual(await as(u.bob, "SELECT public.admin_open_report_count() AS n"), [{ n: 0 }]);
+  assert.deepEqual(
+    await as(u.bob, "SELECT * FROM public.admin_reported_conversation($1)", [
+      u.bob.contactConversationId,
+    ]),
+    [],
+  );
+  await rejects(null, "SELECT * FROM public.admin_reports()");
+
+  const open = await as(u.admin, "SELECT * FROM public.admin_reports()");
+  const conv = open.find((r) => r.id === u.bob.conversationReportId);
+  assert.deepEqual([conv.reported_user_name, conv.reporter_name], ["Alice L.", "Bob B."]);
+  const listing = open.find(
+    (r) => r.target_type === "listing" && r.target_id === u.alice.listingId,
+  );
+  assert.equal(listing.listing_title, "Borrmaskin Bosch");
+  assert.ok((await as(u.admin, "SELECT public.admin_open_report_count() AS n"))[0].n >= 2);
+
+  const msgs = await as(u.admin, "SELECT * FROM public.admin_reported_conversation($1)", [
+    u.bob.contactConversationId,
+  ]);
+  assert.ok(msgs.length > 0);
+  const [{ id: unreported }] = await as(
+    u.mallory,
+    "SELECT public.start_conversation($1, 'Hej') AS id",
+    [u.alice.contactListingId],
+  );
+  u.mallory.conversationId = unreported;
+  assert.deepEqual(
+    await as(u.admin, "SELECT * FROM public.admin_reported_conversation($1)", [unreported]),
+    [],
+  );
+});
+
+test("ordinary users can't moderate", async () => {
+  await rejects(u.bob, "SELECT public.admin_set_listing_hidden($1, true, 'x')", [
+    u.alice.listingId,
+  ]);
+  await rejects(u.bob, "SELECT public.admin_dismiss_report($1)", [u.bob.conversationReportId]);
+  await rejects(u.bob, "SELECT public.admin_set_user_blocked($1, true)", [u.alice.id]);
+});
+
+test("admins hide a listing with a reason the owner sees; it leaves search and its reports close", async () => {
+  await rejects(u.admin, "SELECT public.admin_set_listing_hidden($1, true, '  ')", [
+    u.alice.listingId,
+  ]);
+  await as(u.admin, "SELECT public.admin_set_listing_hidden($1, true, 'Förbjuden vara')", [
+    u.alice.listingId,
+  ]);
+  assert.deepEqual(
+    await as(null, "SELECT id FROM public.listings WHERE id = $1", [u.alice.listingId]),
+    [],
+  );
+  const [own] = await as(
+    u.alice,
+    "SELECT status, moderation_reason FROM public.listings WHERE id = $1",
+    [u.alice.listingId],
+  );
+  assert.deepEqual(own, { status: "removed", moderation_reason: "Förbjuden vara" });
+  await rejects(u.alice, "UPDATE public.listings SET status = 'published' WHERE id = $1", [
+    u.alice.listingId,
+  ]);
+  await as(
+    u.alice,
+    "UPDATE public.listings SET moderation_reason = NULL, title = title WHERE id = $1 AND status = 'removed'",
+    [u.alice.listingId],
+  ).catch(() => {});
+  const [still] = await platform("SELECT moderation_reason FROM public.listings WHERE id = $1", [
+    u.alice.listingId,
+  ]);
+  assert.equal(still.moderation_reason, "Förbjuden vara");
+  const open = await as(u.admin, "SELECT target_id FROM public.admin_reports()");
+  assert.ok(!open.some((r) => r.target_id === u.alice.listingId));
+
+  await as(u.admin, "SELECT public.admin_set_listing_hidden($1, false)", [u.alice.listingId]);
+  const [back] = await platform(
+    "SELECT status, moderation_reason FROM public.listings WHERE id = $1",
+    [u.alice.listingId],
+  );
+  assert.deepEqual(back, { status: "published", moderation_reason: null });
+});
+
+test("admins dismiss reports", async () => {
+  await as(u.admin, "SELECT public.admin_dismiss_report($1)", [u.bob.conversationReportId]);
+  assert.ok(
+    !(await as(u.admin, "SELECT id FROM public.admin_reports(true)")).some(
+      (r) => r.id === u.bob.conversationReportId,
+    ),
+  );
+  const done = (await as(u.admin, "SELECT id, resolution FROM public.admin_reports(false)")).find(
+    (r) => r.id === u.bob.conversationReportId,
+  );
+  assert.equal(done.resolution, "Ingen åtgärd");
+});
+
+test("blocked users can't publish, edit or send messages, and their listings are hidden", async () => {
+  const listingId = await createListing(u.mallory, "Mallorys släp");
+  await rejects(u.admin, "SELECT public.admin_set_user_blocked($1, true)", [u.admin.id]);
+  await as(u.admin, "SELECT public.admin_set_user_blocked($1, true)", [u.mallory.id]);
+
+  await assert.rejects(createListing(u.mallory, "Ny annons"));
+  await rejects(u.mallory, "UPDATE public.listings SET title = 'x' WHERE id = $1", [listingId]);
+  await rejects(
+    u.mallory,
+    "INSERT INTO public.messages (conversation_id, sender_id, body) VALUES ($1, $2, 'Hej')",
+    [u.mallory.conversationId, u.mallory.id],
+  );
+  await rejects(u.mallory, "SELECT public.start_conversation($1, 'Hej igen')", [
+    u.alice.contactListingId,
+  ]);
+  const [hidden] = await platform(
+    "SELECT status, moderation_reason FROM public.listings WHERE id = $1",
+    [listingId],
+  );
+  assert.deepEqual(hidden, { status: "removed", moderation_reason: "Kontot är spärrat" });
+
+  await as(u.mallory, "UPDATE public.profiles SET blocked_at = NULL WHERE id = $1", [u.mallory.id]);
+  assert.equal((await as(u.admin, "SELECT id FROM public.admin_blocked_users()")).length, 1);
+
+  await as(u.admin, "SELECT public.admin_set_user_blocked($1, false)", [u.mallory.id]);
+  assert.deepEqual(await as(u.admin, "SELECT id FROM public.admin_blocked_users()"), []);
+  await createListing(u.mallory, "Tillbaka igen");
+});
+
+test("the admin gets at most one email per reported target, never via the browser", async () => {
+  const listingId = await createListing(u.alice, "Misstänkt annons");
+  const [first] = await reportAs(u.bob, "listing", listingId, "Spam");
+  const [second] = await reportAs(u.mallory, "listing", listingId, "Spam");
+  const claimReport = (id, reporter) =>
+    asService("SELECT * FROM public.claim_report_notification($1, $2)", [id, reporter]);
+
+  await rejects(u.bob, "SELECT * FROM public.claim_report_notification($1, $2)", [
+    first.id,
+    u.bob.id,
+  ]);
+  assert.deepEqual(await claimReport(first.id, u.mallory.id), []);
+  const [mail] = await claimReport(first.id, u.bob.id);
+  assert.deepEqual([mail.reason, mail.target_type], ["Spam", "listing"]);
+  assert.deepEqual(await claimReport(first.id, u.bob.id), []);
+  assert.deepEqual(await claimReport(second.id, u.mallory.id), []);
+});
+
+// --- Spam limits ----------------------------------------------------------------------
+
+const listingFor = (who, title = "Annons", extra = {}) =>
+  as(
+    who,
+    `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day, description, area, status)
+     VALUES ($1, $2, 'verktyg', 'Solna', $3, $4, $5, 'draft') RETURNING id`,
+    [who.id, title, extra.priceDay ?? 100, extra.description ?? "", extra.area ?? null],
+  );
+
+test("listings have text and price limits", async () => {
+  await createUser("tina", "Tina Text");
+  await assert.rejects(listingFor(u.tina, "Hi"));
+  await assert.rejects(listingFor(u.tina, "x".repeat(101)));
+  await assert.rejects(listingFor(u.tina, "Lång beskrivning", { description: "x".repeat(5001) }));
+  await assert.rejects(listingFor(u.tina, "Långt område", { area: "x".repeat(61) }));
+  await assert.rejects(listingFor(u.tina, "För dyr", { priceDay: 2000000 }));
+  await listingFor(u.tina, "Helt okej annons", { description: "x".repeat(5000) });
+  await rejects(u.tina, "UPDATE public.profiles SET full_name = $2 WHERE id = $1", [
+    u.tina.id,
+    "x".repeat(81),
+  ]);
+});
+
+test("at most 20 new listings a day and 50 active listings per user", async () => {
+  await createUser("frank", "Frank Flod");
+  for (let i = 1; i <= 20; i++) await listingFor(u.frank, `Annons nummer ${i}`);
+  await assert.rejects(listingFor(u.frank, "Annons nummer 21"));
+
+  await createUser("gina", "Gina Gran");
+  await platform(
+    `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day, status, created_at)
+     SELECT $1, 'Gammal annons ' || n, 'verktyg', 'Solna', 100, 'published', now() - interval '3 days'
+       FROM generate_series(1, 50) n`,
+    [u.gina.id],
+  );
+  await assert.rejects(listingFor(u.gina, "En till"));
+  await platform(
+    "UPDATE public.listings SET status = 'removed' WHERE owner_id = $1 AND title = 'Gammal annons 1'",
+    [u.gina.id],
+  );
+  await listingFor(u.gina, "Nu går det");
+});
+
+test("at most 10 new conversations an hour", async () => {
+  await createUser("hans", "Hans Hav");
+  const ids = (
+    await platform(
+      `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day, status)
+       SELECT $1, 'Att kontakta ' || n, 'verktyg', 'Solna', 100, 'published' FROM generate_series(1, 11) n
+       RETURNING id`,
+      [u.alice.id],
+    )
+  ).map((r) => r.id);
+  for (const id of ids.slice(0, 10))
+    await as(u.hans, "SELECT public.start_conversation($1, 'Hej!')", [id]);
+  await rejects(u.hans, "SELECT public.start_conversation($1, 'Hej!')", [ids[10]]);
+  u.hans.listingIds = ids;
+});
+
+test("at most 30 messages per 10 minutes", async () => {
+  await createUser("ivy", "Ivy Ilska");
+  const [{ id: conversationId }] = await as(
+    u.ivy,
+    "SELECT public.start_conversation($1, 'Första') AS id",
+    [u.hans.listingIds[10]],
+  );
+  const send = () =>
+    as(
+      u.ivy,
+      "INSERT INTO public.messages (conversation_id, sender_id, body) VALUES ($1, $2, 'Spam')",
+      [conversationId, u.ivy.id],
+    );
+  for (let i = 2; i <= 30; i++) await send();
+  await assert.rejects(send());
+});
+
+test("at most 20 reports a day", async () => {
+  await createUser("jon", "Jon Jakt");
+  const targets = (
+    await platform("SELECT id FROM public.listings WHERE status = 'published' LIMIT 21")
+  ).map((r) => r.id);
+  for (const id of targets.slice(0, 20)) await reportAs(u.jon, "listing", id, "Spam");
+  await assert.rejects(reportAs(u.jon, "listing", targets[20], "Spam"));
+});

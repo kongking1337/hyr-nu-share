@@ -47,3 +47,43 @@ export const notifyNewMessage = createServerFn({ method: "POST" })
     });
     return { sent };
   });
+
+/**
+ * Anropas efter att någon anmält något. Mejlar administratören (ADMIN_EMAIL i Cloudflare)
+ * högst en gång per anmäld annons, användare eller konversation tills den är hanterad.
+ */
+export const notifyNewReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: { reportId: string }) => {
+    if (!UUID.test(String(input?.reportId))) throw new Error("Ogiltig anmälan");
+    return { reportId: input.reportId };
+  })
+  .handler(async ({ data, context }) => {
+    const { emailConfigured, escapeHtml, sendEmail } = await import("@/lib/email.server");
+    const adminEmail = process.env["ADMIN_EMAIL"];
+    if (!emailConfigured() || !adminEmail || !process.env["SUPABASE_SERVICE_ROLE_KEY"]) return { sent: false };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("claim_report_notification", {
+      _report_id: data.reportId,
+      _reporter: context.userId,
+    });
+    if (error) {
+      console.error("[notify] claim_report_notification:", error.message);
+      return { sent: false };
+    }
+    const report = rows?.[0];
+    if (!report) return { sent: false };
+
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const site = process.env["SITE_URL"] || new URL(getRequest().url).origin;
+    const sent = await sendEmail({
+      to: adminEmail,
+      subject: `Ny anmälan på Hyrkoll: ${report.reason}`,
+      text: `En ${report.target_type === "listing" ? "annons" : "konversation eller användare"} har anmälts för "${report.reason}".\n\nÖppna anmälningar just nu: ${report.open_reports}\n\nHantera: ${site}/admin\n`,
+      html: `<p>En ${report.target_type === "listing" ? "annons" : "konversation eller användare"} har anmälts för <strong>${escapeHtml(report.reason)}</strong>.</p>
+<p>Öppna anmälningar just nu: ${report.open_reports}</p>
+<p><a href="${escapeHtml(`${site}/admin`)}">Hantera anmälningar</a></p>`,
+    });
+    return { sent };
+  });

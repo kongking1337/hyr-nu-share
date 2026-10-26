@@ -2,5 +2,8 @@
 // .output/server/wrangler.json, which is what `wrangler deploy` uploads.
 // The name must match the Worker's name in the Cloudflare dashboard.
 {
-  "name": "hyrkoll"
+  "name": "hyrkoll",
+  // Workers Logs: server errors (console.error) are saved and searchable under
+  // Workers & Pages → hyrkoll → Logs in the Cloudflare dashboard.
+  "observability": { "enabled": true }
 }

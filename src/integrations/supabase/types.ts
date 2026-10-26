@@ -336,6 +336,7 @@ export type Database = {
           lat: number
           listing_type: string
           lng: number
+          moderation_reason: string | null
           offer_validity_hours: number
           owner_id: string | null
           owner_name: string
@@ -381,6 +382,7 @@ export type Database = {
           lat?: number
           listing_type?: string
           lng?: number
+          moderation_reason?: string | null
           offer_validity_hours?: number
           owner_id?: string | null
           owner_name?: string
@@ -426,6 +428,7 @@ export type Database = {
           lat?: number
           listing_type?: string
           lng?: number
+          moderation_reason?: string | null
           offer_validity_hours?: number
           owner_id?: string | null
           owner_name?: string
@@ -610,6 +613,7 @@ export type Database = {
           account_type: Database["public"]["Enums"]["account_type"]
           avatar_url: string | null
           bio: string | null
+          blocked_at: string | null
           city: string | null
           created_at: string
           email_verified: boolean
@@ -625,6 +629,7 @@ export type Database = {
           account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           bio?: string | null
+          blocked_at?: string | null
           city?: string | null
           created_at?: string
           email_verified?: boolean
@@ -640,6 +645,7 @@ export type Database = {
           account_type?: Database["public"]["Enums"]["account_type"]
           avatar_url?: string | null
           bio?: string | null
+          blocked_at?: string | null
           city?: string | null
           created_at?: string
           email_verified?: boolean
@@ -658,8 +664,12 @@ export type Database = {
           created_at: string
           details: string | null
           id: string
+          notified_at: string | null
           reason: string
           reporter_id: string | null
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
           status: string
           target_id: string
           target_type: string
@@ -668,8 +678,12 @@ export type Database = {
           created_at?: string
           details?: string | null
           id?: string
+          notified_at?: string | null
           reason: string
           reporter_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           target_id: string
           target_type: string
@@ -678,8 +692,12 @@ export type Database = {
           created_at?: string
           details?: string | null
           id?: string
+          notified_at?: string | null
           reason?: string
           reporter_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           target_id?: string
           target_type?: string
@@ -790,6 +808,63 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_blocked_users: {
+        Args: never
+        Returns: { blocked_at: string; id: string; name: string }[]
+      }
+      admin_dismiss_report: { Args: { _report_id: string }; Returns: undefined }
+      admin_listings: {
+        Args: { _search?: string }
+        Returns: {
+          city: string
+          created_at: string
+          id: string
+          listing_type: string
+          moderation_reason: string | null
+          owner_blocked: boolean
+          owner_id: string | null
+          owner_name: string
+          status: string
+          title: string
+        }[]
+      }
+      admin_open_report_count: { Args: never; Returns: number }
+      admin_reported_conversation: {
+        Args: { _conversation_id: string }
+        Returns: { body: string; created_at: string; sender_name: string }[]
+      }
+      admin_reports: {
+        Args: { _open?: boolean }
+        Returns: {
+          created_at: string
+          details: string | null
+          id: string
+          listing_status: string | null
+          listing_title: string | null
+          reason: string
+          reported_user_blocked: boolean
+          reported_user_id: string | null
+          reported_user_name: string | null
+          reporter_name: string
+          reports_on_target: number
+          resolution: string | null
+          resolved_at: string | null
+          target_id: string
+          target_type: string
+        }[]
+      }
+      admin_set_listing_hidden: {
+        Args: { _hidden: boolean; _listing_id: string; _reason?: string }
+        Returns: undefined
+      }
+      admin_set_user_blocked: {
+        Args: { _blocked: boolean; _user_id: string }
+        Returns: undefined
+      }
+      claim_report_notification: {
+        Args: { _report_id: string; _reporter: string }
+        Returns: { open_reports: number; reason: string; target_type: string }[]
+      }
       claim_message_notification: {
         Args: { _conversation_id: string; _sender: string }
         Returns: {

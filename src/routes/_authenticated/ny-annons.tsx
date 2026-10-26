@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { PHOTO_BUCKET, removeUnusedPhotos } from "@/lib/photos";
+import { userMessage } from "@/lib/db-errors";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/geo";
 import { LISTING_TYPE_LABEL } from "@/lib/pricing";
@@ -107,6 +108,11 @@ function ListingForm() {
     if (form.description.length > 5000) return "Beskrivningen får vara högst 5 000 tecken.";
     if (type === "sale" && !free && kronor(form.price) == null) return "Ange ett pris i kronor, eller välj Skänkes.";
     if (type === "rent" && kronor(form.price_day) == null) return "Ange ett pris per dygn i kronor.";
+    if ((kronor(form.price) ?? 0) > 10_000_000) return "Priset får vara högst 10 000 000 kr.";
+    if ((kronor(form.price_day) ?? 0) > 1_000_000 || (kronor(form.price_week) ?? 0) > 1_000_000) {
+      return "Hyrespriset får vara högst 1 000 000 kr.";
+    }
+    if ((kronor(form.deposit) ?? 0) > 1_000_000) return "Depositionen får vara högst 1 000 000 kr.";
     if (form.price_week && kronor(form.price_week) == null) return "Veckopriset måste vara ett belopp i kronor.";
     if (form.deposit && kronor(form.deposit) == null) return "Depositionen måste vara ett belopp i kronor.";
     return null;
@@ -141,7 +147,7 @@ function ListingForm() {
     if (editId) {
       const { error } = await supabase.from("listings").update(payload).eq("id", editId);
       setBusy(false);
-      if (error) { toast.error("Kunde inte spara ändringarna."); return; }
+      if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
       void removeUnusedPhotos(user!.id, removedSaved.current);
       toast.success("Annonsen är uppdaterad.");
       navigate({ to: "/mina-annonser" });
@@ -154,7 +160,7 @@ function ListingForm() {
       .select("id")
       .single();
     setBusy(false);
-    if (error) { toast.error("Kunde inte spara annonsen."); return; }
+    if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
     if (status === "draft") {
       toast.success("Utkast sparat.");
       navigate({ to: "/mina-annonser" });

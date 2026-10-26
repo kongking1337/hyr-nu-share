@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { userMessage } from "@/lib/db-errors";
 import { MAX_MESSAGE_LENGTH, startConversation } from "@/lib/messages";
 import type { UnifiedResult } from "@/lib/providers/types";
 
@@ -54,7 +55,7 @@ export function ContactSeller({ listing }: { listing: UnifiedResult }) {
       toast.success("Meddelandet är skickat.");
       navigate({ to: "/meddelanden", search: { c: conversationId } });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Meddelandet kunde inte skickas.");
+      toast.error(userMessage(e, "Meddelandet kunde inte skickas. Försök igen."));
       setBusy(false);
     }
   }

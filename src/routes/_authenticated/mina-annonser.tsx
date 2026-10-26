@@ -184,6 +184,16 @@ function MyListings() {
                   <p className="text-sm text-muted-foreground">
                     {price} · {l.city}
                   </p>
+                  {l.status === "removed" && (
+                    <p className="mt-2 rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      Dold av Hyrkolls moderatorer{l.moderation_reason ? `: ${l.moderation_reason}` : ""}. Tycker du att det
+                      är fel?{" "}
+                      <Link to="/kontakt" className="underline">
+                        Kontakta oss
+                      </Link>
+                      .
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Captcha, captchaEnabled } from "@/components/Captcha";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
@@ -67,11 +69,35 @@ function AuthPage() {
   const [accountType, setAccountType] = useState<"private" | "company">("private");
   const [busy, setBusy] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  // Captcha-token gäller ett försök; nyckeln ritar om rutan efter varje försök.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const captcha = <Captcha key={`${mode}-${captchaKey}`} onToken={setCaptchaToken} />;
+
+  /** Returnerar token, eller undefined om captcha inte används. false = inte klar än. */
+  function takeCaptcha(): string | undefined | false {
+    if (!captchaEnabled) return undefined;
+    if (!captchaToken) {
+      toast.error("Bekräfta först att du inte är en robot.");
+      return false;
+    }
+    const token = captchaToken;
+    setCaptchaToken(null);
+    setCaptchaKey((k) => k + 1);
+    return token;
+  }
 
   async function signIn(e: FormEvent) {
     e.preventDefault();
+    const captchaToken = takeCaptcha();
+    if (captchaToken === false) return;
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+      options: captchaToken ? { captchaToken } : {},
+    });
     setBusy(false);
     if (error) {
       toast.error(authErrorMessage(error));
@@ -86,11 +112,18 @@ function AuthPage() {
       toast.error(`Lösenordet måste vara minst ${MIN_PASSWORD_LENGTH} tecken.`);
       return;
     }
+    if (!accepted) {
+      toast.error("Du behöver vara minst 18 år och godkänna användarvillkoren.");
+      return;
+    }
+    const captchaToken = takeCaptcha();
+    if (captchaToken === false) return;
     setBusy(true);
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
+        ...(captchaToken ? { captchaToken } : {}),
         emailRedirectTo: window.location.origin + (redirect ?? ""),
         data: { full_name: name.trim(), account_type: accountType },
       },
@@ -109,9 +142,12 @@ function AuthPage() {
 
   async function sendReset(e: FormEvent) {
     e.preventDefault();
+    const captchaToken = takeCaptcha();
+    if (captchaToken === false) return;
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/nytt-losenord`,
+      ...(captchaToken ? { captchaToken } : {}),
     });
     setBusy(false);
     // Samma besked oavsett om kontot finns, så att ingen kan ta reda på vem som har konto.
@@ -164,6 +200,7 @@ function AuthPage() {
               type="email"
               autoComplete="email"
             />
+            {captcha}
             <Button type="submit" className="w-full rounded-full" disabled={busy}>
               Skicka länk
             </Button>
@@ -218,6 +255,7 @@ function AuthPage() {
               type="password"
               autoComplete="current-password"
             />
+            {captcha}
             <Button type="submit" className="w-full rounded-full" disabled={busy}>
               Logga in
             </Button>
@@ -269,6 +307,26 @@ function AuthPage() {
               type="password"
               autoComplete="new-password"
             />
+            <div className="flex items-start gap-2.5">
+              <Checkbox
+                id="accept-terms"
+                checked={accepted}
+                onCheckedChange={(v) => setAccepted(v === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="accept-terms" className="cursor-pointer text-sm font-normal leading-snug">
+                Jag är minst 18 år och godkänner{" "}
+                <Link to="/villkor" className="text-primary underline" target="_blank">
+                  användarvillkoren
+                </Link>
+                . Läs hur vi hanterar personuppgifter i{" "}
+                <Link to="/integritet" className="text-primary underline" target="_blank">
+                  integritetspolicyn
+                </Link>
+                .
+              </Label>
+            </div>
+            {captcha}
             <Button type="submit" className="w-full rounded-full" disabled={busy}>
               Skapa konto
             </Button>

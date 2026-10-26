@@ -66,8 +66,8 @@ Alternatives:
 | 4 | **Contact the seller** (thread + email notification) (done 2026-10-28; emails need Resend + Cloudflare secrets) | M–L | Buyer → seller via a button on the listing. The seller gets an email without addresses being shared. A third user can't read it |
 | 5 | **Photo upload** (Supabase Storage, shrunk in the browser, max 8) (done 2026-10-30) | M | Works from a phone. Non-images are rejected. Nobody can delete someone else's photos. Gallery on the listing page |
 | 6 | **Account basics** (password reset, own SMTP, Swedish errors, delete account) (code done 2026-10-29; SMTP setup in docs/email-setup.md) | S–M | Reset email arrives and works. Errors are in Swedish. The account can be deleted |
-| 7 | **Minimum moderation** (admin role check, report reasons, hide listing, email on report) | M | Non-admins can't open `/admin`. Admin hides a listing in one click |
-| 8 | **Spam and launch basics** (captcha, limits, terms, privacy policy, `lang="sv"`, logging, backups) | M | See the task description in the review |
+| 7 | **Minimum moderation** (admin role check, report reasons, hide listing, email on report) (done 2026-10-31) | M | Non-admins can't open `/admin`. Admin hides a listing in one click |
+| 8 | **Spam and launch basics** (captcha, limits, terms, privacy policy, `lang="sv"`, logging, backups) (code done 2026-11-01; setup in docs/operations.md) | M | See the task description in the review |
 
 ## Open before inviting users
 
@@ -76,6 +76,26 @@ Alternatives:
   `docs/email-setup.md` (Gmail for a closed beta, or a domain + Resend). Marcus
   postponed this on 2026-10-29. A domain also turns on "new message" emails.
 - **Test account deletion** once with a throwaway account on the live site.
+- **Site details:** who runs the site and a contact email (a Gmail address is fine to
+  start with). Send them and they go into `src/lib/site.ts`; until then the terms,
+  privacy policy and contact page show "Utkast". Postponed by Marcus on 2026-11-01.
+- **Captcha:** create a Turnstile widget in Cloudflare, put the site key in `.env`,
+  then enable it in Supabase, in that order (`docs/operations.md`). Postponed by Marcus
+  on 2026-11-01.
+- **Backups:** choose Supabase Pro (daily backups) or regular manual dumps
+  (`docs/operations.md`). Postponed by Marcus on 2026-11-01.
+- **Have the terms and privacy policy reviewed** before a public launch.
+
+## Later (after the first version)
+
+- **Hidden seller rating** (Marcus, 2026-10-31): a trust score per seller that only
+  admins see, based on how they behave, e.g. reports against them (and whether
+  they were upheld), hidden listings, blocks, account age, and how they answer
+  messages. Used to spot likely scammers early: flag them in `/admin` and, for
+  low scores, hold their new listings for review or rank them lower in search.
+  Never shown to the seller or other users. Builds on the moderation data from task 7.
+- **Small photo versions for cards** (about 480 px) so search and the home page load
+  less data (suggested 2026-10-30).
 
 ## Known issues (summary of the review)
 

@@ -28,5 +28,14 @@
   `SUPABASE_SERVICE_ROLE_KEY` and the variable `EMAIL_FROM`. Without them no email
   is sent and the rest of the site still works. Server-only code goes in `*.server.ts`
   and is imported dynamically inside server function handlers.
+- Moderation: admins (rows in `user_roles` with role `admin`) use `/admin`, backed by
+  the `admin_*` RPCs, which check `private.is_admin()` themselves. Blocked users
+  (`profiles.blocked_at`) can't write listings or messages. Admins only see a
+  conversation's messages after someone in it reported it.
+- Spam limits and text limits live in the database
+  (`supabase/migrations/20261101120000_limits.sql`); database errors meant for users are
+  written in Swedish and shown via `userMessage()` in `src/lib/db-errors.ts`. Site
+  operator and contact details for the legal pages are in `src/lib/site.ts`. Manual
+  setup (captcha, backups, logs, admins): `docs/operations.md`.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just
   the Vite config package and stays. Background: `docs/migration-plan.md`.

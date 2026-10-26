@@ -5,7 +5,7 @@ Hyrkoll sends two kinds of email:
 | Email | Sent by | Needs |
 |---|---|---|
 | Confirm account, reset password | Supabase Auth | Custom SMTP in Supabase (step 1) |
-| "You have a new message" | The site's server (`src/lib/notify.functions.ts`) | Resend + own domain + Cloudflare secrets (step 3) |
+| "You have a new message", "New report" (to the admin) | The site's server (`src/lib/notify.functions.ts`) | Resend + own domain + Cloudflare secrets (step 3) |
 
 Supabase's built-in email sender only delivers to members of the Supabase team
 (other addresses get the error `email_address_not_authorized`), so ordinary users
@@ -64,5 +64,6 @@ port `465`, username `resend`, password = the Resend API key, sender e.g.
    - `RESEND_API_KEY` (Secret)
    - `SUPABASE_SERVICE_ROLE_KEY` (Secret): Supabase → Project Settings → API Keys, the secret key
    - `EMAIL_FROM`: e.g. `Hyrkoll <noreply@yourdomain.se>`
+   - `ADMIN_EMAIL`: where new reports are sent, e.g. your own address
 
 Without these, no notifications are sent; messages still show up on the site.
