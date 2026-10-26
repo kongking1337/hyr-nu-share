@@ -21,5 +21,12 @@
   only in Stockholm county (`src/lib/geo.ts`), and the visible categories are listed in
   `src/lib/categories.ts`. Bookings, bids, comparison, company profiles and the
   statistics page are hidden from the UI but their code and tables remain.
+- Messaging: buyers start conversations with the `start_conversation` RPC; the inbox
+  uses `my_conversations` (public names only, never emails). New-message emails are
+  sent by the server function in `src/lib/notify.functions.ts` via Resend
+  (`src/lib/email.server.ts`); it needs the Cloudflare secrets `RESEND_API_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY` and the variable `EMAIL_FROM`. Without them no email
+  is sent and the rest of the site still works. Server-only code goes in `*.server.ts`
+  and is imported dynamically inside server function handlers.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just
   the Vite config package and stays. Background: `docs/migration-plan.md`.

@@ -7,11 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
+/** Bara sökvägar inom sajten, så att länken inte kan skicka vidare någon annanstans. */
+function safeRedirect(value: unknown): string | undefined {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : undefined;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
+    const redirect = safeRedirect(s["redirect"]);
+    return redirect ? { redirect } : {};
+  },
   head: () => ({
     meta: [
       { title: "Logga in eller skapa konto – Hyrkoll" },
-      { name: "description", content: "Skapa konto som privatperson eller företag och börja hyra ut." },
+      { name: "description", content: "Skapa konto som privatperson eller företag för att köpa, sälja och hyra." },
       { property: "og:title", content: "Logga in – Hyrkoll" },
       { property: "og:description", content: "Konto för privatpersoner och företag." },
     ],
@@ -21,6 +30,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const goBack = () => (redirect ? navigate({ to: redirect }) : navigate({ to: "/konto" }));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -32,7 +43,7 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    navigate({ to: "/konto" });
+    goBack();
   }
 
   async function signUp() {
@@ -41,20 +52,20 @@ function AuthPage() {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: window.location.origin + (redirect ?? ""),
         data: { full_name: name, account_type: accountType },
       },
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     if (!data.session) { toast.success("Kolla din e-post och bekräfta kontot."); return; }
-    navigate({ to: "/konto" });
+    goBack();
   }
 
   async function google() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: window.location.origin + (redirect ?? "") },
     });
     if (error) toast.error("Google-inloggning misslyckades.");
   }

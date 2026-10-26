@@ -57,6 +57,8 @@ export type UnifiedResult = {
   offerValidityHours?: number;
   /** När annonsen publicerades (ISO-datum) */
   publishedAt?: string | null;
+  /** Annonsens ägare (användar-id); null för exempelannonser */
+  ownerId?: string | null;
   /** Exempelannons utan riktig ägare (demodata) – kan inte bokas, budas på eller kontaktas */
   example?: boolean;
   /** Endast externa resultat: länk till erbjudandet hos källan */

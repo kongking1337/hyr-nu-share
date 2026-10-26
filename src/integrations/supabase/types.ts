@@ -178,7 +178,11 @@ export type Database = {
           last_message_at: string
           listing_id: string | null
           owner_id: string
+          owner_last_read_at: string
+          owner_notified_at: string | null
           renter_id: string
+          renter_last_read_at: string
+          renter_notified_at: string | null
         }
         Insert: {
           created_at?: string
@@ -186,7 +190,11 @@ export type Database = {
           last_message_at?: string
           listing_id?: string | null
           owner_id: string
+          owner_last_read_at?: string
+          owner_notified_at?: string | null
           renter_id: string
+          renter_last_read_at?: string
+          renter_notified_at?: string | null
         }
         Update: {
           created_at?: string
@@ -194,7 +202,11 @@ export type Database = {
           last_message_at?: string
           listing_id?: string | null
           owner_id?: string
+          owner_last_read_at?: string
+          owner_notified_at?: string | null
           renter_id?: string
+          renter_last_read_at?: string
+          renter_notified_at?: string | null
         }
         Relationships: [
           {
@@ -778,6 +790,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_message_notification: {
+        Args: { _conversation_id: string; _sender: string }
+        Returns: {
+          email: string
+          listing_title: string
+        }[]
+      }
       booked_dates: {
         Args: { _listing_id: string }
         Returns: {
@@ -786,6 +805,24 @@ export type Database = {
         }[]
       }
       expire_stale_offers: { Args: never; Returns: undefined }
+      mark_conversation_read: {
+        Args: { _conversation_id: string }
+        Returns: undefined
+      }
+      my_conversations: {
+        Args: never
+        Returns: {
+          counterpart_name: string
+          i_am_seller: boolean
+          id: string
+          last_message: string
+          last_message_at: string
+          listing_id: string
+          listing_image: string
+          listing_title: string
+          unread: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -805,6 +842,11 @@ export type Database = {
         }
         Returns: Json
       }
+      start_conversation: {
+        Args: { _body: string; _listing_id: string }
+        Returns: string
+      }
+      unread_conversation_count: { Args: never; Returns: number }
       respond_offer: {
         Args: {
           _action: string

@@ -71,6 +71,7 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     allowOffers: !!r.allow_offers,
     offerValidityHours: Number(r.offer_validity_hours ?? 24),
     publishedAt: r.published_at ?? r.created_at,
+    ownerId: r.owner_id,
     example: r.owner_id == null,
   };
 }

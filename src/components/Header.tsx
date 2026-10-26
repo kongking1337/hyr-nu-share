@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Heart, LayoutList, Menu, MessageSquare, Moon, Plus, Search, Sun, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useTheme } from "@/hooks/useTheme";
@@ -14,11 +16,18 @@ export function Header() {
   const isAdmin = useIsAdmin();
   const [open, setOpen] = useState(false);
 
+  const { data: unread = 0 } = useQuery({
+    queryKey: ["unread-count", user?.id],
+    enabled: !!user,
+    refetchInterval: 60_000,
+    queryFn: async () => (await supabase.rpc("unread_conversation_count")).data ?? 0,
+  });
+
   const mobileLinks = [
     { to: "/sok", label: "Sök" },
     { to: "/ny-annons", label: "+ Lägg upp annons" },
     ...(user ? [{ to: "/mina-annonser", label: "Mina annonser" }] : []),
-    { to: "/meddelanden", label: "Meddelanden" },
+    { to: "/meddelanden", label: unread ? `Meddelanden (${unread} olästa)` : "Meddelanden" },
     { to: "/favoriter", label: "Favoriter" },
     { to: user ? "/konto" : "/auth", label: user ? "Mitt konto" : "Logga in" },
     ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
@@ -53,10 +62,15 @@ export function Header() {
               <Heart className="h-5 w-5" />
             </Button>
           </Link>
-          <Link to="/meddelanden" className="hidden sm:block">
-            <Button variant="ghost" size="icon" aria-label="Meddelanden">
+          <Link to="/meddelanden" search={{}} className="relative hidden sm:block">
+            <Button variant="ghost" size="icon" aria-label={unread ? `Meddelanden, ${unread} olästa` : "Meddelanden"}>
               <MessageSquare className="h-5 w-5" />
             </Button>
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                {unread}
+              </span>
+            )}
           </Link>
           {user && (
             <Link to="/mina-annonser" className="hidden md:block">
@@ -78,8 +92,9 @@ export function Header() {
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="sm:hidden" aria-label="Meny">
+              <Button variant="ghost" size="icon" className="relative sm:hidden" aria-label={unread ? `Meny, ${unread} olästa meddelanden` : "Meny"}>
                 <Menu className="h-5 w-5" />
+                {unread > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />}
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-72">

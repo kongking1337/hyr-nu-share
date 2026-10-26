@@ -58,6 +58,14 @@ async function platform(sql, params = []) {
 
 const rejects = (who, sql, params) => assert.rejects(as(who, sql, params));
 
+/** Runs one statement as the site's server (service role key). */
+async function asService(sql, params = []) {
+  return db.transaction(async (tx) => {
+    await tx.exec("SET LOCAL ROLE service_role");
+    return (await tx.query(sql, params)).rows;
+  });
+}
+
 async function createUser(name, fullName) {
   const [row] = await platform(
     "INSERT INTO auth.users (email, raw_user_meta_data) VALUES ($1, $2) RETURNING id",
@@ -570,6 +578,122 @@ test("users cannot fake system messages, edit messages or delete conversations",
       .length,
     1,
   );
+});
+
+// --- Contacting the seller -----------------------------------------------------
+
+const startSql = "SELECT public.start_conversation($1, $2) AS id";
+const inbox = (who) =>
+  as(
+    who,
+    "SELECT id, counterpart_name, i_am_seller, last_message, unread FROM public.my_conversations()",
+  );
+const claim = (conversationId, senderId) =>
+  asService("SELECT * FROM public.claim_message_notification($1, $2)", [conversationId, senderId]);
+
+test("buyers contact the seller from a listing; the same conversation is reused", async () => {
+  const id = await createListing(u.alice, "Cykel att hyra");
+  u.alice.contactListingId = id;
+  const [{ id: first }] = await as(u.bob, startSql, [id, "  Hej! Finns den kvar?  "]);
+  const [{ id: again }] = await as(u.bob, startSql, [id, "Kan jag hämta i morgon?"]);
+  assert.equal(again, first);
+  u.bob.contactConversationId = first;
+  const bodies = await as(
+    u.alice,
+    "SELECT body FROM public.messages WHERE conversation_id = $1 ORDER BY created_at",
+    [first],
+  );
+  assert.deepEqual(
+    bodies.map((m) => m.body),
+    ["Hej! Finns den kvar?", "Kan jag hämta i morgon?"],
+  );
+});
+
+test("you cannot contact yourself, demo listings or listings that are not published", async () => {
+  await rejects(u.alice, startSql, [u.alice.contactListingId, "Hej"]);
+  const [demo] = await platform("SELECT id FROM public.listings WHERE owner_id IS NULL LIMIT 1");
+  await rejects(u.bob, startSql, [demo.id, "Hej"]);
+  const paused = await createListing(u.alice, "Pausad");
+  await as(u.alice, "UPDATE public.listings SET status = 'paused' WHERE id = $1", [paused]);
+  await rejects(u.bob, startSql, [paused, "Hej"]);
+  await rejects(null, startSql, [u.alice.contactListingId, "Hej"]);
+});
+
+test("messages must be 1–2000 characters", async () => {
+  await rejects(u.bob, startSql, [u.alice.contactListingId, "   "]);
+  await rejects(u.bob, startSql, [u.alice.contactListingId, "x".repeat(2001)]);
+  await rejects(
+    u.bob,
+    "INSERT INTO public.messages (conversation_id, sender_id, body) VALUES ($1, $2, '')",
+    [u.bob.contactConversationId, u.bob.id],
+  );
+});
+
+test("the inbox shows public names only, and unread status per person", async () => {
+  const [forAlice] = (await inbox(u.alice)).filter((c) => c.id === u.bob.contactConversationId);
+  assert.deepEqual(
+    [forAlice.counterpart_name, forAlice.i_am_seller, forAlice.unread, forAlice.last_message],
+    ["Bob B.", true, true, "Kan jag hämta i morgon?"],
+  );
+  const [forBob] = (await inbox(u.bob)).filter((c) => c.id === u.bob.contactConversationId);
+  assert.deepEqual(
+    [forBob.counterpart_name, forBob.i_am_seller, forBob.unread],
+    ["Alice L.", false, false],
+  );
+  assert.ok(!JSON.stringify(await inbox(u.bob)).includes("@"));
+  assert.deepEqual(await inbox(u.mallory), []);
+});
+
+test("reading clears unread; a reply makes it unread for the other person", async () => {
+  const unread = async (who) =>
+    (await as(who, "SELECT public.unread_conversation_count() AS n"))[0].n;
+  const before = await unread(u.alice);
+  assert.ok(before >= 1);
+  await as(u.mallory, "SELECT public.mark_conversation_read($1)", [u.bob.contactConversationId]);
+  assert.equal(await unread(u.alice), before);
+  await as(u.alice, "SELECT public.mark_conversation_read($1)", [u.bob.contactConversationId]);
+  assert.equal(await unread(u.alice), before - 1);
+  await as(
+    u.alice,
+    "INSERT INTO public.messages (conversation_id, sender_id, body) VALUES ($1, $2, 'Ja, välkommen!')",
+    [u.bob.contactConversationId, u.alice.id],
+  );
+  const [forBob] = (await inbox(u.bob)).filter((c) => c.id === u.bob.contactConversationId);
+  assert.equal(forBob.unread, true);
+});
+
+test("nobody can change read or notification state directly", async () => {
+  await rejects(
+    u.alice,
+    "UPDATE public.conversations SET owner_last_read_at = now(), owner_notified_at = now() WHERE id = $1",
+    [u.bob.contactConversationId],
+  );
+});
+
+test("email notifications: never from the browser, at most one per unread streak", async () => {
+  await rejects(u.bob, "SELECT * FROM public.claim_message_notification($1, $2)", [
+    u.bob.contactConversationId,
+    u.bob.id,
+  ]);
+  await rejects(null, "SELECT * FROM public.claim_message_notification($1, $2)", [
+    u.bob.contactConversationId,
+    u.bob.id,
+  ]);
+  // Bob writes again; Alice has not read it yet -> one email to Alice, then nothing until she reads.
+  await as(u.bob, startSql, [u.alice.contactListingId, "Hallå?"]);
+  assert.deepEqual(await claim(u.bob.contactConversationId, u.bob.id), [
+    { email: "alice@example.com", listing_title: "Cykel att hyra" },
+  ]);
+  assert.deepEqual(await claim(u.bob.contactConversationId, u.bob.id), []);
+  await as(u.bob, startSql, [u.alice.contactListingId, "Hallå igen?"]);
+  assert.deepEqual(await claim(u.bob.contactConversationId, u.bob.id), []);
+  // Alice reads; nothing new from Bob -> no email. Bob writes -> email again.
+  await as(u.alice, "SELECT public.mark_conversation_read($1)", [u.bob.contactConversationId]);
+  assert.deepEqual(await claim(u.bob.contactConversationId, u.bob.id), []);
+  await as(u.bob, startSql, [u.alice.contactListingId, "En sista fråga"]);
+  assert.equal((await claim(u.bob.contactConversationId, u.bob.id)).length, 1);
+  // Someone outside the conversation gets nothing.
+  assert.deepEqual(await claim(u.bob.contactConversationId, u.mallory.id), []);
 });
 
 // --- Reports -------------------------------------------------------------------

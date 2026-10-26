@@ -4,6 +4,7 @@ import { Flag, Info, MapPin, Truck, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ContactSeller } from "@/components/ContactSeller";
 import { ExampleBadge } from "@/components/ExampleBadge";
 import { ListingTypeBadge } from "@/components/ListingTypeBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,11 +119,13 @@ function ListingPage() {
               )}
             </ul>
           )}
-          {listing.example && (
+          {listing.example ? (
             <p className="flex gap-2 rounded-2xl bg-muted/60 p-3 text-sm text-muted-foreground">
               <Info className="mt-0.5 h-4 w-4 shrink-0" />
               Det här är en exempelannons som visar hur sajten fungerar. Den går inte att svara på.
             </p>
+          ) : (
+            <ContactSeller listing={listing} />
           )}
         </aside>
       </div>
