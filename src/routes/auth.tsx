@@ -63,7 +63,7 @@ function AuthPage() {
     <div className="mx-auto max-w-md px-4 py-14">
       <h1 className="font-display text-3xl font-semibold">Välkommen till Hyrkoll</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Skapa konto som privatperson eller företag för att boka, hyra ut och chatta.
+        Skapa konto som privatperson eller företag för att köpa, sälja, hyra och skicka meddelanden.
       </p>
 
       <Tabs defaultValue="signin" className="mt-7">

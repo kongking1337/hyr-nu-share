@@ -37,7 +37,7 @@ function ListingStats() {
     queryKey: ["listing-stats", id],
     queryFn: async () => {
       const { data } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
-      return data;
+      return data && { ...data, price_day: data.price_day ?? 0 };
     },
   });
 

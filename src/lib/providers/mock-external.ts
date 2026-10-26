@@ -70,6 +70,8 @@ function toUnified(seed: Seed, item: Seed["items"][number], i: number): UnifiedR
   return {
     id: `${seed.slug}-${i}`,
     source: { kind: "external", slug: seed.slug, name: seed.name, demo: true },
+    listingType: "rent",
+    price: null,
     title: item.title,
     description:
       "Detta är ett demoresultat från en extern källa. Priser och tillgänglighet är exempeldata tills en officiell integration är på plats.",

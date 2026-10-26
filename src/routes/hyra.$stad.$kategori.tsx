@@ -11,8 +11,8 @@ export const Route = createFileRoute("/hyra/$stad/$kategori")({
   head: ({ params }) => {
     const city = cityBySlug(params.stad)?.name ?? params.stad;
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;
-    const title = `Hyra ${name.toLowerCase()} i ${city} – jämför totalpris | Hyrkoll`;
-    const description = `Lediga ${name.toLowerCase()} att hyra i ${city}. Jämför pris och avstånd hos privatpersoner och företag.`;
+    const title = `Hyra ${name.toLowerCase()} i ${city} | Hyrkoll`;
+    const description = `${name} att hyra i ${city} av privatpersoner och företag.`;
     return {
       meta: [
         { title },
@@ -31,7 +31,8 @@ function CityCategoryPage() {
   const { stad, kategori } = Route.useParams();
   const search = Route.useSearch();
   const city = cityBySlug(stad);
-  const params = { ...search, category: kategori, location: city?.slug ?? search.location };
+  // /hyra-sidorna visar bara saker som hyrs ut.
+  const params = { ...search, category: kategori, type: "rent" as const, location: city?.slug ?? search.location };
   const { patch, reset } = useUrlSearchState(params);
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
@@ -40,7 +41,7 @@ function CityCategoryPage() {
       patch={patch}
       reset={reset}
       heading={`Hyra ${name.toLowerCase()} i ${city?.name ?? stad}`}
-      intro={`Se lediga ${name.toLowerCase()} nära ${city?.name ?? stad} med pris för hela perioden och avstånd.`}
+      intro={`${name} att hyra nära ${city?.name ?? stad}, av privatpersoner och företag.`}
     />
   );
 }

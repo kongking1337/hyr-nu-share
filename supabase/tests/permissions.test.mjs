@@ -265,11 +265,8 @@ test("only admins can remove listings, and owners cannot undo a removal", async 
   await rejects(u.alice, "UPDATE public.listings SET status = 'published' WHERE id = $1", [id]);
 });
 
-test("existing app flows still work: pause, mark sold, duplicate, delete", async () => {
+test("existing app flows still work: pause, duplicate, delete", async () => {
   await as(u.alice, "UPDATE public.listings SET status = 'paused' WHERE id = $1", [
-    u.alice.listingId,
-  ]);
-  await as(u.alice, "UPDATE public.listings SET status = 'sold' WHERE id = $1", [
     u.alice.listingId,
   ]);
   await as(u.alice, "UPDATE public.listings SET status = 'published' WHERE id = $1", [
@@ -316,6 +313,46 @@ test("listings can be published under the user's own company", async () => {
   await as(u.alice, "UPDATE public.listings SET company_id = NULL WHERE id = $1", [
     u.alice.listingId,
   ]);
+});
+
+// --- Sell and rent ---------------------------------------------------------------
+
+const saleSql = `
+  INSERT INTO public.listings (owner_id, listing_type, title, category_slug, city, price, status)
+  VALUES ($1, 'sale', $2, 'verktyg', 'Solna', $3, 'published')
+  RETURNING id, price::float AS price, price_day`;
+
+test("sale listings need a price, rentals a day price; 0 kr means given away", async () => {
+  await rejects(u.alice, saleSql, [u.alice.id, "Utan pris", null]);
+  await rejects(u.alice, saleSql, [u.alice.id, "Negativt pris", -5]);
+  await rejects(
+    u.alice,
+    `INSERT INTO public.listings (owner_id, listing_type, title, category_slug, city, price)
+     VALUES ($1, 'rent', 'Uthyres utan dygnspris', 'verktyg', 'Solna', 100)`,
+    [u.alice.id],
+  );
+  await rejects(
+    u.alice,
+    `INSERT INTO public.listings (owner_id, listing_type, title, category_slug, city, price)
+     VALUES ($1, 'swap', 'Byte', 'verktyg', 'Solna', 100)`,
+    [u.alice.id],
+  );
+  const [free] = await as(u.alice, saleSql, [u.alice.id, "Skänkes", 0]);
+  assert.deepEqual([free.price, free.price_day], [0, null]);
+});
+
+test("only sale listings can be marked sold, and sold listings disappear from search", async () => {
+  await rejects(u.alice, "UPDATE public.listings SET status = 'sold' WHERE id = $1", [
+    u.alice.listingId,
+  ]);
+  const [sale] = await as(u.alice, saleSql, [u.alice.id, "Skruvdragare", 450]);
+  await as(u.alice, "UPDATE public.listings SET status = 'sold' WHERE id = $1", [sale.id]);
+  assert.deepEqual(await as(null, "SELECT id FROM public.listings WHERE id = $1", [sale.id]), []);
+  assert.deepEqual(await as(u.bob, "SELECT id FROM public.listings WHERE id = $1", [sale.id]), []);
+  assert.equal(
+    (await as(u.alice, "SELECT id FROM public.listings WHERE id = $1", [sale.id])).length,
+    1,
+  );
 });
 
 // --- Reviews -------------------------------------------------------------------

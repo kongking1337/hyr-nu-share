@@ -9,8 +9,8 @@ export const Route = createFileRoute("/hyra/$kategori")({
   search: { middlewares: [stripSearchParams(DEFAULTS)] },
   head: ({ params }) => {
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;
-    const title = `Hyra ${name.toLowerCase()} – jämför priser | Hyrkoll`;
-    const description = `Hyr ${name.toLowerCase()} av privatpersoner och företag. Jämför pris, plats och leverans.`;
+    const title = `Hyra ${name.toLowerCase()} i Stockholm | Hyrkoll`;
+    const description = `Hyr ${name.toLowerCase()} av privatpersoner och företag i Stockholms län.`;
     return {
       meta: [
         { title },
@@ -28,7 +28,8 @@ export const Route = createFileRoute("/hyra/$kategori")({
 function CategoryPage() {
   const { kategori } = Route.useParams();
   const search = Route.useSearch();
-  const params = { ...search, category: kategori };
+  // /hyra-sidorna visar bara saker som hyrs ut.
+  const params = { ...search, category: kategori, type: "rent" as const };
   const { patch, reset } = useUrlSearchState(params);
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
@@ -36,8 +37,8 @@ function CategoryPage() {
       params={params}
       patch={patch}
       reset={reset}
-      heading={`Hyra ${name.toLowerCase()}`}
-      intro={`Hyr ${name.toLowerCase()} av privatpersoner och företag. Priset visas för hela din period.`}
+      heading={`Hyra ${name.toLowerCase()} i Stockholm`}
+      intro={`${name} att hyra av privatpersoner och företag i Stockholms län.`}
     />
   );
 }

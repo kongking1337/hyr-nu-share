@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
+  CircleCheck,
   Copy,
   ExternalLink,
   Pause,
@@ -27,8 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { kr } from "@/lib/pricing";
-import { scoreListing } from "@/lib/listing-quality";
+import { LISTING_TYPE_LABEL, priceLabel } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/mina-annonser")({
   head: () => ({
@@ -55,7 +55,14 @@ const TABS = [
   { key: "published", label: "Publicerade" },
   { key: "paused", label: "Pausade" },
   { key: "draft", label: "Utkast" },
+  { key: "sold", label: "Sålda" },
 ];
+
+const STATUS_TOAST: Record<string, string> = {
+  paused: "Annonsen är pausad.",
+  published: "Annonsen är publicerad.",
+  sold: "Annonsen är markerad som såld och syns inte längre i sökningen.",
+};
 
 function MyListings() {
   const { user } = useAuth();
@@ -66,26 +73,23 @@ function MyListings() {
     queryKey: ["my-listings", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [{ data: listings }, { data: bookings }] = await Promise.all([
-        supabase.from("listings").select("*").eq("owner_id", user!.id).order("created_at", { ascending: false }),
-        supabase.from("bookings").select("*").order("start_date", { ascending: true }),
-      ]);
-      return { listings: listings ?? [], bookings: bookings ?? [] };
+      const { data: listings } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("owner_id", user!.id)
+        .order("created_at", { ascending: false });
+      return { listings: listings ?? [] };
     },
   });
 
   const listings = data?.listings ?? [];
-
-  const upcoming = (data?.bookings ?? [])
-    .filter((b) => listings.some((l) => l.id === b.listing_id) && b.status === "confirmed")
-    .slice(0, 4);
 
   const filtered = tab === "all" ? listings : listings.filter((l) => (l.status ?? "published") === tab);
 
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
     if (error) { toast.error("Kunde inte uppdatera status."); return; }
-    toast.success(status === "paused" ? "Annonsen är pausad." : "Annonsen är aktiv igen.");
+    toast.success(STATUS_TOAST[status] ?? "Status uppdaterad.");
     refetch();
   }
 
@@ -124,29 +128,9 @@ function MyListings() {
             Redigera, pausa, duplicera och ta bort dina annonser.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/bud" })}>
-            Mina bud
-          </Button>
-          <Button className="rounded-full" onClick={() => navigate({ to: "/hyr-ut" })}>
-            + Ny annons
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-6 max-w-md">
-        <div className="rounded-3xl border border-border p-5">
-          <h2 className="font-display text-lg font-semibold">Kommande bokningar</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {upcoming.map((b) => (
-              <li key={b.id} className="flex justify-between">
-                <span className="text-muted-foreground">{b.start_date} – {b.end_date}</span>
-                <span className="font-medium">{kr(Number(b.total_price))}</span>
-              </li>
-            ))}
-            {!upcoming.length && <li className="text-sm text-muted-foreground">Inga bekräftade bokningar framåt.</li>}
-          </ul>
-        </div>
+        <Button className="rounded-full" onClick={() => navigate({ to: "/ny-annons" })}>
+          + Ny annons
+        </Button>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mt-8">
@@ -172,20 +156,9 @@ function MyListings() {
 
         {filtered.map((l) => {
           const meta = STATUS_META[l.status ?? "published"] ?? STATUS_META["published"]!;
-          const quality = scoreListing({
-            images: l.images ?? [],
-            title: l.title,
-            description: l.description ?? "",
-            price_day: l.price_day,
-            price_week: l.price_week,
-            price_hour: l.price_hour,
-            deposit: l.deposit,
-            city: l.city,
-            area: l.area,
-            category_slug: l.category_slug,
-            attributes: (l.attributes as Record<string, unknown>) ?? {},
-          });
-          const next = (data?.bookings ?? []).find((b) => b.listing_id === l.id && b.status === "confirmed");
+          const listingType = l.listing_type === "sale" ? "sale" : "rent";
+          const price = priceLabel({ listingType, price: l.price, priceDay: Number(l.price_day ?? 0) });
+          const active = l.status === "published" || l.status === "paused";
 
           return (
             <div key={l.id} className="rounded-3xl border border-border p-4 sm:p-5">
@@ -200,30 +173,41 @@ function MyListings() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className={`rounded-full border-0 ${meta.className}`}>{meta.label}</Badge>
                     <span className="text-xs text-muted-foreground">
-                      Publicerad {new Date(l.published_at ?? l.created_at).toLocaleDateString("sv-SE")}
+                      {LISTING_TYPE_LABEL[listingType]} · publicerad{" "}
+                      {new Date(l.published_at ?? l.created_at).toLocaleDateString("sv-SE")}
                     </span>
-                    <span className="text-xs text-muted-foreground">· Kvalitet {quality.total}/100</span>
                   </div>
                   <h3 className="mt-1 truncate font-display text-lg font-semibold">{l.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {kr(l.price_day)}/dygn · {l.city}
-                    {next ? ` · Nästa bokning ${next.start_date}` : " · Ledig"}
+                    {price} · {l.city}
                   </p>
                 </div>
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" className="rounded-full" asChild>
-                  <Link to="/hyr-ut" search={{ id: l.id }}><Pencil className="mr-1 h-4 w-4" /> Redigera</Link>
+                  <Link to="/ny-annons" search={{ id: l.id }}><Pencil className="mr-1 h-4 w-4" /> Redigera</Link>
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full"
-                  onClick={() => setStatus(l.id, l.status === "paused" ? "published" : "paused")}
-                >
-                  {l.status === "paused" ? <><Play className="mr-1 h-4 w-4" /> Aktivera</> : <><Pause className="mr-1 h-4 w-4" /> Pausa</>}
-                </Button>
+                {active && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setStatus(l.id, l.status === "paused" ? "published" : "paused")}
+                  >
+                    {l.status === "paused" ? <><Play className="mr-1 h-4 w-4" /> Aktivera</> : <><Pause className="mr-1 h-4 w-4" /> Pausa</>}
+                  </Button>
+                )}
+                {active && listingType === "sale" && (
+                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => setStatus(l.id, "sold")}>
+                    <CircleCheck className="mr-1 h-4 w-4" /> Markera som såld
+                  </Button>
+                )}
+                {l.status === "sold" && (
+                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => setStatus(l.id, "published")}>
+                    <Play className="mr-1 h-4 w-4" /> Publicera igen
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" className="rounded-full" onClick={() => duplicate(l)}>
                   <Copy className="mr-1 h-4 w-4" /> Duplicera
                 </Button>
@@ -243,7 +227,7 @@ function MyListings() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Ta bort annonsen?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        ”{l.title}” tas bort permanent. Befintliga bokningar påverkas inte.
+                        ”{l.title}” tas bort permanent.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

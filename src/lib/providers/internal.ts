@@ -8,6 +8,8 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
   const r = row as never as {
     id: string;
     owner_id: string | null;
+    listing_type: string;
+    price: number | null;
     published_at: string | null;
     created_at: string;
     title: string;
@@ -24,7 +26,7 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     review_count: number;
     booking_count: number;
     price_hour: number | null;
-    price_day: number;
+    price_day: number | null;
     price_week: number | null;
     price_month: number | null;
     deposit: number;
@@ -40,6 +42,8 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
   return {
     id: r.id,
     source: { kind: "internal", slug: "hyrkoll", name: BRAND, demo: false },
+    listingType: r.listing_type === "sale" ? "sale" : "rent",
+    price: r.price == null ? null : Number(r.price),
     title: r.title,
     description: r.description,
     category: r.category_slug,
@@ -54,7 +58,7 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     reviewCount: r.review_count,
     bookingCount: r.booking_count,
     priceHour: r.price_hour == null ? null : Number(r.price_hour),
-    priceDay: Number(r.price_day),
+    priceDay: Number(r.price_day ?? 0),
     priceWeek: r.price_week == null ? null : Number(r.price_week),
     priceMonth: r.price_month == null ? null : Number(r.price_month),
     deposit: Number(r.deposit),

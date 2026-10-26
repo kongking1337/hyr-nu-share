@@ -1,85 +1,44 @@
-import { distanceKm } from "@/lib/geo";
-import { bestBasePrice, quote } from "@/lib/pricing";
+import { distanceKm, inRegion } from "@/lib/geo";
+import { listPrice } from "@/lib/pricing";
 import type { UnifiedResult } from "@/lib/providers/types";
 import { matchesAttrFilter, parseAttrFilter, subCategoryOf } from "./attributes";
 import type { Center } from "./useSearchResults";
-import type { PriceBase, SearchParams } from "./params";
+import type { SearchParams } from "./params";
 
-export function daysBetween(from: string, to: string): number {
-  if (!from || !to) return 1;
-  const d = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000) + 1;
-  return Number.isFinite(d) ? Math.max(1, d) : 1;
-}
-
-/** Annonserat pris enligt vald prisbas. */
-export function advertisedPrice(r: UnifiedResult, base: PriceBase, days: number): number {
-  switch (base) {
-    case "hour":
-      return r.priceHour ?? Math.round(r.priceDay / 8);
-    case "week":
-      return r.priceWeek ?? r.priceDay * 6;
-    case "month":
-      return r.priceMonth ?? (r.priceWeek ?? r.priceDay * 6) * 3.6;
-    case "total":
-      return quote(r, days).total;
-    default:
-      return r.priceDay;
-  }
-}
-
-export function priceBaseLabel(base: PriceBase): string {
-  return { hour: "/tim", day: "/dygn", week: "/vecka", month: "/mån", total: " totalt" }[base];
-}
-
-export function filterResults(
-  results: UnifiedResult[],
-  p: SearchParams,
-  center: Center,
-  days: number,
-): UnifiedResult[] {
+/**
+ * Första versionen filtrerar på typ, kategori, plats, pris och säljare.
+ * Övriga fält i SearchParams (datum, leverans, bokningssätt …) finns kvar för gamla länkar men används inte.
+ */
+export function filterResults(results: UnifiedResult[], p: SearchParams, center: Center): UnifiedResult[] {
   const attrs = parseAttrFilter(p.attrs);
   return results.filter((r) => {
+    if (!inRegion(r.city)) return false;
+    if (p.type !== "all" && r.listingType !== p.type) return false;
     if (p.category !== "all" && r.category !== p.category) return false;
     if (p.sub !== "all" && subCategoryOf(r) !== p.sub) return false;
-    if (!center.nationwide && distanceKm(center.lat, center.lng, r.lat, r.lng) > p.radius) return false;
+    if (!center.wholeRegion && distanceKm(center.lat, center.lng, r.lat, r.lng) > p.radius) return false;
 
-    const price = advertisedPrice(r, p.priceBase, days);
+    const price = listPrice(r);
     if (p.priceMin && price < p.priceMin) return false;
     if (p.priceMax && price > p.priceMax) return false;
 
     if (p.owner !== "all" && r.ownerType !== p.owner) return false;
-    if (p.delivery === "delivery" && !r.deliveryAvailable) return false;
-    if (p.delivery === "pickup" && !r.pickupAvailable) return false;
-    if (p.rating && r.rating < p.rating) return false;
-    if (p.booking === "instant" && !r.instantBook) return false;
-    if (p.booking === "request" && r.instantBook) return false;
-    if (p.verified && r.source.kind !== "internal") return false;
-    if (p.noDeposit && r.deposit > 0) return false;
-    if (p.insurance && r.insuranceFee <= 0) return false;
-    if (p.availableToday && r.availableFrom && new Date(r.availableFrom) > new Date()) return false;
     if (!matchesAttrFilter(r, attrs)) return false;
     return true;
   });
 }
 
-export function sortResults(
-  results: UnifiedResult[],
-  p: SearchParams,
-  center: Center,
-  days: number,
-): UnifiedResult[] {
+export function sortResults(results: UnifiedResult[], p: SearchParams, center: Center): UnifiedResult[] {
   const dist = (r: UnifiedResult) =>
-    center.nationwide ? 0 : distanceKm(center.lat, center.lng, r.lat, r.lng);
+    center.wholeRegion ? 0 : distanceKm(center.lat, center.lng, r.lat, r.lng);
   const newest = (a: UnifiedResult, b: UnifiedResult) =>
     (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "");
   return [...results].sort((a, b) => {
     switch (p.sort) {
       case "price":
-        return bestBasePrice(a, 1).base - bestBasePrice(b, 1).base;
-      case "total":
-        return quote(a, days).total - quote(b, days).total;
+        return listPrice(a) - listPrice(b);
       case "price_desc":
-        return quote(b, days).total - quote(a, days).total;
+        return listPrice(b) - listPrice(a);
       case "distance":
         return dist(a) - dist(b);
       case "newest":

@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
+import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CATEGORY_ATTRIBUTES, SUBCATEGORIES, parseAttrFilter, stringifyAttrFilter } from "@/lib/search/attributes";
-import { PRICE_BASES, RADIUS_OPTIONS, type SearchParams } from "@/lib/search/params";
+import { RADIUS_OPTIONS, TYPE_OPTIONS, type SearchParams } from "@/lib/search/params";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { cn } from "@/lib/utils";
+import { REGION } from "@/lib/geo";
 
 type Patch = (p: Partial<SearchParams>) => void;
 
@@ -57,9 +59,28 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
   return (
     <Accordion
       type="multiple"
-      defaultValue={["kategori", "plats", "period", "pris", "uthyrare", "kalla", "ovrigt"]}
+      defaultValue={["typ", "kategori", "plats", "pris", "saljare"]}
       className="w-full"
     >
+      <AccordionItem value="typ">
+        <AccordionTrigger className="text-sm font-semibold">Typ</AccordionTrigger>
+        <AccordionContent className="flex flex-wrap gap-1.5 pb-4">
+          {TYPE_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => patch({ type: o.value })}
+              className={cn(
+                "rounded-full border border-border px-3 py-1 text-xs",
+                params.type === o.value && "border-primary bg-primary/10 text-primary",
+              )}
+            >
+              {o.label}
+            </button>
+          ))}
+        </AccordionContent>
+      </AccordionItem>
+
       <AccordionItem value="kategori">
         <AccordionTrigger className="text-sm font-semibold">Kategori</AccordionTrigger>
         <AccordionContent className="space-y-3 pb-4">
@@ -67,8 +88,8 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alla kategorier</SelectItem>
-              {Object.entries(CATEGORY_SYNONYMS).map(([slug, def]) => (
-                <SelectItem key={slug} value={slug}>{def.name}</SelectItem>
+              {ACTIVE_CATEGORIES.map((c) => (
+                <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -164,7 +185,7 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
               <button
                 key={r}
                 type="button"
-                disabled={params.location === "hela-sverige"}
+                disabled={params.location === REGION.slug}
                 onClick={() => patch({ radius: r })}
                 className={cn(
                   "rounded-full border border-border px-3 py-1 text-xs disabled:opacity-40",
@@ -178,39 +199,10 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
         </AccordionContent>
       </AccordionItem>
 
-      <AccordionItem value="period">
-        <AccordionTrigger className="text-sm font-semibold">Datum</AccordionTrigger>
-        <AccordionContent className="grid grid-cols-2 gap-2 pb-4">
-          <Row label="Från">
-            <Input type="date" value={params.from} onChange={(e) => patch({ from: e.target.value })} />
-          </Row>
-          <Row label="Till">
-            <Input type="date" value={params.to} onChange={(e) => patch({ to: e.target.value })} />
-          </Row>
-          <div className="col-span-2">
-            <Check
-              id="availableToday"
-              label="Tillgänglig idag"
-              checked={params.availableToday}
-              onChange={(v) => patch({ availableToday: v })}
-            />
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-
       <AccordionItem value="pris">
         <AccordionTrigger className="text-sm font-semibold">Pris</AccordionTrigger>
         <AccordionContent className="space-y-3 pb-4">
-          <Row label="Prisbas">
-            <Select value={params.priceBase} onValueChange={(v) => patch({ priceBase: v as SearchParams["priceBase"] })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PRICE_BASES.map((b) => (
-                  <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Row>
+          <p className="text-xs text-muted-foreground">För saker som hyrs ut gäller priset per dygn.</p>
           <div className="grid grid-cols-2 gap-2">
             <Row label="Min (kr)">
               <Input
@@ -234,10 +226,10 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
         </AccordionContent>
       </AccordionItem>
 
-      <AccordionItem value="uthyrare">
-        <AccordionTrigger className="text-sm font-semibold">Uthyrare & bokning</AccordionTrigger>
+      <AccordionItem value="saljare">
+        <AccordionTrigger className="text-sm font-semibold">Säljare</AccordionTrigger>
         <AccordionContent className="space-y-3 pb-4">
-          <Row label="Uthyrare">
+          <Row label="Säljare">
             <Select value={params.owner} onValueChange={(v) => patch({ owner: v as SearchParams["owner"] })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -247,39 +239,6 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
               </SelectContent>
             </Select>
           </Row>
-          <Row label="Leverans">
-            <Select value={params.delivery} onValueChange={(v) => patch({ delivery: v as SearchParams["delivery"] })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alla</SelectItem>
-                <SelectItem value="delivery">Med leverans</SelectItem>
-                <SelectItem value="pickup">Upphämtning</SelectItem>
-              </SelectContent>
-            </Select>
-          </Row>
-          <Row label="Bokningssätt">
-            <Select value={params.booking} onValueChange={(v) => patch({ booking: v as SearchParams["booking"] })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alla</SelectItem>
-                <SelectItem value="instant">Direktbokning</SelectItem>
-                <SelectItem value="request">Bokningsförfrågan</SelectItem>
-              </SelectContent>
-            </Select>
-          </Row>
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="ovrigt">
-        <AccordionTrigger className="text-sm font-semibold">Övrigt</AccordionTrigger>
-        <AccordionContent className="space-y-2.5 pb-4">
-          <Check id="noDeposit" label="Ingen deposition" checked={params.noDeposit} onChange={(v) => patch({ noDeposit: v })} />
-          <Check
-            id="deliveryOnly"
-            label="Leverans möjlig"
-            checked={params.delivery === "delivery"}
-            onChange={(v) => patch({ delivery: v ? "delivery" : "all" })}
-          />
         </AccordionContent>
       </AccordionItem>
     </Accordion>

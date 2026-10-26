@@ -18,10 +18,10 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
 import { Route as AuthenticatedBudRouteImport } from './routes/_authenticated/bud'
 import { Route as AuthenticatedFavoriterRouteImport } from './routes/_authenticated/favoriter'
-import { Route as AuthenticatedHyrUtRouteImport } from './routes/_authenticated/hyr-ut'
 import { Route as AuthenticatedKontoRouteImport } from './routes/_authenticated/konto'
 import { Route as AuthenticatedMeddelandenRouteImport } from './routes/_authenticated/meddelanden'
 import { Route as AuthenticatedMinaAnnonserRouteImport } from './routes/_authenticated/mina-annonser'
+import { Route as AuthenticatedNyAnnonsRouteImport } from './routes/_authenticated/ny-annons'
 import { Route as AnnonsIdRouteImport } from './routes/annons.$id'
 import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
 import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
@@ -71,11 +71,6 @@ const AuthenticatedFavoriterRoute = AuthenticatedFavoriterRouteImport.update({
   path: '/favoriter',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedHyrUtRoute = AuthenticatedHyrUtRouteImport.update({
-  id: '/hyr-ut',
-  path: '/hyr-ut',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedKontoRoute = AuthenticatedKontoRouteImport.update({
   id: '/konto',
   path: '/konto',
@@ -93,6 +88,11 @@ const AuthenticatedMinaAnnonserRoute =
     path: '/mina-annonser',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedNyAnnonsRoute = AuthenticatedNyAnnonsRouteImport.update({
+  id: '/ny-annons',
+  path: '/ny-annons',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AnnonsIdRoute = AnnonsIdRouteImport.update({
   id: '/annons/$id',
   path: '/annons/$id',
@@ -124,10 +124,10 @@ export interface FileRoutesByFullPath {
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/bud': typeof AuthenticatedBudRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
-  '/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/konto': typeof AuthenticatedKontoRoute
   '/meddelanden': typeof AuthenticatedMeddelandenRoute
   '/mina-annonser': typeof AuthenticatedMinaAnnonserRoute
+  '/ny-annons': typeof AuthenticatedNyAnnonsRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -142,10 +142,10 @@ export interface FileRoutesByTo {
   '/bokningar': typeof AuthenticatedBokningarRoute
   '/bud': typeof AuthenticatedBudRoute
   '/favoriter': typeof AuthenticatedFavoriterRoute
-  '/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/konto': typeof AuthenticatedKontoRoute
   '/meddelanden': typeof AuthenticatedMeddelandenRoute
   '/mina-annonser': typeof AuthenticatedMinaAnnonserRoute
+  '/ny-annons': typeof AuthenticatedNyAnnonsRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -162,10 +162,10 @@ export interface FileRoutesById {
   '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
   '/_authenticated/bud': typeof AuthenticatedBudRoute
   '/_authenticated/favoriter': typeof AuthenticatedFavoriterRoute
-  '/_authenticated/hyr-ut': typeof AuthenticatedHyrUtRoute
   '/_authenticated/konto': typeof AuthenticatedKontoRoute
   '/_authenticated/meddelanden': typeof AuthenticatedMeddelandenRoute
   '/_authenticated/mina-annonser': typeof AuthenticatedMinaAnnonserRoute
+  '/_authenticated/ny-annons': typeof AuthenticatedNyAnnonsRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
@@ -182,10 +182,10 @@ export interface FileRouteTypes {
     | '/bokningar'
     | '/bud'
     | '/favoriter'
-    | '/hyr-ut'
     | '/konto'
     | '/meddelanden'
     | '/mina-annonser'
+    | '/ny-annons'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -200,10 +200,10 @@ export interface FileRouteTypes {
     | '/bokningar'
     | '/bud'
     | '/favoriter'
-    | '/hyr-ut'
     | '/konto'
     | '/meddelanden'
     | '/mina-annonser'
+    | '/ny-annons'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -219,10 +219,10 @@ export interface FileRouteTypes {
     | '/_authenticated/bokningar'
     | '/_authenticated/bud'
     | '/_authenticated/favoriter'
-    | '/_authenticated/hyr-ut'
     | '/_authenticated/konto'
     | '/_authenticated/meddelanden'
     | '/_authenticated/mina-annonser'
+    | '/_authenticated/ny-annons'
     | '/annons/$id'
     | '/hyra/$kategori'
     | '/hyra/$stad/$kategori'
@@ -305,13 +305,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFavoriterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/hyr-ut': {
-      id: '/_authenticated/hyr-ut'
-      path: '/hyr-ut'
-      fullPath: '/hyr-ut'
-      preLoaderRoute: typeof AuthenticatedHyrUtRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/konto': {
       id: '/_authenticated/konto'
       path: '/konto'
@@ -331,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/mina-annonser'
       fullPath: '/mina-annonser'
       preLoaderRoute: typeof AuthenticatedMinaAnnonserRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ny-annons': {
+      id: '/_authenticated/ny-annons'
+      path: '/ny-annons'
+      fullPath: '/ny-annons'
+      preLoaderRoute: typeof AuthenticatedNyAnnonsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/annons/$id': {
@@ -369,10 +369,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBokningarRoute: typeof AuthenticatedBokningarRoute
   AuthenticatedBudRoute: typeof AuthenticatedBudRoute
   AuthenticatedFavoriterRoute: typeof AuthenticatedFavoriterRoute
-  AuthenticatedHyrUtRoute: typeof AuthenticatedHyrUtRoute
   AuthenticatedKontoRoute: typeof AuthenticatedKontoRoute
   AuthenticatedMeddelandenRoute: typeof AuthenticatedMeddelandenRoute
   AuthenticatedMinaAnnonserRoute: typeof AuthenticatedMinaAnnonserRoute
+  AuthenticatedNyAnnonsRoute: typeof AuthenticatedNyAnnonsRoute
   AuthenticatedAnnonserIdStatistikRoute: typeof AuthenticatedAnnonserIdStatistikRoute
 }
 
@@ -381,10 +381,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBokningarRoute: AuthenticatedBokningarRoute,
   AuthenticatedBudRoute: AuthenticatedBudRoute,
   AuthenticatedFavoriterRoute: AuthenticatedFavoriterRoute,
-  AuthenticatedHyrUtRoute: AuthenticatedHyrUtRoute,
   AuthenticatedKontoRoute: AuthenticatedKontoRoute,
   AuthenticatedMeddelandenRoute: AuthenticatedMeddelandenRoute,
   AuthenticatedMinaAnnonserRoute: AuthenticatedMinaAnnonserRoute,
+  AuthenticatedNyAnnonsRoute: AuthenticatedNyAnnonsRoute,
   AuthenticatedAnnonserIdStatistikRoute: AuthenticatedAnnonserIdStatistikRoute,
 }
 

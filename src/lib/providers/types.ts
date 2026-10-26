@@ -17,9 +17,15 @@ export type ResultSource = {
   demo: boolean;
 };
 
+export type ListingType = "sale" | "rent";
+
 export type UnifiedResult = {
   id: string;
   source: ResultSource;
+  /** "sale" = säljes (pris i `price`), "rent" = uthyres (pris per dygn i `priceDay`) */
+  listingType: ListingType;
+  /** Försäljningspris i kr; 0 = skänkes. Endast för listingType "sale". */
+  price: number | null;
   title: string;
   description: string;
   category: string;
@@ -34,6 +40,7 @@ export type UnifiedResult = {
   reviewCount: number;
   bookingCount: number;
   priceHour?: number | null;
+  /** Pris per dygn; 0 för annonser som säljes */
   priceDay: number;
   priceWeek?: number | null;
   priceMonth?: number | null;

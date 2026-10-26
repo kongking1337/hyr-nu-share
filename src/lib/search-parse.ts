@@ -157,10 +157,11 @@ export function parseSearch(raw: string): ParsedSearch {
 }
 
 export const EXAMPLE_QUERIES = [
-  "Jag behöver en högtryckstvätt nära Solna över helgen",
-  "Billigaste släpvagnen inom 20 km från Göteborg på lördag",
-  "Systemkamera i Stockholm en vecka",
-  "Partytält till bröllop i Uppsala",
+  "Hyra släpvagn i Huddinge",
+  "Begagnad barnvagn i Nacka",
+  "Högtryckstvätt nära Solna",
+  "Billig skruvdragare",
+  "Partytält i Täby",
 ];
 
 export const CITY_OPTIONS = CITIES;

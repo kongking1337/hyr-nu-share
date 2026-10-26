@@ -1,6 +1,8 @@
+import { CITIES, REGION } from "@/lib/geo";
+
 /**
  * Delbar URL-modell för /sok.
- * Exempel: /sok?q=slapvagn&location=stockholm&radius=25&priceMax=500&sort=price
+ * Exempel: /sok?q=slapvagn&type=rent&location=solna&radius=10&priceMax=500&sort=price
  */
 export type SortKey =
   | "recommended"
@@ -14,14 +16,14 @@ export type SortKey =
 
 export const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "recommended", label: "Rekommenderat" },
-  { value: "price", label: "Billigast (dagspris)" },
-  { value: "total", label: "Lägsta totalpris" },
-  { value: "price_desc", label: "Dyrast" },
+  { value: "price", label: "Lägst pris" },
+  { value: "price_desc", label: "Högst pris" },
   { value: "distance", label: "Närmast" },
   { value: "newest", label: "Nyast" },
 ];
 
-// "rating" och "popular" byggde på påhittade betyg och bokningar; gamla länkar får standardsorteringen.
+// "rating" och "popular" byggde på påhittade betyg och bokningar, och "total" på hyresperioden.
+// Gamla länkar med dem får standardsorteringen.
 const sortKey = (v: string): SortKey =>
   SORT_OPTIONS.some((o) => o.value === v) ? (v as SortKey) : "recommended";
 
@@ -35,10 +37,21 @@ export const PRICE_BASES: Array<{ value: PriceBase; label: string }> = [
   { value: "total", label: "Totalpris" },
 ];
 
-export const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 250];
+export const RADIUS_OPTIONS = [5, 10, 25, 50];
+
+export type ListingTypeFilter = "all" | "sale" | "rent";
+
+export const TYPE_OPTIONS: Array<{ value: ListingTypeFilter; label: string }> = [
+  { value: "all", label: "Säljes och uthyres" },
+  { value: "sale", label: "Säljes" },
+  { value: "rent", label: "Uthyres" },
+];
+
+const LOCATION_SLUGS = new Set([REGION.slug, "nara-mig", ...CITIES.map((c) => c.slug)]);
 
 export type SearchParams = {
   q: string;
+  type: ListingTypeFilter;
   location: string;
   radius: number;
   category: string;
@@ -65,7 +78,8 @@ export type SearchParams = {
 
 export const DEFAULTS: SearchParams = {
   q: "",
-  location: "hela-sverige",
+  type: "all",
+  location: REGION.slug,
   radius: 25,
   category: "all",
   sub: "all",
@@ -94,12 +108,16 @@ const num = (v: unknown, d: number) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
 };
+const oneOf = <T extends string>(v: unknown, allowed: readonly T[], d: T): T =>
+  allowed.includes(v as T) ? (v as T) : d;
 const bool = (v: unknown, d: boolean) => (v === true || v === "true" ? true : v === false || v === "false" ? false : d);
 
 export function validateSearchParams(search: Partial<Record<keyof SearchParams, unknown>>): SearchParams {
   return {
     q: str(search["q"], DEFAULTS.q),
-    location: str(search["location"], DEFAULTS.location),
+    type: oneOf(search["type"], TYPE_OPTIONS.map((o) => o.value), DEFAULTS.type),
+    // Okända platser (t.ex. gamla länkar till Göteborg) blir hela Stockholm.
+    location: oneOf(search["location"], [...LOCATION_SLUGS], DEFAULTS.location),
     radius: num(search["radius"], DEFAULTS.radius),
     category: str(search["category"], DEFAULTS.category),
     sub: str(search["sub"], DEFAULTS.sub),

@@ -8,14 +8,14 @@ export const Route = createFileRoute("/sok")({
   search: { middlewares: [stripSearchParams(DEFAULTS)] },
   head: () => ({
     meta: [
-      { title: "Sök och jämför uthyrning – Hyrkoll" },
+      { title: "Sök annonser i Stockholm – Hyrkoll" },
       {
         name: "description",
         content:
-          "Sök på vanlig svenska, filtrera på kategori, plats, radie, datum och pris – och sortera på verkligt totalpris för din hyresperiod.",
+          "Sök på vanlig svenska bland saker som säljs och hyrs ut i Stockholms län. Filtrera på kategori, plats och pris.",
       },
-      { property: "og:title", content: "Sök och jämför uthyrning – Hyrkoll" },
-      { property: "og:description", content: "Sortera på verklig totalkostnad." },
+      { property: "og:title", content: "Sök annonser i Stockholm – Hyrkoll" },
+      { property: "og:description", content: "Köp, sälj och hyr i Stockholms län." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

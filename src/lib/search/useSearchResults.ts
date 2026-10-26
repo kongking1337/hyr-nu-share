@@ -2,21 +2,22 @@ import { useQueries } from "@tanstack/react-query";
 import { providers } from "@/lib/providers";
 import type { UnifiedResult } from "@/lib/providers/types";
 import type { SearchParams } from "./params";
-import { CITIES, cityBySlug } from "@/lib/geo";
+import { CITIES, REGION, cityBySlug } from "@/lib/geo";
 
-export type Center = { lat: number; lng: number; label: string; nationwide: boolean };
+/** wholeRegion = sök i hela Stockholms län utan avståndsgräns. */
+export type Center = { lat: number; lng: number; label: string; wholeRegion: boolean };
 
 export const LOCATIONS = [
-  { slug: "hela-sverige", name: "Hela Sverige" },
+  { slug: REGION.slug, name: REGION.name },
   { slug: "nara-mig", name: "Nära mig" },
   ...CITIES.map((c) => ({ slug: c.slug, name: c.name })),
 ];
 
 export function resolveCenter(slug: string, myPos?: { lat: number; lng: number } | null): Center {
-  if (slug === "nara-mig" && myPos) return { ...myPos, label: "Nära mig", nationwide: false };
+  if (slug === "nara-mig" && myPos) return { ...myPos, label: "Nära mig", wholeRegion: false };
   const city = cityBySlug(slug);
-  if (city) return { lat: city.lat, lng: city.lng, label: city.name, nationwide: false };
-  return { lat: 62.0, lng: 15.0, label: "Hela Sverige", nationwide: true };
+  if (city) return { lat: city.lat, lng: city.lng, label: city.name, wholeRegion: false };
+  return { lat: REGION.lat, lng: REGION.lng, label: REGION.name, wholeRegion: true };
 }
 
 export type SourceState = {
@@ -42,13 +43,13 @@ export function useSearchResults(params: SearchParams, center: Center) {
 
   const queries = useQueries({
     queries: selected.map((p) => ({
-      queryKey: ["search", p.slug, params.q, params.category, center.label, center.nationwide ? 0 : params.radius],
+      queryKey: ["search", p.slug, params.q, params.category, center.label, center.wholeRegion ? 0 : params.radius],
       queryFn: () =>
         p.search({
           text: params.q,
           category: params.category === "all" ? null : params.category,
-          city: center.nationwide ? null : center.label,
-          ...(center.nationwide ? {} : { lat: center.lat, lng: center.lng, radiusKm: params.radius }),
+          city: center.wholeRegion ? null : center.label,
+          ...(center.wholeRegion ? {} : { lat: center.lat, lng: center.lng, radiusKm: params.radius }),
           startDate: params.from || null,
           endDate: params.to || null,
         }),

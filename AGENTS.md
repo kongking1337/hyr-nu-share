@@ -17,5 +17,9 @@
   Platform-owned columns (ratings, counters, seller name, verification) are kept
   by `*_guard` triggers in the `private` schema; see
   `supabase/migrations/20261026120000_harden_permissions.sql`.
+- First version (docs/mvp-plan.md): listings are "sale" or "rent" (`listing_type`),
+  only in Stockholm county (`src/lib/geo.ts`), and the visible categories are listed in
+  `src/lib/categories.ts`. Bookings, bids, comparison, company profiles and the
+  statistics page are hidden from the UI but their code and tables remain.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just
   the Vite config package and stays. Background: `docs/migration-plan.md`.

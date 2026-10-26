@@ -7,6 +7,7 @@ import { suggest, type Suggestion } from "@/lib/search/suggest";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { RADIUS_OPTIONS } from "@/lib/search/params";
 import { cn } from "@/lib/utils";
+import { REGION } from "@/lib/geo";
 
 const ICONS = {
   term: Search,
@@ -103,8 +104,8 @@ export function SearchBar({
                 pick(items[active]!);
               } else if (e.key === "Escape") setOpen(false);
             }}
-            placeholder="Vad vill du hyra?"
-            aria-label="Vad vill du hyra?"
+            placeholder="Vad letar du efter?"
+            aria-label="Vad letar du efter?"
             className={cn(h, "rounded-2xl pl-12 text-base")}
           />
         </div>
@@ -138,7 +139,7 @@ export function SearchBar({
         >
           <SelectTrigger
             className={cn(h, "rounded-2xl md:w-[120px]")}
-            disabled={loc === "hela-sverige"}
+            disabled={loc === REGION.slug}
             aria-label="Radie"
           >
             <SelectValue />

@@ -1,24 +1,28 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, LayoutList, Menu, MessageSquare, Moon, Plus, Scale, Sun, User } from "lucide-react";
+import { Heart, LayoutList, Menu, MessageSquare, Moon, Plus, Search, Sun, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useTheme } from "@/hooks/useTheme";
-import { useCompare } from "@/hooks/useCompare";
-
-const NAV = [
-  { to: "/sok", label: "Sök & jämför" },
-  { to: "/hyra/slapvagn", label: "Släpvagn" },
-  { to: "/hyra/verktyg", label: "Verktyg" },
-  { to: "/hyra/kamera", label: "Kamera" },
-];
+import { DEFAULTS } from "@/lib/search/params";
 
 export function Header() {
   const { dark, toggle } = useTheme();
   const { user } = useAuth();
-  const { items } = useCompare();
+  const isAdmin = useIsAdmin();
   const [open, setOpen] = useState(false);
+
+  const mobileLinks = [
+    { to: "/sok", label: "Sök" },
+    { to: "/ny-annons", label: "+ Lägg upp annons" },
+    ...(user ? [{ to: "/mina-annonser", label: "Mina annonser" }] : []),
+    { to: "/meddelanden", label: "Meddelanden" },
+    { to: "/favoriter", label: "Favoriter" },
+    { to: user ? "/konto" : "/auth", label: user ? "Mitt konto" : "Logga in" },
+    ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-xl">
@@ -31,31 +35,19 @@ export function Header() {
         </Link>
 
         <nav className="ml-4 hidden items-center gap-1 md:flex">
-          {NAV.map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              className="rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              {n.label}
-            </Link>
-          ))}
+          <Link
+            to="/sok"
+            search={DEFAULTS}
+            className="flex items-center gap-1 rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Search className="h-4 w-4" /> Sök
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
           <Button variant="ghost" size="icon" onClick={toggle} aria-label="Växla mörkt läge">
             {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
-          <Link to="/jamfor" className="relative hidden sm:block">
-            <Button variant="ghost" size="icon" aria-label="Jämför">
-              <Scale className="h-5 w-5" />
-            </Button>
-            {items.length > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid h-4 w-4 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                {items.length}
-              </span>
-            )}
-          </Link>
           <Link to="/favoriter" className="hidden sm:block">
             <Button variant="ghost" size="icon" aria-label="Favoriter">
               <Heart className="h-5 w-5" />
@@ -73,9 +65,9 @@ export function Header() {
               </Button>
             </Link>
           )}
-          <Link to="/hyr-ut" className="hidden sm:block">
+          <Link to="/ny-annons" className="hidden sm:block">
             <Button className="rounded-full" size="sm">
-              <Plus className="mr-1 h-4 w-4" /> Hyr ut
+              <Plus className="mr-1 h-4 w-4" /> Lägg upp annons
             </Button>
           </Link>
           <Link to={user ? "/konto" : "/auth"} className="hidden sm:block">
@@ -92,18 +84,7 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <div className="mt-8 flex flex-col gap-1">
-                {[
-                  { to: "/sok", label: "Sök & jämför" },
-                  { to: "/hyr-ut", label: "+ Hyr ut" },
-                  { to: "/mina-annonser", label: "Mina annonser" },
-                  { to: "/bud", label: "Mina bud" },
-                  { to: "/bokningar", label: "Bokningar" },
-                  { to: "/meddelanden", label: "Meddelanden" },
-                  { to: "/favoriter", label: "Favoriter" },
-                  { to: "/jamfor", label: "Jämför" },
-                  { to: user ? "/konto" : "/auth", label: user ? "Mitt konto" : "Logga in" },
-                  { to: "/admin", label: "Admin" },
-                ].map((n) => (
+                {mobileLinks.map((n) => (
                   <Link
                     key={n.to}
                     to={n.to}

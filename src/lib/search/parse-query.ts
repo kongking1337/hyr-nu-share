@@ -16,23 +16,33 @@ export type QueryIntent = {
 export function interpretQuery(raw: string): QueryIntent {
   const base = parseSearch(raw);
   const n = normalize(raw);
-  const notes = [...base.notes];
+  // Datum och betyg används inte i första versionen, så de visas inte som tolkning.
+  const notes = base.notes
+    .filter((note) => !/^Period:|bäst betyg/.test(note))
+    .map((note) => (note === "Sortering: lägsta totalpris" ? "Sortering: lägst pris" : note));
   const patch: Partial<SearchParams> = {};
 
   if (base.category) patch.category = base.category;
   if (base.cityName) patch.location = normalize(base.cityName).replace(/ /g, "-");
   if (base.radiusKm) patch.radius = base.radiusKm;
-  if (base.startDate) patch.from = base.startDate;
-  if (base.endDate) patch.to = base.endDate;
   if (base.sort) {
-    const map: Record<string, SortKey> = { price_asc: "total", distance: "distance" };
+    const map: Record<string, SortKey> = { price_asc: "price", distance: "distance" };
     patch.sort = map[base.sort] ?? "recommended";
   }
 
-  // "billig" utan explicit sortering → lägsta totalpris
+  // "köpa", "begagnad" → säljes; "hyra" → uthyres
+  if (/\b(kop|kopa|koper|begagnad|saljes|skankes|gratis)\b/.test(n)) {
+    patch.type = "sale";
+    notes.push("Annonstyp: säljes");
+  } else if (/\bhyr/.test(n)) {
+    patch.type = "rent";
+    notes.push("Annonstyp: uthyres");
+  }
+
+  // "billig" utan explicit sortering → lägst pris
   if (/\bbillig|prisvard|budget/.test(n) && !patch.sort) {
-    patch.sort = "total";
-    notes.push("Sortering: lägsta totalpris");
+    patch.sort = "price";
+    notes.push("Sortering: lägst pris");
   }
 
   // "nära mig"

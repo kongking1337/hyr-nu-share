@@ -7,11 +7,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SearchBar } from "@/components/search/SearchBar";
 import { FilterPanel } from "@/components/search/FilterPanel";
 import { ActiveFilterChips, activeChips } from "@/components/search/ActiveFilterChips";
-import { ResultCard } from "@/components/search/ResultCard";
+import { ListingCard } from "@/components/ListingCard";
 import { SaveSearchButton } from "@/components/SaveSearchButton";
 import { distanceKm } from "@/lib/geo";
 import { dedupe } from "@/lib/search/dedupe";
-import { daysBetween, filterResults, sortResults } from "@/lib/search/filter-sort";
+import { filterResults, sortResults } from "@/lib/search/filter-sort";
 import { SORT_OPTIONS, type SearchParams } from "@/lib/search/params";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
@@ -48,15 +48,14 @@ export function SearchResultsPage({
   }, [params.location, myPos]);
 
   const center = resolveCenter(params.location, myPos);
-  const days = daysBetween(params.from, params.to);
 
   const { results, sources, internalLoading, externalLoading } = useSearchResults(params, center);
 
   const groups = useMemo(() => {
-    const filtered = filterResults(results, params, center, days);
-    const sorted = sortResults(filtered, params, center, days);
+    const filtered = filterResults(results, params, center);
+    const sorted = sortResults(filtered, params, center);
     return dedupe(sorted);
-  }, [results, params, center, days]);
+  }, [results, params, center]);
 
   const visible = groups.slice(0, params.page * PAGE_SIZE);
   const chipCount = activeChips(params).length;
@@ -115,7 +114,6 @@ export function SearchResultsPage({
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
             <p className="min-w-0 truncate text-sm text-muted-foreground">
               {internalLoading ? "Söker…" : `${resultCount} träffar`}
-              {` · period ${days} dygn`}
             </p>
 
             <div className="flex shrink-0 items-center gap-2">
@@ -202,14 +200,12 @@ export function SearchResultsPage({
             )}
           >
             {visible.map((g) => (
-              <ResultCard
+              <ListingCard
                 key={g.key}
-                group={g}
-                days={days}
-                priceBase={params.priceBase}
+                result={g.primary}
                 layout={params.view === "list" ? "list" : "grid"}
-                distance={
-                  center.nationwide ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
+                distanceKm={
+                  center.wholeRegion ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
                 }
               />
             ))}

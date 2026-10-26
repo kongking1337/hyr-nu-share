@@ -322,13 +322,15 @@ export type Database = {
           instant_book: boolean
           insurance_fee: number
           lat: number
+          listing_type: string
           lng: number
           offer_validity_hours: number
           owner_id: string | null
           owner_name: string
           owner_type: Database["public"]["Enums"]["account_type"]
           pickup_available: boolean
-          price_day: number
+          price: number | null
+          price_day: number | null
           price_hour: number | null
           price_month: number | null
           price_week: number | null
@@ -365,13 +367,15 @@ export type Database = {
           instant_book?: boolean
           insurance_fee?: number
           lat?: number
+          listing_type?: string
           lng?: number
           offer_validity_hours?: number
           owner_id?: string | null
           owner_name?: string
           owner_type?: Database["public"]["Enums"]["account_type"]
           pickup_available?: boolean
-          price_day: number
+          price?: number | null
+          price_day?: number | null
           price_hour?: number | null
           price_month?: number | null
           price_week?: number | null
@@ -408,13 +412,15 @@ export type Database = {
           instant_book?: boolean
           insurance_fee?: number
           lat?: number
+          listing_type?: string
           lng?: number
           offer_validity_hours?: number
           owner_id?: string | null
           owner_name?: string
           owner_type?: Database["public"]["Enums"]["account_type"]
           pickup_available?: boolean
-          price_day?: number
+          price?: number | null
+          price_day?: number | null
           price_hour?: number | null
           price_month?: number | null
           price_week?: number | null

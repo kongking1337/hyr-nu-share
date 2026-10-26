@@ -1,5 +1,20 @@
 import type { UnifiedResult } from "./providers/types";
 
+type Priced = Pick<UnifiedResult, "listingType" | "price" | "priceDay">;
+
+/** Priset annonsen visar: försäljningspris för säljes, pris per dygn för uthyres. */
+export function listPrice(r: Priced): number {
+  return r.listingType === "sale" ? (r.price ?? 0) : r.priceDay;
+}
+
+/** "1 500 kr", "Skänkes" eller "199 kr/dygn". */
+export function priceLabel(r: Priced): string {
+  if (r.listingType === "sale") return r.price ? kr(r.price) : "Skänkes";
+  return `${kr(r.priceDay)}/dygn`;
+}
+
+export const LISTING_TYPE_LABEL = { sale: "Säljes", rent: "Uthyres" } as const;
+
 export type Quote = {
   days: number;
   base: number;

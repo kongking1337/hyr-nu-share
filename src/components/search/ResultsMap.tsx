@@ -20,7 +20,7 @@ export function ResultsMap({
   onSearchArea: () => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
-  const spread = center.nationwide ? 8 : Math.max(radiusKm / 60, 0.15);
+  const spread = center.wholeRegion ? 8 : Math.max(radiusKm / 60, 0.15);
   const active = results.find((r) => r.id === selected);
 
   return (
@@ -33,7 +33,7 @@ export function ResultsMap({
           backgroundSize: "48px 48px",
         }}
       />
-      {!center.nationwide && (
+      {!center.wholeRegion && (
         <div className="absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-primary/50 bg-primary/5" />
       )}
 

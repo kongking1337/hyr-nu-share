@@ -40,7 +40,7 @@ function FavoritesPage() {
         {(data?.favs ?? []).map((f) => {
           const row = (f as { listings: Record<string, unknown> | null }).listings;
           if (!row) return null;
-          return <ListingCard key={f.id} result={rowToUnified(row)} days={2} />;
+          return <ListingCard key={f.id} result={rowToUnified(row)} />;
         })}
       </div>
       {data?.favs.length === 0 && <p className="mt-4 text-muted-foreground">Inga sparade annonser ännu.</p>}
