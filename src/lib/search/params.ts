@@ -19,9 +19,11 @@ export const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "price_desc", label: "Dyrast" },
   { value: "distance", label: "Närmast" },
   { value: "newest", label: "Nyast" },
-  { value: "rating", label: "Bäst betyg" },
-  { value: "popular", label: "Populärast" },
 ];
+
+// "rating" och "popular" byggde på påhittade betyg och bokningar; gamla länkar får standardsorteringen.
+const sortKey = (v: string): SortKey =>
+  SORT_OPTIONS.some((o) => o.value === v) ? (v as SortKey) : "recommended";
 
 export type PriceBase = "hour" | "day" | "week" | "month" | "total";
 
@@ -115,7 +117,7 @@ export function validateSearchParams(search: Partial<Record<keyof SearchParams, 
     noDeposit: bool(search["noDeposit"], DEFAULTS.noDeposit),
     insurance: bool(search["insurance"], DEFAULTS.insurance),
     availableToday: bool(search["availableToday"], DEFAULTS.availableToday),
-    sort: str(search["sort"], DEFAULTS.sort) as SortKey,
+    sort: sortKey(str(search["sort"], DEFAULTS.sort)),
     view: str(search["view"], DEFAULTS.view) as SearchParams["view"],
     page: Math.max(1, num(search["page"], DEFAULTS.page)),
     attrs: str(search["attrs"], DEFAULTS.attrs),

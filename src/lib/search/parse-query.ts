@@ -25,7 +25,7 @@ export function interpretQuery(raw: string): QueryIntent {
   if (base.startDate) patch.from = base.startDate;
   if (base.endDate) patch.to = base.endDate;
   if (base.sort) {
-    const map: Record<string, SortKey> = { price_asc: "total", distance: "distance", rating: "rating" };
+    const map: Record<string, SortKey> = { price_asc: "total", distance: "distance" };
     patch.sort = map[base.sort] ?? "recommended";
   }
 

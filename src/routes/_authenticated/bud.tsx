@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { kr } from "@/lib/pricing";
 import { DATA_WEIGHT_NOTE, offerStats, type OfferRow } from "@/lib/offers";
-import { DEMO_INCOMING_OFFERS, DEMO_OUTGOING_OFFERS } from "@/lib/demo-offers";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/bud")({
@@ -52,20 +51,11 @@ function OffersPage() {
     ...(o.listings?.images?.[0] ? { listingImage: o.listings.images[0] } : {}),
   });
 
-  const list: OfferView[] = tab === "owner" ? asOwner.map(toView) : asRenter.map(toView);
-  const demo: OfferView[] = tab === "owner" ? DEMO_INCOMING_OFFERS : DEMO_OUTGOING_OFFERS;
-  const showDemo = list.length === 0;
-  const shown = showDemo ? demo : list;
+  const shown: OfferView[] = tab === "owner" ? asOwner.map(toView) : asRenter.map(toView);
 
-  const stats = offerStats(
-    (showDemo ? demo : list).map((o) => o as OfferRow),
-  );
+  const stats = offerStats(shown.map((o) => o as OfferRow));
 
   async function respond(id: string, action: OfferAction, amount?: number) {
-    if (id.startsWith("demo-")) {
-      toast.info("Det här är ett demobud – prova hela flödet på en riktig annons som tar emot bud.");
-      return;
-    }
     const { error } = await supabase.rpc("respond_offer", {
       _offer_id: id,
       _action: action,
@@ -107,12 +97,6 @@ function OffersPage() {
         ))}
       </div>
 
-      {showDemo && (
-        <p className="mt-4 rounded-2xl bg-amber-500/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
-          Du har inga {tab === "owner" ? "inkomna" : "egna"} bud ännu – nedan visas demobud så att du kan se hur flödet ser ut.
-        </p>
-      )}
-
       <section className="mt-6 space-y-3">
         <h2 className="font-display text-lg font-semibold">Aktiva ({open.length})</h2>
         {open.length === 0 && <p className="text-sm text-muted-foreground">Inga aktiva bud just nu.</p>}
@@ -121,8 +105,6 @@ function OffersPage() {
             key={o.id}
             offer={o}
             role={tab}
-            showAssessment={tab === "owner"}
-            marketTotal={Number(o.list_total) * 0.92}
             onAction={(a, amt) => respond(o.id, a, amt)}
           />
         ))}

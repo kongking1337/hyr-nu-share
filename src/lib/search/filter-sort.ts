@@ -70,6 +70,8 @@ export function sortResults(
 ): UnifiedResult[] {
   const dist = (r: UnifiedResult) =>
     center.nationwide ? 0 : distanceKm(center.lat, center.lng, r.lat, r.lng);
+  const newest = (a: UnifiedResult, b: UnifiedResult) =>
+    (b.publishedAt ?? "").localeCompare(a.publishedAt ?? "");
   return [...results].sort((a, b) => {
     switch (p.sort) {
       case "price":
@@ -81,20 +83,10 @@ export function sortResults(
       case "distance":
         return dist(a) - dist(b);
       case "newest":
-        return (b.availableFrom ?? "").localeCompare(a.availableFrom ?? "") || b.bookingCount - a.bookingCount;
-      case "rating":
-        return b.rating - a.rating;
-      case "popular":
-        return b.bookingCount - a.bookingCount;
-      default: {
-        const s = (r: UnifiedResult) =>
-          r.rating * 18 +
-          Math.min(r.reviewCount, 120) * 0.4 +
-          (r.source.kind === "internal" ? 25 : 0) +
-          (r.instantBook ? 8 : 0) -
-          dist(r) * 0.3;
-        return s(b) - s(a);
-      }
+        return newest(a, b);
+      default:
+        // Riktiga annonser före exempelannonser, sedan närmast, sedan nyast.
+        return Number(!!a.example) - Number(!!b.example) || dist(a) - dist(b) || newest(a, b);
     }
   });
 }

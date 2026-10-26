@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Gavel, Heart, Layers, MapPin, Sparkles, Star, Zap } from "lucide-react";
+import { ExternalLink, Gavel, Heart, Layers, MapPin, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ExampleBadge } from "@/components/ExampleBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { kr, quote } from "@/lib/pricing";
@@ -9,7 +10,6 @@ import { advertisedPrice, priceBaseLabel } from "@/lib/search/filter-sort";
 import type { PriceBase } from "@/lib/search/params";
 import type { ResultGroup } from "@/lib/search/dedupe";
 import type { UnifiedResult } from "@/lib/providers/types";
-import { marketIndicator } from "@/lib/price-insights";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -22,37 +22,18 @@ function specLine(r: UnifiedResult): string {
   return parts.join(" · ");
 }
 
-function SourceTag({ r }: { r: UnifiedResult }) {
-  const internal = r.source.kind === "internal";
-  return (
-    <span
-      className={cn(
-        "rounded-full px-2.5 py-1 text-[11px] font-semibold",
-        internal ? "bg-primary text-primary-foreground" : "bg-foreground/85 text-background",
-      )}
-    >
-      {internal ? `På ${r.source.name}` : `Från ${r.source.name}`}
-    </span>
-  );
-}
-
 export function ResultCard({
   group,
   days,
   distance,
   priceBase,
   layout,
-  marketDay,
-  marketSample,
 }: {
   group: ResultGroup;
   days: number;
   distance: number | null;
   priceBase: PriceBase;
   layout: "grid" | "list";
-  /** Medianpris per dygn bland jämförbara träffar – underlag för marknadsindikatorn */
-  marketDay?: number | null;
-  marketSample?: number;
 }) {
   const r = group.primary;
   const [openOffers, setOpenOffers] = useState(false);
@@ -60,8 +41,7 @@ export function ResultCard({
   const q = quote(r, days);
   const ads = advertisedPrice(r, priceBase, days);
   const internal = r.source.kind === "internal";
-
-  const indicator = marketIndicator(r.priceDay, marketDay, marketSample ?? 0);
+  const canOffer = internal && r.allowOffers && !r.example;
 
   const cheapest = [...group.offers].sort((a, b) => quote(a, days).total - quote(b, days).total)[0]!;
 
@@ -88,8 +68,8 @@ export function ResultCard({
         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
       />
       <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-        <SourceTag r={r} />
-        {r.allowOffers && (
+        {r.example && <ExampleBadge />}
+        {canOffer && (
           <span className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-foreground">
             <Gavel className="h-3 w-3" /> Bud välkomna
           </span>
@@ -114,11 +94,6 @@ export function ResultCard({
     <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-display text-base font-semibold leading-tight">{r.title}</h3>
-        <span className="flex shrink-0 items-center gap-1 text-sm">
-          <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-          {r.rating.toFixed(1)}
-          <span className="text-muted-foreground">({r.reviewCount})</span>
-        </span>
       </div>
 
       <p className="text-xs text-muted-foreground">{specLine(r)}</p>
@@ -153,21 +128,6 @@ export function ResultCard({
         </div>
       </div>
 
-      {indicator && (
-        <p
-          className={cn(
-            "flex items-center gap-1 text-[11px] font-medium",
-            indicator.tone === "good" && "text-emerald-600 dark:text-emerald-400",
-            indicator.tone === "high" && "text-amber-600 dark:text-amber-400",
-            indicator.tone === "neutral" && "text-muted-foreground",
-          )}
-          title="AI-uppskattning baserad på jämförbara egna annonser och märkta demokällor."
-        >
-          <Sparkles className="h-3 w-3" /> {indicator.label}
-          {indicator.estimate && <span className="text-muted-foreground"> · uppskattning</span>}
-        </p>
-      )}
-
       {group.sources > 1 && (
         <div className="rounded-2xl border border-dashed border-border p-2.5">
           <button
@@ -201,11 +161,11 @@ export function ResultCard({
         {internal ? (
           <Button asChild className="flex-1 rounded-full">
             <Link to="/annons/$id" params={{ id: r.id }}>
-              Visa & boka
+              Visa annons
             </Link>
           </Button>
         ) : null}
-        {internal && r.allowOffers ? (
+        {canOffer ? (
           <Button asChild variant="outline" className="rounded-full">
             <Link to="/annons/$id" params={{ id: r.id }}>
               Lägg bud

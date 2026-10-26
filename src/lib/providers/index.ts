@@ -1,11 +1,12 @@
-import { externalProviders } from "./mock-external";
 import { internalProvider } from "./internal";
 import type { ProviderQuery, RentalProvider, UnifiedResult } from "./types";
 
 export { BRAND } from "./internal";
 export type { UnifiedResult, ProviderQuery } from "./types";
 
-export const providers: RentalProvider[] = [internalProvider, ...externalProviders];
+// Externa källor (mock-external.ts) är avstängda: de innehöll bara påhittade annonser.
+// Lägg tillbaka dem här när det finns riktiga, avtalade integrationer.
+export const providers: RentalProvider[] = [internalProvider];
 
 export type SourceFilter = "all" | "internal" | "external";
 

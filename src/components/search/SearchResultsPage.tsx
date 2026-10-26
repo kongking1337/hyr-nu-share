@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Grid2x2, LayoutList, Map as MapIcon, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Grid2x2, LayoutList, SlidersHorizontal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -8,7 +8,6 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { FilterPanel } from "@/components/search/FilterPanel";
 import { ActiveFilterChips, activeChips } from "@/components/search/ActiveFilterChips";
 import { ResultCard } from "@/components/search/ResultCard";
-import { ResultsMap } from "@/components/search/ResultsMap";
 import { SaveSearchButton } from "@/components/SaveSearchButton";
 import { distanceKm } from "@/lib/geo";
 import { dedupe } from "@/lib/search/dedupe";
@@ -58,13 +57,6 @@ export function SearchResultsPage({
     const sorted = sortResults(filtered, params, center, days);
     return dedupe(sorted);
   }, [results, params, center, days]);
-
-  // Medianpris per dygn bland träffarna – underlag för marknadsindikatorn på korten
-  const marketDay = useMemo(() => {
-    const prices = groups.map((g) => g.primary.priceDay).filter((p) => p > 0).sort((a, b) => a - b);
-    if (prices.length < 3) return null;
-    return prices[Math.floor(prices.length / 2)] ?? null;
-  }, [groups]);
 
   const visible = groups.slice(0, params.page * PAGE_SIZE);
   const chipCount = activeChips(params).length;
@@ -123,7 +115,6 @@ export function SearchResultsPage({
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
             <p className="min-w-0 truncate text-sm text-muted-foreground">
               {internalLoading ? "Söker…" : `${resultCount} träffar`}
-              {externalLoading && " · hämtar externa källor…"}
               {` · period ${days} dygn`}
             </p>
 
@@ -175,7 +166,6 @@ export function SearchResultsPage({
                 {([
                   ["grid", Grid2x2, "Rutnät"],
                   ["list", LayoutList, "Lista"],
-                  ["map", MapIcon, "Karta"],
                 ] as const).map(([v, Icon, label]) => (
                   <button
                     key={v}
@@ -200,82 +190,46 @@ export function SearchResultsPage({
           </div>
 
           {sources.some((s) => s.status === "error") && (
-            <p className="mt-3 text-xs text-destructive">
-              Källa svarade inte: {sources.filter((s) => s.status === "error").map((s) => s.name).join(", ")}
+            <p className="mt-3 text-sm text-destructive">
+              Sökningen kunde inte genomföras just nu. Ladda om sidan och försök igen.
             </p>
           )}
 
-          {params.view === "map" ? (
-            <div className="mt-4">
-              <ResultsMap
-                results={groups.map((g) => g.primary)}
+          <div
+            className={cn(
+              "mt-4 grid gap-4",
+              params.view === "list" ? "grid-cols-1" : "sm:grid-cols-2 xl:grid-cols-3",
+            )}
+          >
+            {visible.map((g) => (
+              <ResultCard
+                key={g.key}
+                group={g}
                 days={days}
-                center={center}
-                radiusKm={params.radius}
-                onSearchArea={() => patch({ page: 1 })}
+                priceBase={params.priceBase}
+                layout={params.view === "list" ? "list" : "grid"}
+                distance={
+                  center.nationwide ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
+                }
               />
+            ))}
+            {(internalLoading || (externalLoading && !visible.length)) &&
+              [0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-96 rounded-3xl" />)}
+          </div>
+
+          {visible.length < groups.length && (
+            <div className="mt-6 flex justify-center">
+              <Button variant="outline" className="rounded-full" onClick={() => patch({ page: params.page + 1 })}>
+                Visa fler ({groups.length - visible.length} kvar)
+              </Button>
             </div>
-          ) : (
-            <>
-              <div
-                className={cn(
-                  "mt-4 grid gap-4",
-                  params.view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1",
-                )}
-              >
-                {visible.map((g) => (
-                  <ResultCard
-                    key={g.key}
-                    group={g}
-                    days={days}
-                    priceBase={params.priceBase}
-                    marketDay={marketDay}
-                    marketSample={groups.length}
-                    layout={params.view === "grid" ? "grid" : "list"}
-                    distance={
-                      center.nationwide ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
-                    }
-                  />
-                ))}
-                {(internalLoading || (externalLoading && !visible.length)) &&
-                  [0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-96 rounded-3xl" />)}
-              </div>
-
-              {visible.length < groups.length && (
-                <div className="mt-6 flex justify-center">
-                  <Button variant="outline" className="rounded-full" onClick={() => patch({ page: params.page + 1 })}>
-                    Visa fler ({groups.length - visible.length} kvar)
-                  </Button>
-                </div>
-              )}
-
-              {!internalLoading && !externalLoading && groups.length === 0 && (
-                <p className="mt-12 text-center text-muted-foreground">
-                  Inga träffar. Prova större radie, färre filter eller ett bredare sökord.
-                </p>
-              )}
-            </>
           )}
 
-          <div className="mt-8 rounded-3xl bg-muted/60 p-4 text-xs text-muted-foreground">
-            <p className="mb-2 font-semibold text-foreground">Källornas status</p>
-            <ul className="grid gap-1 sm:grid-cols-2">
-              {sources.map((s) => (
-                <li key={s.slug} className="flex items-center justify-between gap-2">
-                  <span>
-                    {s.name} {s.demo && <em className="not-italic">(demo/mock)</em>}
-                  </span>
-                  <span>
-                    {s.status === "loading" ? "hämtar…" : s.status === "error" ? "fel" : `${s.count} träffar`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3">
-              Externa resultat är demodata tills officiella API:er, feeds eller affiliateavtal är på plats. Ingen
-              skrapning sker.
+          {!internalLoading && !externalLoading && groups.length === 0 && (
+            <p className="mt-12 text-center text-muted-foreground">
+              Inga träffar. Prova större radie, färre filter eller ett bredare sökord.
             </p>
-          </div>
+          )}
         </div>
       </div>
     </div>

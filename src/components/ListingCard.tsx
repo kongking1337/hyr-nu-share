@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Heart, MapPin, Scale, Star, Zap } from "lucide-react";
+import { ExternalLink, Heart, MapPin, Scale, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { SourceBadge } from "@/components/SourceBadge";
+import { ExampleBadge } from "@/components/ExampleBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCompare } from "@/hooks/useCompare";
@@ -53,7 +53,7 @@ export function ListingCard({
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          <SourceBadge source={result.source} className="bg-background/90 backdrop-blur" />
+          {result.example && <ExampleBadge />}
           {badges.map((b) => (
             <span
               key={b}
@@ -75,11 +75,6 @@ export function ListingCard({
       <div className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-display text-base font-semibold leading-tight">{result.title}</h3>
-          <span className="flex shrink-0 items-center gap-1 text-sm">
-            <Star className="h-3.5 w-3.5 fill-accent text-accent" />
-            {result.rating.toFixed(1)}
-            <span className="text-muted-foreground">({result.reviewCount})</span>
-          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -109,15 +104,15 @@ export function ListingCard({
         </div>
 
         <p className="text-[11px] text-muted-foreground">
-          Grundpris {kr(q.base)} ({q.breakdownLabel}) · avgifter {kr(q.serviceFee + q.insuranceFee)} ·
-          deposition {kr(q.deposit)}
+          Grundpris {kr(q.base)} ({q.breakdownLabel})
+          {q.deposit > 0 && ` · deposition ${kr(q.deposit)}`}
         </p>
 
         <div className="flex gap-2">
           {internal ? (
             <Button asChild className="flex-1 rounded-full">
               <Link to="/annons/$id" params={{ id: result.id }}>
-                Visa & boka
+                Visa annons
               </Link>
             </Button>
           ) : (

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Sök på vanlig svenska, jämför totalpris från privatpersoner och företag och boka direkt. Släpvagn, verktyg, kamera och mycket mer.",
+          "Sök på vanlig svenska och hyr av privatpersoner och företag nära dig. Släpvagn, verktyg, kamera och mycket mer.",
       },
       { property: "og:title", content: "Hyrkoll – jämför uthyrning i hela Sverige" },
       { property: "og:description", content: "Hitta lägsta totalpris för det du vill hyra." },
@@ -49,7 +49,7 @@ function Index() {
         .from("listings")
         .select("*")
         .eq("status", "published")
-        .order("booking_count", { ascending: false })
+        .order("published_at", { ascending: false })
         .limit(6);
       return (data ?? []).map(rowToUnified);
     },
@@ -77,14 +77,14 @@ function Index() {
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-primary/8 to-transparent">
         <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:py-20">
           <p className="mb-3 inline-flex rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary">
-            Sveriges jämförelsesökmotor för uthyrning
+            Hyr av grannar och företag nära dig
           </p>
           <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
             Vad vill du hyra?
           </h1>
           <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-            Skriv precis som du tänker. Vi jämför pris, avgifter och avstånd – och visar verklig
-            totalkostnad.
+            Skriv precis som du tänker. Vi visar vad som finns nära dig och vad det kostar för hela
+            perioden.
           </p>
 
           <div className="mt-7 text-left">
@@ -126,7 +126,7 @@ function Index() {
 
       <section className="mx-auto max-w-6xl px-4 pb-16">
         <div className="flex items-end justify-between">
-          <h2 className="font-display text-2xl font-semibold">Rekommenderat just nu</h2>
+          <h2 className="font-display text-2xl font-semibold">Senaste annonserna</h2>
           <Link to="/sok" search={DEFAULTS} className="text-sm text-primary hover:underline">
             Visa alla
           </Link>

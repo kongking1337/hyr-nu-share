@@ -10,7 +10,7 @@ export const Route = createFileRoute("/hyra/$kategori")({
   head: ({ params }) => {
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;
     const title = `Hyra ${name.toLowerCase()} – jämför priser | Hyrkoll`;
-    const description = `Jämför uthyrning av ${name.toLowerCase()} i hela Sverige. Se totalpris inklusive avgifter, deposition och leverans.`;
+    const description = `Hyr ${name.toLowerCase()} av privatpersoner och företag. Jämför pris, plats och leverans.`;
     return {
       meta: [
         { title },
@@ -37,7 +37,7 @@ function CategoryPage() {
       patch={patch}
       reset={reset}
       heading={`Hyra ${name.toLowerCase()}`}
-      intro={`Jämför ${name.toLowerCase()} från privatpersoner, företag och externa källor. Priserna visas som verkligt totalpris för din period.`}
+      intro={`Hyr ${name.toLowerCase()} av privatpersoner och företag. Priset visas för hela din period.`}
     />
   );
 }

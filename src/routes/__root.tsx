@@ -135,8 +135,9 @@ function RootComponent() {
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 text-sm text-muted-foreground">
           <p className="font-display text-base font-semibold text-foreground">Hyrkoll</p>
           <p>
-            Jämför uthyrning från privatpersoner och företag. Externa resultat är demodata tills
-            officiella integrationer är på plats. Betalningar är inte aktiverade i denna demo.
+            Hyr saker av privatpersoner och företag. Hyrkoll är under utveckling: annonser märkta
+            "Exempelannons" visar hur sajten fungerar och går inte att boka. Hyrkoll tar inga avgifter
+            och förmedlar inga betalningar.
           </p>
         </div>
       </footer>

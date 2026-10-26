@@ -51,11 +51,12 @@ export function bestBasePrice(
 export function quote(
   r: UnifiedResult,
   days: number,
-  opts: { delivery?: boolean; insurance?: boolean } = {},
+  opts: { delivery?: boolean } = {},
 ): Quote {
   const { base, label } = bestBasePrice(r, days);
-  const serviceFee = Math.round((base * r.serviceFeePct) / 100);
-  const insuranceFee = opts.insurance === false ? 0 : Math.round(r.insuranceFee * days);
+  // Hyrkoll tar ingen serviceavgift och förmedlar ingen försäkring, så de ingår inte i priset.
+  const serviceFee = 0;
+  const insuranceFee = 0;
   const deliveryFee = opts.delivery && r.deliveryAvailable ? r.deliveryFee : 0;
   const total = base + serviceFee + insuranceFee + deliveryFee;
   return {

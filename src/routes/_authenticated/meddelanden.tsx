@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Image as ImageIcon, Send, ShieldAlert } from "lucide-react";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,9 +73,6 @@ function MessagesPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="font-display text-3xl font-semibold">Meddelanden</h1>
-      <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-        <ShieldAlert className="h-4 w-4" /> Telefonnummer och adress delas först när en bokning är bekräftad.
-      </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-[280px_1fr]">
         <div className="space-y-2 rounded-3xl border border-border p-3">
@@ -97,7 +94,7 @@ function MessagesPage() {
           ))}
           {conversations?.length === 0 && (
             <p className="px-3 py-6 text-sm text-muted-foreground">
-              Inga konversationer ännu. En chatt startas när du bokar eller får en förfrågan.
+              Inga konversationer ännu.
             </p>
           )}
         </div>
@@ -138,9 +135,6 @@ function MessagesPage() {
             {!active && <p className="text-sm text-muted-foreground">Välj en konversation till vänster.</p>}
           </div>
           <div className="mt-3 flex gap-2">
-            <Button variant="outline" size="icon" className="rounded-full" aria-label="Bifoga bild">
-              <ImageIcon className="h-4 w-4" />
-            </Button>
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}

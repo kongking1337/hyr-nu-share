@@ -10,9 +10,9 @@ export const Route = createFileRoute("/_authenticated/favoriter")({
   head: () => ({
     meta: [
       { title: "Mina favoriter – Hyrkoll" },
-      { name: "description", content: "Sparade annonser och sökbevakningar på Hyrkoll." },
+      { name: "description", content: "Sparade annonser och sökningar på Hyrkoll." },
       { property: "og:title", content: "Mina favoriter – Hyrkoll" },
-      { property: "og:description", content: "Sparade annonser och bevakningar." },
+      { property: "og:description", content: "Sparade annonser och sökningar." },
     ],
   }),
   component: FavoritesPage,
@@ -45,14 +45,14 @@ function FavoritesPage() {
       </div>
       {data?.favs.length === 0 && <p className="mt-4 text-muted-foreground">Inga sparade annonser ännu.</p>}
 
-      <h2 className="mt-12 font-display text-2xl font-semibold">Sökbevakningar</h2>
+      <h2 className="mt-12 font-display text-2xl font-semibold">Sparade sökningar</h2>
       <div className="mt-4 space-y-3">
         {(data?.searches ?? []).map((s) => (
           <div key={s.id} className="flex items-center justify-between rounded-3xl border border-border p-4">
             <div>
               <p className="font-medium">{s.label}</p>
               <p className="text-xs text-muted-foreground">
-                {s.notify ? "Notiser på" : "Notiser av"} · sparad {new Date(s.created_at).toLocaleDateString("sv-SE")}
+                Sparad {new Date(s.created_at).toLocaleDateString("sv-SE")}
               </p>
             </div>
             <Button
@@ -68,7 +68,7 @@ function FavoritesPage() {
             </Button>
           </div>
         ))}
-        {data?.searches.length === 0 && <p className="text-muted-foreground">Inga bevakningar ännu.</p>}
+        {data?.searches.length === 0 && <p className="text-muted-foreground">Inga sparade sökningar ännu.</p>}
       </div>
     </div>
   );

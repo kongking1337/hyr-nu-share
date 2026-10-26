@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
@@ -14,6 +14,10 @@ import { DATA_WEIGHT_NOTE, offerStats, type OfferRow } from "@/lib/offers";
 import { DEMO_ALL_OFFERS } from "@/lib/demo-offers";
 
 export const Route = createFileRoute("/_authenticated/annonser/$id/statistik")({
+  // Siffrorna på sidan är genererade demodata tills riktig besöksmätning finns.
+  beforeLoad: () => {
+    throw redirect({ to: "/mina-annonser" });
+  },
   head: () => ({
     meta: [
       { title: "Annonsstatistik – Hyrkoll" },

@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  BadgeCheck, CalendarDays, Flag, MapPin, Shield, Star, Truck, Zap,
+  CalendarDays, Flag, Info, MapPin, Truck, User, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SourceBadge } from "@/components/SourceBadge";
+import { ExampleBadge } from "@/components/ExampleBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { rowToUnified } from "@/lib/providers/internal";
@@ -46,13 +46,9 @@ function ListingPage() {
       const { data: row, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       if (!row) return null;
-      const [{ data: reviews }, { data: booked }] = await Promise.all([
-        supabase.from("reviews").select("*").eq("listing_id", id).order("created_at", { ascending: false }),
-        supabase.rpc("booked_dates", { _listing_id: id }),
-      ]);
+      const { data: booked } = await supabase.rpc("booked_dates", { _listing_id: id });
       return {
         listing: rowToUnified(row),
-        reviews: reviews ?? [],
         booked: (booked ?? []) as Array<{ start_date: string; end_date: string }>,
       };
     },
@@ -61,7 +57,7 @@ function ListingPage() {
   if (isLoading) return <div className="mx-auto max-w-5xl p-4"><Skeleton className="h-[520px] rounded-3xl" /></div>;
   if (!data) return <div className="mx-auto max-w-5xl p-10 text-center">Annonsen kunde inte hittas.</div>;
 
-  const { listing, reviews, booked } = data;
+  const { listing, booked } = data;
   const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1);
   const q = quote(listing, days, { delivery });
 
@@ -115,17 +111,16 @@ function ListingPage() {
       <div className="mt-6 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
           <div className="space-y-3">
-            <SourceBadge source={listing.source} />
+            {listing.example && <ExampleBadge />}
             <h1 className="font-display text-3xl font-semibold">{listing.title}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-accent text-accent" /> {listing.rating.toFixed(1)} ({listing.reviewCount} recensioner)
+                <MapPin className="h-4 w-4" /> {listing.area ? `${listing.area}, ` : ""}{listing.city}
               </span>
-              <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {listing.area}, {listing.city}</span>
               <span className="flex items-center gap-1">
-                <BadgeCheck className="h-4 w-4" /> {listing.ownerType === "company" ? "Företag" : "Privatperson"} · {listing.ownerName}
+                <User className="h-4 w-4" /> {listing.ownerType === "company" ? "Företag" : "Privatperson"} · {listing.ownerName}
               </span>
-              {listing.allowOffers && (
+              {listing.allowOffers && !listing.example && (
                 <span className="flex items-center gap-1 rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-semibold text-foreground">
                   Bud välkomna
                 </span>
@@ -153,31 +148,11 @@ function ListingPage() {
           </div>
 
           <div className="rounded-3xl border border-border p-5">
-            <h2 className="font-display text-lg font-semibold">Villkor</h2>
-            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-              <li>Deposition {kr(listing.deposit)} reserveras och återbetalas efter återlämning.</li>
-              <li>Fri avbokning fram till 48 timmar före start, därefter 50 % av grundpriset.</li>
-              <li>Försäkring {listing.insuranceFee > 0 ? `${kr(listing.insuranceFee)}/dygn` : "ingår ej"}.</li>
-              <li className="flex items-center gap-1"><Shield className="h-4 w-4" /> Kontaktuppgifter delas först när bokningen är bekräftad.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="font-display text-lg font-semibold">Verifierade recensioner</h2>
-            <div className="mt-3 space-y-3">
-              {reviews.map((r) => (
-                <div key={r.id} className="rounded-3xl border border-border p-4">
-                  <p className="flex items-center gap-2 text-sm font-medium">
-                    {r.author_name}
-                    <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                      <Star className="h-3 w-3 fill-accent text-accent" /> {r.rating}
-                    </span>
-                    {r.verified && <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[11px] text-primary">Verifierad hyra</span>}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">{r.body}</p>
-                </div>
-              ))}
-            </div>
+            <h2 className="font-display text-lg font-semibold">Bra att veta</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Hyrkoll tar inga avgifter och förmedlar inga betalningar eller försäkringar. Pris, eventuell
+              deposition och upphämtning kommer du överens om direkt med uthyraren.
+            </p>
           </div>
 
           <Button
@@ -186,12 +161,13 @@ function ListingPage() {
             className="text-muted-foreground"
             onClick={async () => {
               if (!user) { toast.info("Logga in för att rapportera."); return; }
-              await supabase.from("reports").insert({
+              const { error } = await supabase.from("reports").insert({
                 reporter_id: user.id,
                 target_type: "listing",
                 target_id: listing.id,
                 reason: "Rapporterad från annonssidan",
               });
+              if (error) { toast.error("Rapporten kunde inte skickas. Försök igen."); return; }
               toast.success("Tack, rapporten är skickad till moderering.");
             }}
           >
@@ -224,42 +200,42 @@ function ListingPage() {
           )}
           <dl className="space-y-1 text-sm">
             <Row label={`Grundpris (${q.breakdownLabel})`} value={kr(q.base)} />
-            <Row label="Serviceavgift" value={kr(q.serviceFee)} />
-            <Row label="Försäkring" value={kr(q.insuranceFee)} />
-            <Row label="Leverans" value={kr(q.deliveryFee)} />
-            <Row label="Deposition (reserveras)" value={kr(q.deposit)} />
+            {q.deliveryFee > 0 && <Row label="Leverans" value={kr(q.deliveryFee)} />}
             <div className="flex justify-between border-t border-border pt-2 font-display text-base font-semibold">
               <span>Totalt {days} dygn</span>
               <span>{kr(q.total)}</span>
             </div>
+            {q.deposit > 0 && <Row label="Deposition (gör upp med uthyraren)" value={kr(q.deposit)} />}
           </dl>
-          <Textarea
-            placeholder="Meddelande till uthyraren (valfritt)"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          {overlaps && <p className="text-xs text-destructive">Valda datum är redan bokade.</p>}
-          <Button className="w-full rounded-full" onClick={book} disabled={overlaps}>
-            {listing.instantBook ? "Boka direkt" : "Skicka bokningsförfrågan"}
-          </Button>
-          {listing.allowOffers && (
-            <OfferPanel
-              listingId={listing.id}
-              listTotal={q.total}
-              days={days}
-              start={start}
-              end={end}
-              validityHours={listing.offerValidityHours ?? 24}
-              disabled={overlaps}
-            />
+          {listing.example ? (
+            <p className="flex gap-2 rounded-2xl bg-muted/60 p-3 text-sm text-muted-foreground">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              Det här är en exempelannons som visar hur sajten fungerar. Den går inte att boka eller lägga bud på.
+            </p>
+          ) : (
+            <>
+              <Textarea
+                placeholder="Meddelande till uthyraren (valfritt)"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              {overlaps && <p className="text-xs text-destructive">Valda datum är redan bokade.</p>}
+              <Button className="w-full rounded-full" onClick={book} disabled={overlaps}>
+                {listing.instantBook ? "Boka direkt" : "Skicka bokningsförfrågan"}
+              </Button>
+              {listing.allowOffers && (
+                <OfferPanel
+                  listingId={listing.id}
+                  listTotal={q.total}
+                  days={days}
+                  start={start}
+                  end={end}
+                  validityHours={listing.offerValidityHours ?? 24}
+                  disabled={overlaps}
+                />
+              )}
+            </>
           )}
-          <p className="text-[11px] text-muted-foreground">
-            Betalning sker i nästa steg via Stripe Connect (serviceavgift, utbetalning, deposition och
-            återbetalning). Betalningar är inte aktiverade i denna demo.
-          </p>
-          <Link to="/meddelanden" className="block text-center text-xs text-primary hover:underline">
-            Kontakta uthyraren
-          </Link>
         </aside>
       </div>
     </div>

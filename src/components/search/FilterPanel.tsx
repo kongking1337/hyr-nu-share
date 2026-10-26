@@ -8,7 +8,6 @@ import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { CATEGORY_ATTRIBUTES, SUBCATEGORIES, parseAttrFilter, stringifyAttrFilter } from "@/lib/search/attributes";
 import { PRICE_BASES, RADIUS_OPTIONS, type SearchParams } from "@/lib/search/params";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
-import { providers } from "@/lib/providers";
 import { cn } from "@/lib/utils";
 
 type Patch = (p: Partial<SearchParams>) => void;
@@ -47,7 +46,6 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
   const subs = SUBCATEGORIES[params.category] ?? [];
   const attrDefs = CATEGORY_ATTRIBUTES[params.category] ?? [];
   const attrs = parseAttrFilter(params.attrs);
-  const externals = providers.filter((p) => p.kind === "external");
 
   const setAttr = (key: string, value: string) => {
     const next = { ...attrs };
@@ -269,40 +267,6 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
               </SelectContent>
             </Select>
           </Row>
-          <Row label="Lägsta betyg">
-            <Select value={String(params.rating)} onValueChange={(v) => patch({ rating: Number(v) })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Alla betyg</SelectItem>
-                <SelectItem value="3">3,0 och uppåt</SelectItem>
-                <SelectItem value="4">4,0 och uppåt</SelectItem>
-                <SelectItem value="4.5">4,5 och uppåt</SelectItem>
-              </SelectContent>
-            </Select>
-          </Row>
-          <Check
-            id="verified"
-            label="Endast verifierade uthyrare"
-            checked={params.verified}
-            onChange={(v) => patch({ verified: v })}
-          />
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="kalla">
-        <AccordionTrigger className="text-sm font-semibold">Källa</AccordionTrigger>
-        <AccordionContent className="pb-4">
-          <Select value={params.source} onValueChange={(v) => patch({ source: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alla källor</SelectItem>
-              <SelectItem value="internal">Endast egna annonser</SelectItem>
-              <SelectItem value="external">Endast externa</SelectItem>
-              {externals.map((p) => (
-                <SelectItem key={p.slug} value={p.slug}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </AccordionContent>
       </AccordionItem>
 
@@ -310,7 +274,6 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
         <AccordionTrigger className="text-sm font-semibold">Övrigt</AccordionTrigger>
         <AccordionContent className="space-y-2.5 pb-4">
           <Check id="noDeposit" label="Ingen deposition" checked={params.noDeposit} onChange={(v) => patch({ noDeposit: v })} />
-          <Check id="insurance" label="Försäkring ingår" checked={params.insurance} onChange={(v) => patch({ insurance: v })} />
           <Check
             id="deliveryOnly"
             label="Leverans möjlig"

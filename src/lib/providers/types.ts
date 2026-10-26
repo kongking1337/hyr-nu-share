@@ -48,6 +48,10 @@ export type UnifiedResult = {
   allowOffers?: boolean;
   /** Timmar ett bud är giltigt (0 = ingen tidsgräns) */
   offerValidityHours?: number;
+  /** När annonsen publicerades (ISO-datum) */
+  publishedAt?: string | null;
+  /** Exempelannons utan riktig ägare (demodata) – kan inte bokas, budas på eller kontaktas */
+  example?: boolean;
   /** Endast externa resultat: länk till erbjudandet hos källan */
   externalUrl?: string;
   availableFrom?: string | null;

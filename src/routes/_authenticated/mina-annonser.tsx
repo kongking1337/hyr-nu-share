@@ -1,18 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
-  BarChart3,
   Copy,
   ExternalLink,
-  Eye,
-  Heart,
-  MousePointerClick,
   Pause,
   Pencil,
   Play,
   Share2,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,18 +28,15 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { kr } from "@/lib/pricing";
-import { KpiCard, DemoNote } from "@/components/dashboard/KpiCard";
-import { dashboardKpis, seriesFor, totals } from "@/lib/listing-analytics";
 import { scoreListing } from "@/lib/listing-quality";
-import { DEMO_LISTINGS } from "@/lib/demo-listings";
 
 export const Route = createFileRoute("/_authenticated/mina-annonser")({
   head: () => ({
     meta: [
       { title: "Mina annonser – Hyrkoll" },
-      { name: "description", content: "Uthyrardashboard med statistik, status och snabbåtgärder för alla dina annonser." },
+      { name: "description", content: "Redigera, pausa, duplicera och ta bort dina annonser." },
       { property: "og:title", content: "Mina annonser – Hyrkoll" },
-      { property: "og:description", content: "Visningar, klick, favoriter, bokningar och intäkter för dina annonser." },
+      { property: "og:description", content: "Hantera dina annonser på Hyrkoll." },
     ],
   }),
   component: MyListings,
@@ -54,9 +46,8 @@ export const STATUS_META: Record<string, { label: string; className: string }> =
   published: { label: "Publicerad", className: "bg-primary/15 text-primary" },
   paused: { label: "Pausad", className: "bg-muted text-muted-foreground" },
   draft: { label: "Utkast", className: "bg-accent/20 text-foreground" },
-  fully_booked: { label: "Fullbokad", className: "bg-secondary text-secondary-foreground" },
-  review: { label: "Under granskning", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
-  ended: { label: "Avslutad", className: "bg-destructive/10 text-destructive" },
+  sold: { label: "Såld", className: "bg-secondary text-secondary-foreground" },
+  removed: { label: "Borttagen av moderator", className: "bg-destructive/10 text-destructive" },
 };
 
 const TABS = [
@@ -64,16 +55,12 @@ const TABS = [
   { key: "published", label: "Publicerade" },
   { key: "paused", label: "Pausade" },
   { key: "draft", label: "Utkast" },
-  { key: "fully_booked", label: "Fullbokade" },
-  { key: "review", label: "Granskas" },
-  { key: "ended", label: "Avslutade" },
 ];
 
 function MyListings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("all");
-  const [seeding, setSeeding] = useState(false);
 
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["my-listings", user?.id],
@@ -88,36 +75,12 @@ function MyListings() {
   });
 
   const listings = data?.listings ?? [];
-  const kpis = useMemo(() => dashboardKpis(listings, 30), [listings]);
-
-  const top = useMemo(
-    () =>
-      listings
-        .map((l) => ({ l, t: totals(seriesFor(l, 30)) }))
-        .sort((a, b) => b.t.views - a.t.views)
-        .slice(0, 3),
-    [listings],
-  );
 
   const upcoming = (data?.bookings ?? [])
     .filter((b) => listings.some((l) => l.id === b.listing_id) && b.status === "confirmed")
     .slice(0, 4);
 
   const filtered = tab === "all" ? listings : listings.filter((l) => (l.status ?? "published") === tab);
-
-  async function seedDemo() {
-    setSeeding(true);
-    const rows = DEMO_LISTINGS.map((d) => ({
-      ...d,
-      owner_id: user!.id,
-      owner_name: user!.email?.split("@")[0] ?? "Uthyrare",
-    }));
-    const { error } = await supabase.from("listings").insert(rows);
-    setSeeding(false);
-    if (error) { toast.error("Kunde inte lägga till demoannonser."); return; }
-    toast.success("Sex demoannonser tillagda på ditt konto.");
-    refetch();
-  }
 
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
@@ -158,15 +121,10 @@ function MyListings() {
         <div>
           <h1 className="font-display text-3xl font-semibold">Mina annonser</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Visningar → klick → favoriter → bokningar → intäkter, samlat på ett ställe.
+            Redigera, pausa, duplicera och ta bort dina annonser.
           </p>
         </div>
         <div className="flex gap-2">
-          {listings.length === 0 && (
-            <Button variant="outline" className="rounded-full" onClick={seedDemo} disabled={seeding}>
-              <Sparkles className="mr-1 h-4 w-4" /> Fyll på med demoannonser
-            </Button>
-          )}
           <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/bud" })}>
             Mina bud
           </Button>
@@ -176,38 +134,7 @@ function MyListings() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Visningar denna månad" value={String(kpis.views)} delta={kpis.viewsDelta} />
-        <KpiCard label="Bokningar" value={String(kpis.bookings)} delta={kpis.bookingsDelta} />
-        <KpiCard label="Intäkter" value={kr(kpis.revenue)} delta={kpis.revenueDelta} />
-        <KpiCard label="Aktiva annonser" value={String(kpis.active)} hint={`${listings.length} totalt`} />
-        <KpiCard label="Snittbetyg" value={kpis.rating ? kpis.rating.toFixed(1) : "–"} hint="Från verifierade omdömen" />
-        <KpiCard label="Konverteringsgrad" value={`${kpis.conversion.toFixed(1)} %`} delta={kpis.conversionDelta} />
-        <KpiCard label="Favoriter" value={String(kpis.favorites)} delta={kpis.favoritesDelta} />
-        <KpiCard label="Bokningsförfrågningar" value={String(kpis.requests)} delta={kpis.requestsDelta} />
-      </div>
-
-      <div className="mt-4">
-        <DemoNote>
-          Trafiksiffror (visningar, klick, favoriter, delningar) är demodata tills en mätpunkt för besök har kopplats
-          in. Bokningar och annonsstatus är riktiga uppgifter från ditt konto.
-        </DemoNote>
-      </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-3xl border border-border p-5">
-          <h2 className="font-display text-lg font-semibold">Senaste aktivitet</h2>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            {top.flatMap(({ l, t }) => [
-              <li key={`${l.id}-v`}>{t.views} visningar av <span className="text-foreground">{l.title}</span> senaste 30 dagarna</li>,
-              t.requests > 0 ? (
-                <li key={`${l.id}-r`}>{t.requests} bokningsförfrågningar på <span className="text-foreground">{l.title}</span></li>
-              ) : null,
-            ]).filter(Boolean).slice(0, 5)}
-            {!listings.length && <li>Ingen aktivitet ännu.</li>}
-          </ul>
-        </div>
-
+      <div className="mt-6 max-w-md">
         <div className="rounded-3xl border border-border p-5">
           <h2 className="font-display text-lg font-semibold">Kommande bokningar</h2>
           <ul className="mt-3 space-y-2 text-sm">
@@ -219,19 +146,6 @@ function MyListings() {
             ))}
             {!upcoming.length && <li className="text-sm text-muted-foreground">Inga bekräftade bokningar framåt.</li>}
           </ul>
-        </div>
-
-        <div className="rounded-3xl border border-border p-5">
-          <h2 className="font-display text-lg font-semibold">Toppannonser</h2>
-          <ol className="mt-3 space-y-2 text-sm">
-            {top.map(({ l, t }, i) => (
-              <li key={l.id} className="flex justify-between gap-2">
-                <span className="truncate">{i + 1}. {l.title}</span>
-                <span className="shrink-0 text-muted-foreground">{t.views} visn.</span>
-              </li>
-            ))}
-            {!top.length && <li className="text-sm text-muted-foreground">Lägg upp din första annons.</li>}
-          </ol>
         </div>
       </div>
 
@@ -257,7 +171,6 @@ function MyListings() {
         )}
 
         {filtered.map((l) => {
-          const t = totals(seriesFor(l, 30));
           const meta = STATUS_META[l.status ?? "published"] ?? STATUS_META["published"]!;
           const quality = scoreListing({
             images: l.images ?? [],
@@ -296,15 +209,6 @@ function MyListings() {
                     {kr(l.price_day)}/dygn · {l.city}
                     {next ? ` · Nästa bokning ${next.start_date}` : " · Ledig"}
                   </p>
-
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {t.views} visningar</span>
-                    <span className="flex items-center gap-1"><MousePointerClick className="h-3.5 w-3.5" /> {t.clicks} klick</span>
-                    <span className="flex items-center gap-1"><Heart className="h-3.5 w-3.5" /> {t.favorites} favoriter</span>
-                    <span>{t.requests} förfrågningar</span>
-                    <span>{t.bookings} bokningar</span>
-                    <span className="text-foreground">{kr(t.revenue)} intäkter</span>
-                  </div>
                 </div>
               </div>
 
@@ -328,11 +232,6 @@ function MyListings() {
                 </Button>
                 <Button size="sm" variant="outline" className="rounded-full" onClick={() => share(l.id, l.title)}>
                   <Share2 className="mr-1 h-4 w-4" /> Dela
-                </Button>
-                <Button size="sm" variant="outline" className="rounded-full" asChild>
-                  <Link to="/annonser/$id/statistik" params={{ id: l.id }}>
-                    <BarChart3 className="mr-1 h-4 w-4" /> Statistik
-                  </Link>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

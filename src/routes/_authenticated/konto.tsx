@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { BadgeCheck, Building2, LogOut, Star } from "lucide-react";
+import { BadgeCheck, Building2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/konto")({
   head: () => ({
     meta: [
       { title: "Mitt konto – Hyrkoll" },
-      { name: "description", content: "Profil, verifieringar, företagsuppgifter, inventarie och statistik." },
+      { name: "description", content: "Profil, företagsuppgifter och statistik." },
       { property: "og:title", content: "Mitt konto – Hyrkoll" },
       { property: "og:description", content: "Profil och företagsprofil." },
     ],
@@ -103,7 +103,7 @@ function AccountPage() {
         <span>
           <span className="block font-display text-lg font-semibold">Mina annonser</span>
           <span className="block text-sm text-muted-foreground">
-            Dashboard med visningar, klick, bokningar, intäkter och snabbåtgärder.
+            Redigera, pausa och ta bort dina annonser.
           </span>
         </span>
         <span className="text-sm text-primary">Öppna →</span>
@@ -120,24 +120,6 @@ function AccountPage() {
           <div className="space-y-1.5"><Label>Namn</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
           <div className="space-y-1.5"><Label>Ort</Label><Input value={city} onChange={(e) => setCity(e.target.value)} /></div>
           <Button className="rounded-full" onClick={saveProfile}>Spara</Button>
-
-          <div className="rounded-3xl border border-border p-5">
-            <h2 className="font-display text-lg font-semibold">Verifiering</h2>
-            <ul className="mt-3 space-y-2 text-sm">
-              <Verify label="E-post" ok={!!data?.profile?.email_verified} />
-              <Verify label="Telefon" ok={!!data?.profile?.phone_verified} />
-              <Verify label="ID-kontroll (BankID)" ok={!!data?.profile?.id_verified} />
-              <Verify label="Företagsverifiering" ok={!!data?.companies.some((c) => c.verified)} />
-            </ul>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Verifieringsflöden är förberedda i datamodellen men aktiveras när identitetsleverantör är på plats.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 rounded-3xl border border-border p-5 text-sm">
-            <Star className="h-4 w-4 fill-accent text-accent" />
-            Profilbetyg {Number(data?.profile?.rating ?? 0).toFixed(1)} ({data?.profile?.review_count ?? 0} omdömen)
-          </div>
         </TabsContent>
 
         <TabsContent value="foretag" className="space-y-4 pt-5">
@@ -149,7 +131,6 @@ function AccountPage() {
               </p>
               <p className="text-sm text-muted-foreground">Org.nr {c.org_number || "—"} · {c.city || "—"}</p>
               <p className="mt-2 text-sm">Inventarie: {data?.listings.length} annonser</p>
-              <p className="mt-1 text-xs text-muted-foreground">Flera administratörer kan bjudas in (förberett).</p>
             </div>
           ))}
           <div className="space-y-3 rounded-3xl border border-border p-5">
@@ -174,13 +155,6 @@ function AccountPage() {
     </div>
   );
 }
-
-const Verify = ({ label, ok }: { label: string; ok: boolean }) => (
-  <li className="flex items-center justify-between">
-    <span>{label}</span>
-    <span className={ok ? "text-primary" : "text-muted-foreground"}>{ok ? "Verifierad" : "Ej verifierad"}</span>
-  </li>
-);
 
 const Stat = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-3xl border border-border p-5">

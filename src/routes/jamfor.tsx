@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SourceBadge } from "@/components/SourceBadge";
+import { ExampleBadge } from "@/components/ExampleBadge";
 import { useCompare } from "@/hooks/useCompare";
 import { kr, quote } from "@/lib/pricing";
 
@@ -12,9 +12,9 @@ export const Route = createFileRoute("/jamfor")({
   head: () => ({
     meta: [
       { title: "Jämför flera uthyrningar – Hyrkoll" },
-      { name: "description", content: "Ställ upp till fyra alternativ mot varandra: totalpris, betyg, avstånd och bäst värde." },
+      { name: "description", content: "Ställ upp till fyra alternativ mot varandra och se vilket som är billigast för din period." },
       { property: "og:title", content: "Jämför uthyrningar – Hyrkoll" },
-      { property: "og:description", content: "Se billigast, bäst betyg och bäst värde." },
+      { property: "og:description", content: "Se vilket alternativ som är billigast för din period." },
     ],
   }),
   component: ComparePage,
@@ -38,8 +38,6 @@ function ComparePage() {
 
   const quotes = items.map((i) => ({ item: i, q: quote(i, days) }));
   const cheapest = [...quotes].sort((a, b) => a.q.total - b.q.total)[0]!.item.id;
-  const bestRated = [...items].sort((a, b) => b.rating - a.rating)[0]!.id;
-  const bestValue = [...quotes].sort((a, b) => a.q.total / (a.item.rating || 1) - b.q.total / (b.item.rating || 1))[0]!.item.id;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -66,18 +64,14 @@ function ComparePage() {
             <img src={item.images[0]} alt={item.title} className="aspect-[4/3] w-full rounded-2xl object-cover" />
             <div className="flex flex-wrap gap-1.5">
               {item.id === cheapest && <Tag>Billigast</Tag>}
-              {item.id === bestRated && <Tag>Bäst betyg</Tag>}
-              {item.id === bestValue && <Tag>Bäst värde</Tag>}
+              {item.example && <ExampleBadge />}
             </div>
-            <SourceBadge source={item.source} />
             <h2 className="font-display text-base font-semibold">{item.title}</h2>
             <dl className="space-y-1 text-sm">
               <Row l="Totalpris" v={kr(q.total)} strong />
               <Row l="Per dygn" v={`${kr(q.comparableDayPrice)}`} />
               <Row l="Grundpris" v={kr(q.base)} />
-              <Row l="Avgifter" v={kr(q.serviceFee + q.insuranceFee)} />
               <Row l="Deposition" v={kr(q.deposit)} />
-              <Row l="Betyg" v={`${item.rating.toFixed(1)} (${item.reviewCount})`} />
               <Row l="Plats" v={item.city} />
               <Row l="Kontoform" v={item.ownerType === "company" ? "Företag" : "Privat"} />
               <Row l="Leverans" v={item.deliveryAvailable ? kr(item.deliveryFee) : "Nej"} />

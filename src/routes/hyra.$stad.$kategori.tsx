@@ -12,7 +12,7 @@ export const Route = createFileRoute("/hyra/$stad/$kategori")({
     const city = cityBySlug(params.stad)?.name ?? params.stad;
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;
     const title = `Hyra ${name.toLowerCase()} i ${city} – jämför totalpris | Hyrkoll`;
-    const description = `Lediga ${name.toLowerCase()} att hyra i ${city}. Jämför pris, avgifter, avstånd och betyg från privatpersoner och företag.`;
+    const description = `Lediga ${name.toLowerCase()} att hyra i ${city}. Jämför pris och avstånd hos privatpersoner och företag.`;
     return {
       meta: [
         { title },
@@ -40,7 +40,7 @@ function CityCategoryPage() {
       patch={patch}
       reset={reset}
       heading={`Hyra ${name.toLowerCase()} i ${city?.name ?? stad}`}
-      intro={`Se lediga ${name.toLowerCase()} nära ${city?.name ?? stad} med verkligt totalpris, avstånd och betyg.`}
+      intro={`Se lediga ${name.toLowerCase()} nära ${city?.name ?? stad} med pris för hela perioden och avstånd.`}
     />
   );
 }

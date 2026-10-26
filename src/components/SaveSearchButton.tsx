@@ -1,4 +1,4 @@
-import { BellPlus } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,7 @@ export function SaveSearchButton({
 
   async function save() {
     if (!user) {
-      toast.info("Logga in för att skapa en sökbevakning.");
+      toast.info("Logga in för att spara sökningen.");
       return;
     }
     const { error } = await supabase.from("saved_searches").insert({
@@ -25,13 +25,13 @@ export function SaveSearchButton({
       filters: filters as never,
     });
     toast[error ? "error" : "success"](
-      error ? "Kunde inte spara sökbevakningen" : "Sökbevakning sparad – du får notiser vid nya träffar",
+      error ? "Kunde inte spara sökningen" : "Sökningen är sparad under Favoriter",
     );
   }
 
   return (
     <Button variant="ghost" size="sm" className="rounded-full" onClick={save}>
-      <BellPlus className="mr-1 h-4 w-4" /> Bevaka sökning
+      <Bookmark className="mr-1 h-4 w-4" /> Spara sökning
     </Button>
   );
 }
