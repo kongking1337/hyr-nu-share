@@ -75,7 +75,18 @@ Alternatives:
   so ordinary users get no confirmation or password-reset email. Set up SMTP per
   `docs/email-setup.md` (Gmail for a closed beta, or a domain + Resend). Marcus
   postponed this on 2026-10-29. A domain also turns on "new message" emails.
-- **Test account deletion** once with a throwaway account on the live site.
+- **Spam limits in the database:** run `supabase/migrations/20261101120000_limits.sql`
+  in the SQL Editor if not done yet (it can't be checked from outside).
+- **Make yourself admin** (SQL in `docs/operations.md`) if not done yet.
+- **Supabase settings:** minimum password length 8, the Swedish email templates, and
+  the site's address in Site URL / Redirect URLs (`docs/email-setup.md`).
+- **Test on the live site** with two accounts, since nothing could be clicked through
+  in a browser during development: sign up and log in, post a listing with photos
+  from an iPhone, an Android phone and a computer, send messages both ways, mark as
+  sold, report a listing and handle it in `/admin`, and delete a throwaway account.
+  Password reset once email works.
+- **Remove the 24 demo listings** (and their fake reviews) before inviting real users.
+- **Choose the launch category** (all 8 are visible now): edit `src/lib/categories.ts`.
 - **Site details:** who runs the site and a contact email (a Gmail address is fine to
   start with). Send them and they go into `src/lib/site.ts`; until then the terms,
   privacy policy and contact page show "Utkast". Postponed by Marcus on 2026-11-01.
@@ -96,6 +107,17 @@ Alternatives:
   Never shown to the seller or other users. Builds on the moderation data from task 7.
 - **Small photo versions for cards** (about 480 px) so search and the home page load
   less data (suggested 2026-10-30).
+- **Own domain + Resend**: turns on "new message" emails and report emails to the admin
+  (`docs/email-setup.md`, step 3). Also the long-term fix for login emails.
+- **Company**: when it exists, update `src/lib/site.ts`, the terms and the privacy policy.
+- **Make the code private**: the GitHub repo is a public fork; copy it to a new private
+  repo (`docs/migration-plan.md`, Step 0).
+- **Google login** (optional): enable it in Supabase; the button appears by itself.
+- **Browser error monitoring** (e.g. Sentry); server errors already go to Workers Logs.
+- **Listing pages rendered on the server** for link previews and Google.
+- **Search in the database** instead of in the browser (today max 200 listings per search).
+- **Clean up unused code** from the original prototype (`ai-assist.ts`, `demo-listings.ts`,
+  `demo-offers.ts`, `ResultsMap.tsx` …), after checking with the friend who wrote it.
 
 ## Known issues (summary of the review)
 
