@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { photoUrl, removeUnusedPhotos } from "@/lib/photos";
 import { LISTING_TYPE_LABEL, priceLabel } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/mina-annonser")({
@@ -105,8 +106,10 @@ function MyListings() {
   }
 
   async function remove(id: string) {
+    const images = listings.find((l) => l.id === id)?.images ?? [];
     const { error } = await supabase.from("listings").delete().eq("id", id);
     if (error) { toast.error("Kunde inte ta bort annonsen."); return; }
+    void removeUnusedPhotos(user!.id, images);
     toast.success("Annonsen är borttagen.");
     refetch();
   }
@@ -164,7 +167,7 @@ function MyListings() {
             <div key={l.id} className="rounded-3xl border border-border p-4 sm:p-5">
               <div className="flex flex-col gap-4 sm:flex-row">
                 <img
-                  src={l.images?.[0] ?? ""}
+                  src={photoUrl(l.images?.[0])}
                   alt={l.title}
                   loading="lazy"
                   className="h-40 w-full rounded-2xl object-cover sm:h-28 sm:w-40"

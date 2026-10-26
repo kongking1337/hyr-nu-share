@@ -29,6 +29,29 @@ const SUPABASE_BASE = `
     SELECT (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   $$;
 
+  -- Supabase Storage: buckets, objects (with row level security) and foldername().
+  CREATE SCHEMA storage;
+  GRANT USAGE ON SCHEMA storage TO anon, authenticated, service_role;
+  CREATE TABLE storage.buckets (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    public boolean NOT NULL DEFAULT false,
+    file_size_limit bigint,
+    allowed_mime_types text[]
+  );
+  CREATE TABLE storage.objects (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    bucket_id text REFERENCES storage.buckets (id),
+    name text NOT NULL,
+    owner uuid DEFAULT auth.uid(),
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
+  ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+  GRANT ALL ON storage.objects, storage.buckets TO anon, authenticated, service_role;
+  CREATE FUNCTION storage.foldername(name text) RETURNS text[] LANGUAGE sql IMMUTABLE AS $$
+    SELECT (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1]
+  $$;
+
   -- Supabase grants every new table and function to the API roles, so the
   -- migrations' own rules are what actually protects the data.
   GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
@@ -770,17 +793,98 @@ test("logged-out visitors cannot write anything", async () => {
   await rejects(null, "DELETE FROM public.categories");
 });
 
+// --- Photos ---------------------------------------------------------------------
+
+const photo = (who, ext = "webp") => `${who.id}/${crypto.randomUUID()}.${ext}`;
+const upload = (who, path) =>
+  as(
+    who,
+    "INSERT INTO storage.objects (bucket_id, name) VALUES ('listing-images', $1) RETURNING name",
+    [path],
+  );
+
+test("photos go in a public bucket that only takes WebP and JPEG", async () => {
+  const [b] = await platform(
+    "SELECT public, file_size_limit::int AS max, allowed_mime_types FROM storage.buckets WHERE id = 'listing-images'",
+  );
+  assert.deepEqual(b, {
+    public: true,
+    max: 2097152,
+    allowed_mime_types: ["image/webp", "image/jpeg"],
+  });
+});
+
+test("users upload and delete photos only in their own folder", async () => {
+  const mine = photo(u.bob);
+  await upload(u.bob, mine);
+  await assert.rejects(upload(u.bob, photo(u.alice)));
+  await assert.rejects(upload(null, photo(u.bob)));
+  assert.deepEqual(
+    await as(u.alice, "DELETE FROM storage.objects WHERE name = $1 RETURNING name", [mine]),
+    [],
+  );
+  assert.equal(
+    (await as(u.bob, "DELETE FROM storage.objects WHERE name = $1 RETURNING name", [mine])).length,
+    1,
+  );
+});
+
+test("listings only use the owner's own uploaded photos, at most 8", async () => {
+  const own = [photo(u.alice), photo(u.alice, "jpg")];
+  const [l] = await as(
+    u.alice,
+    `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day, images)
+     VALUES ($1, 'Med bilder', 'verktyg', 'Solna', 100, $2) RETURNING id`,
+    [u.alice.id, own],
+  );
+  const insertWith = (images) =>
+    as(
+      u.alice,
+      `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day, images)
+       VALUES ($1, 'Fel bilder', 'verktyg', 'Solna', 100, $2)`,
+      [u.alice.id, images],
+    );
+  await assert.rejects(insertWith([photo(u.bob)]));
+  await assert.rejects(insertWith(["https://evil.example/stolen.jpg"]));
+  await assert.rejects(insertWith([`${u.alice.id}/../${u.bob.id}/x.jpg`]));
+  await assert.rejects(insertWith([photo(u.alice, "png")]));
+  await assert.rejects(insertWith(Array.from({ length: 9 }, () => photo(u.alice))));
+  // Older listings keep their full image URLs when edited, but new URLs are not allowed.
+  await platform(
+    "UPDATE public.listings SET images = ARRAY['https://images.example/old.jpg'] WHERE id = $1",
+    [l.id],
+  );
+  await as(
+    u.alice,
+    "UPDATE public.listings SET title = 'Ny titel', images = images || $2::text[] WHERE id = $1",
+    [l.id, [photo(u.alice)]],
+  );
+  await rejects(
+    u.alice,
+    "UPDATE public.listings SET images = images || ARRAY['https://evil.example/x.jpg'] WHERE id = $1",
+    [l.id],
+  );
+});
+
 // --- Deleting your account ------------------------------------------------------
 
 test("users can delete their own account, which removes their data but nobody else's", async () => {
   await createUser("dave", "Dave Dahl");
   const listingId = await createListing(u.dave, "Daves borrmaskin");
-  await as(u.dave, "INSERT INTO public.favorites (user_id, listing_id) VALUES ($1, $2)", [u.dave.id, u.alice.listingId]);
-  const [{ id: conversationId }] = await as(u.dave, "SELECT public.start_conversation($1, 'Hej Alice') AS id", [
+  await as(u.dave, "INSERT INTO public.favorites (user_id, listing_id) VALUES ($1, $2)", [
+    u.dave.id,
     u.alice.listingId,
   ]);
+  const [{ id: conversationId }] = await as(
+    u.dave,
+    "SELECT public.start_conversation($1, 'Hej Alice') AS id",
+    [u.alice.listingId],
+  );
   await as(u.dave, reportSql, [u.dave.id, "listing", u.alice.listingId, "Testrapport"]);
-  const aliceListingsBefore = await platform("SELECT count(*)::int AS n FROM public.listings WHERE owner_id = $1", [u.alice.id]);
+  const aliceListingsBefore = await platform(
+    "SELECT count(*)::int AS n FROM public.listings WHERE owner_id = $1",
+    [u.alice.id],
+  );
 
   await rejects(null, "SELECT public.delete_my_account()");
   await as(u.dave, "SELECT public.delete_my_account()");
@@ -794,9 +898,13 @@ test("users can delete their own account, which removes their data but nobody el
             (SELECT count(*)::int FROM public.reports WHERE reason = 'Testrapport' AND reporter_id IS NULL) AS anonymous_reports`,
     [u.dave.id, listingId, conversationId],
   );
-  assert.deepEqual(left, [{ users: 0, profiles: 0, listings: 0, favorites: 0, conversations: 0, anonymous_reports: 1 }]);
+  assert.deepEqual(left, [
+    { users: 0, profiles: 0, listings: 0, favorites: 0, conversations: 0, anonymous_reports: 1 },
+  ]);
   assert.deepEqual(
-    await platform("SELECT count(*)::int AS n FROM public.listings WHERE owner_id = $1", [u.alice.id]),
+    await platform("SELECT count(*)::int AS n FROM public.listings WHERE owner_id = $1", [
+      u.alice.id,
+    ]),
     aliceListingsBefore,
   );
 });

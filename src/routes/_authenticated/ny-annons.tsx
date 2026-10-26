@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { PhotoUploader } from "@/components/PhotoUploader";
+import { PHOTO_BUCKET, removeUnusedPhotos } from "@/lib/photos";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/geo";
 import { LISTING_TYPE_LABEL } from "@/lib/pricing";
@@ -32,8 +33,6 @@ export const Route = createFileRoute("/_authenticated/ny-annons")({
   component: ListingForm,
 });
 
-const MAX_IMAGES = 8;
-
 const EMPTY = {
   title: "",
   description: "",
@@ -44,7 +43,6 @@ const EMPTY = {
   price_day: "",
   price_week: "",
   deposit: "",
-  images: "",
 };
 
 /** Heltal ≥ 0 i kronor, eller null om fältet är tomt/ogiltigt. */
@@ -64,12 +62,13 @@ function ListingForm() {
   const [form, setForm] = useState(EMPTY);
   const [attrs, setAttrs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  // Bilder som laddats upp nu kan tas bort direkt; sparade bilder städas först när ändringen är sparad.
+  const uploadedNow = useRef(new Set<string>());
+  const removedSaved = useRef<string[]>([]);
   const set = (k: keyof typeof EMPTY, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const images = useMemo(
-    () => form.images.split(/[\n,]/).map((s) => s.trim()).filter(Boolean),
-    [form.images],
-  );
   const attrDefs = CATEGORY_ATTRIBUTES[form.category_slug] ?? [];
 
   /* Redigeringsläge: hämta befintlig annons */
@@ -95,8 +94,8 @@ function ListingForm() {
       price_day: existing.price_day != null ? String(existing.price_day) : "",
       price_week: existing.price_week != null ? String(existing.price_week) : "",
       deposit: existing.deposit ? String(existing.deposit) : "",
-      images: (existing.images ?? []).join("\n"),
     });
+    setPhotos(existing.images ?? []);
     const a = (existing.attributes as Record<string, unknown>) ?? {};
     setAttrs(Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v)])));
   }, [existing]);
@@ -110,8 +109,6 @@ function ListingForm() {
     if (type === "rent" && kronor(form.price_day) == null) return "Ange ett pris per dygn i kronor.";
     if (form.price_week && kronor(form.price_week) == null) return "Veckopriset måste vara ett belopp i kronor.";
     if (form.deposit && kronor(form.deposit) == null) return "Depositionen måste vara ett belopp i kronor.";
-    if (images.length > MAX_IMAGES) return `Högst ${MAX_IMAGES} bilder.`;
-    if (images.some((src) => !/^https:\/\//.test(src))) return "Bildlänkar måste börja med https://";
     return null;
   }
 
@@ -137,7 +134,7 @@ function ListingForm() {
       price_month: null,
       deposit: sale ? 0 : (kronor(form.deposit) ?? 0),
       attributes: attrs,
-      images: images.length ? images : ["https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200"],
+      images: photos,
       ...(status ? { status } : {}),
     };
 
@@ -145,6 +142,7 @@ function ListingForm() {
       const { error } = await supabase.from("listings").update(payload).eq("id", editId);
       setBusy(false);
       if (error) { toast.error("Kunde inte spara ändringarna."); return; }
+      void removeUnusedPhotos(user!.id, removedSaved.current);
       toast.success("Annonsen är uppdaterad.");
       navigate({ to: "/mina-annonser" });
       return;
@@ -192,6 +190,23 @@ function ListingForm() {
             </Button>
           ))}
         </div>
+      </F>
+
+      <F label="Bilder">
+        {user && <PhotoUploader
+          userId={user.id}
+          value={photos}
+          onChange={setPhotos}
+          onUploaded={(path) => uploadedNow.current.add(path)}
+          onRemove={(path) => {
+            if (uploadedNow.current.has(path)) {
+              void supabase.storage.from(PHOTO_BUCKET).remove([path]);
+            } else {
+              removedSaved.current.push(path);
+            }
+          }}
+          onBusyChange={setUploading}
+        />}
       </F>
 
       <F label="Rubrik">
@@ -268,21 +283,6 @@ function ListingForm() {
         </F>
       </div>
 
-      <div className="rounded-3xl border border-dashed border-border p-5">
-        <Label className="flex items-center gap-2"><ImagePlus className="h-4 w-4" /> Bilder (länkar, en per rad)</Label>
-        <Textarea className="mt-2" rows={3} placeholder="https://…" value={form.images} onChange={(e) => set("images", e.target.value)} />
-        <p className="mt-2 text-xs text-muted-foreground">
-          Högst {MAX_IMAGES} bilder. Uppladdning direkt från mobilen kommer snart.
-        </p>
-        {images.length > 0 && (
-          <div className="mt-3 flex gap-2 overflow-x-auto">
-            {images.map((src) => (
-              <img key={src} src={src} alt="" loading="lazy" className="h-20 w-20 rounded-xl object-cover" />
-            ))}
-          </div>
-        )}
-      </div>
-
       {attrDefs.length > 0 && (
         <details className="rounded-3xl border border-border p-5">
           <summary className="cursor-pointer font-display text-base font-semibold">Fler detaljer (valfritt)</summary>
@@ -322,19 +322,19 @@ function ListingForm() {
       <div className="flex flex-wrap gap-2">
         {editId ? (
           <>
-            <Button className="flex-1 rounded-full" onClick={() => save()} disabled={busy}>Spara ändringar</Button>
+            <Button className="flex-1 rounded-full" onClick={() => save()} disabled={busy || uploading}>Spara ändringar</Button>
             {existing?.status === "draft" && (
-              <Button variant="outline" className="rounded-full" onClick={() => save("published")} disabled={busy}>
+              <Button variant="outline" className="rounded-full" onClick={() => save("published")} disabled={busy || uploading}>
                 Publicera
               </Button>
             )}
           </>
         ) : (
           <>
-            <Button className="flex-1 rounded-full" onClick={() => save("published")} disabled={busy}>
+            <Button className="flex-1 rounded-full" onClick={() => save("published")} disabled={busy || uploading}>
               Publicera ({LISTING_TYPE_LABEL[type].toLowerCase()})
             </Button>
-            <Button variant="outline" className="rounded-full" onClick={() => save("draft")} disabled={busy}>
+            <Button variant="outline" className="rounded-full" onClick={() => save("draft")} disabled={busy || uploading}>
               Spara som utkast
             </Button>
           </>

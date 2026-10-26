@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
+import { removeAllMyPhotos } from "@/lib/photos";
 
 export const Route = createFileRoute("/_authenticated/konto")({
   head: () => ({
@@ -65,6 +66,8 @@ function AccountPage() {
 
   async function deleteAccount() {
     setBusy(true);
+    // Bildfilerna tas bort via Storage innan kontot raderas.
+    await removeAllMyPhotos(user!.id).catch(() => undefined);
     const { error } = await supabase.rpc("delete_my_account");
     if (error) {
       setBusy(false);
@@ -146,7 +149,8 @@ function AccountPage() {
       <section className="mt-10 space-y-3 rounded-3xl border border-destructive/40 p-5">
         <h2 className="font-display text-xl font-semibold">Radera konto</h2>
         <p className="text-sm text-muted-foreground">
-          Ditt konto, din profil, dina annonser, favoriter, sparade sökningar och konversationer raderas för gott.
+          Ditt konto, din profil, dina annonser och bilder, favoriter, sparade sökningar och konversationer raderas
+          för gott.
           Det går inte att ångra.
         </p>
         <div className="space-y-1.5">

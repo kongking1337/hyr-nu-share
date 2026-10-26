@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MAX_MESSAGE_LENGTH, sendMessage } from "@/lib/messages";
+import { photoUrl } from "@/lib/photos";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/meddelanden")({
@@ -126,7 +127,7 @@ function MessagesPage() {
             >
               {c.listing_image ? (
                 <img
-                  src={c.listing_image}
+                  src={photoUrl(c.listing_image)}
                   alt=""
                   className="h-11 w-11 shrink-0 rounded-xl object-cover"
                 />

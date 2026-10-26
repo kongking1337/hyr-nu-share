@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ContactSeller } from "@/components/ContactSeller";
 import { ExampleBadge } from "@/components/ExampleBadge";
+import { PhotoGallery } from "@/components/PhotoGallery";
 import { ListingTypeBadge } from "@/components/ListingTypeBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -63,11 +64,7 @@ function ListingPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <img
-        src={listing.images[0]}
-        alt={listing.title}
-        className="aspect-[4/3] w-full rounded-3xl object-cover"
-      />
+      <PhotoGallery images={listing.images} title={listing.title} />
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">

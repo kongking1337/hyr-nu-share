@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { kr } from "@/lib/pricing";
+import { photoUrl } from "@/lib/photos";
 
 export const Route = createFileRoute("/_authenticated/bokningar")({
   head: () => ({
@@ -58,7 +59,7 @@ function BookingsPage() {
           const l = (b as { listings: { title: string; images: string[]; city: string } | null }).listings;
           return (
             <div key={b.id} className="flex flex-wrap items-center gap-4 rounded-3xl border border-border p-4">
-              {l?.images?.[0] && <img src={l.images[0]} alt="" className="h-20 w-24 rounded-2xl object-cover" />}
+              {l?.images?.[0] && <img src={photoUrl(l.images[0])} alt="" className="h-20 w-24 rounded-2xl object-cover" />}
               <div className="min-w-40 flex-1">
                 <p className="font-medium">{l?.title ?? "Annons"}</p>
                 <p className="text-xs text-muted-foreground">

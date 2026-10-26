@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { PLACEHOLDER_PHOTO, photoUrl } from "@/lib/photos";
 import { distanceKm, normalize } from "../geo";
 import type { ProviderQuery, RentalProvider, UnifiedResult } from "./types";
 
@@ -51,7 +52,7 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     area: r.area,
     lat: Number(r.lat),
     lng: Number(r.lng),
-    images: r.images?.length ? r.images : ["https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1200"],
+    images: r.images?.length ? r.images.map(photoUrl) : [PLACEHOLDER_PHOTO],
     ownerName: r.owner_name,
     ownerType: r.owner_type,
     rating: Number(r.rating),

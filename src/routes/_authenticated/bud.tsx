@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { kr } from "@/lib/pricing";
 import { DATA_WEIGHT_NOTE, offerStats, type OfferRow } from "@/lib/offers";
 import { cn } from "@/lib/utils";
+import { photoUrl } from "@/lib/photos";
 
 export const Route = createFileRoute("/_authenticated/bud")({
   head: () => ({
@@ -48,7 +49,7 @@ function OffersPage() {
   const toView = (o: Row): OfferView => ({
     ...o,
     listingTitle: o.listings?.title ?? "Annons",
-    ...(o.listings?.images?.[0] ? { listingImage: o.listings.images[0] } : {}),
+    ...(o.listings?.images?.[0] ? { listingImage: photoUrl(o.listings.images[0]) } : {}),
   });
 
   const shown: OfferView[] = tab === "owner" ? asOwner.map(toView) : asRenter.map(toView);
