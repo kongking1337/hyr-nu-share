@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JamforRouteImport } from './routes/jamfor'
+import { Route as NyttLosenordRouteImport } from './routes/nytt-losenord'
 import { Route as SokRouteImport } from './routes/sok'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
@@ -44,6 +45,11 @@ const AuthRoute = AuthRouteImport.update({
 const JamforRoute = JamforRouteImport.update({
   id: '/jamfor',
   path: '/jamfor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NyttLosenordRoute = NyttLosenordRouteImport.update({
+  id: '/nytt-losenord',
+  path: '/nytt-losenord',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SokRoute = SokRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
+  '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
+  '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/jamfor': typeof JamforRoute
+  '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/jamfor'
+    | '/nytt-losenord'
     | '/sok'
     | '/admin'
     | '/bokningar'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/jamfor'
+    | '/nytt-losenord'
     | '/sok'
     | '/admin'
     | '/bokningar'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/jamfor'
+    | '/nytt-losenord'
     | '/sok'
     | '/_authenticated/admin'
     | '/_authenticated/bokningar'
@@ -234,6 +246,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   JamforRoute: typeof JamforRoute
+  NyttLosenordRoute: typeof NyttLosenordRoute
   SokRoute: typeof SokRoute
   AnnonsIdRoute: typeof AnnonsIdRoute
   HyraKategoriRoute: typeof HyraKategoriRoute
@@ -268,6 +281,13 @@ declare module '@tanstack/react-router' {
       path: '/jamfor'
       fullPath: '/jamfor'
       preLoaderRoute: typeof JamforRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nytt-losenord': {
+      id: '/nytt-losenord'
+      path: '/nytt-losenord'
+      fullPath: '/nytt-losenord'
+      preLoaderRoute: typeof NyttLosenordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sok': {
@@ -396,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   JamforRoute: JamforRoute,
+  NyttLosenordRoute: NyttLosenordRoute,
   SokRoute: SokRoute,
   AnnonsIdRoute: AnnonsIdRoute,
   HyraKategoriRoute: HyraKategoriRoute,

@@ -804,6 +804,7 @@ export type Database = {
           start_date: string
         }[]
       }
+      delete_my_account: { Args: never; Returns: undefined }
       expire_stale_offers: { Args: never; Returns: undefined }
       mark_conversation_read: {
         Args: { _conversation_id: string }

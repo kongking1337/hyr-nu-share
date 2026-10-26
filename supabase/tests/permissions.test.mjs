@@ -769,3 +769,34 @@ test("logged-out visitors cannot write anything", async () => {
   await rejects(null, "UPDATE public.listings SET title = 'x'");
   await rejects(null, "DELETE FROM public.categories");
 });
+
+// --- Deleting your account ------------------------------------------------------
+
+test("users can delete their own account, which removes their data but nobody else's", async () => {
+  await createUser("dave", "Dave Dahl");
+  const listingId = await createListing(u.dave, "Daves borrmaskin");
+  await as(u.dave, "INSERT INTO public.favorites (user_id, listing_id) VALUES ($1, $2)", [u.dave.id, u.alice.listingId]);
+  const [{ id: conversationId }] = await as(u.dave, "SELECT public.start_conversation($1, 'Hej Alice') AS id", [
+    u.alice.listingId,
+  ]);
+  await as(u.dave, reportSql, [u.dave.id, "listing", u.alice.listingId, "Testrapport"]);
+  const aliceListingsBefore = await platform("SELECT count(*)::int AS n FROM public.listings WHERE owner_id = $1", [u.alice.id]);
+
+  await rejects(null, "SELECT public.delete_my_account()");
+  await as(u.dave, "SELECT public.delete_my_account()");
+
+  const left = await platform(
+    `SELECT (SELECT count(*)::int FROM auth.users WHERE id = $1) AS users,
+            (SELECT count(*)::int FROM public.profiles WHERE id = $1) AS profiles,
+            (SELECT count(*)::int FROM public.listings WHERE id = $2) AS listings,
+            (SELECT count(*)::int FROM public.favorites WHERE user_id = $1) AS favorites,
+            (SELECT count(*)::int FROM public.conversations WHERE id = $3) AS conversations,
+            (SELECT count(*)::int FROM public.reports WHERE reason = 'Testrapport' AND reporter_id IS NULL) AS anonymous_reports`,
+    [u.dave.id, listingId, conversationId],
+  );
+  assert.deepEqual(left, [{ users: 0, profiles: 0, listings: 0, favorites: 0, conversations: 0, anonymous_reports: 1 }]);
+  assert.deepEqual(
+    await platform("SELECT count(*)::int AS n FROM public.listings WHERE owner_id = $1", [u.alice.id]),
+    aliceListingsBefore,
+  );
+});

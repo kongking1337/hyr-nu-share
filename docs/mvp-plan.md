@@ -65,9 +65,17 @@ Alternatives:
 | 3 | **Sell + rent, Stockholm, one category group; hide everything else** (done 2026-10-27; all 8 categories still visible until the category is chosen) | M | Menu: Sök, Lägg upp annons, Meddelanden, Favoriter, Mitt konto. One page to create a listing with Säljes/Uthyres. "Mark as sold" hides the listing from search |
 | 4 | **Contact the seller** (thread + email notification) (done 2026-10-28; emails need Resend + Cloudflare secrets) | M–L | Buyer → seller via a button on the listing. The seller gets an email without addresses being shared. A third user can't read it |
 | 5 | **Photo upload** (Supabase Storage, shrunk in the browser, max 8) | M | Works from a phone. Non-images are rejected. Nobody can delete someone else's photos. Gallery on the listing page |
-| 6 | **Account basics** (password reset, own SMTP, Swedish errors, delete account) | S–M | Reset email arrives and works. Errors are in Swedish. The account can be deleted |
+| 6 | **Account basics** (password reset, own SMTP, Swedish errors, delete account) (code done 2026-10-29; SMTP setup in docs/email-setup.md) | S–M | Reset email arrives and works. Errors are in Swedish. The account can be deleted |
 | 7 | **Minimum moderation** (admin role check, report reasons, hide listing, email on report) | M | Non-admins can't open `/admin`. Admin hides a listing in one click |
 | 8 | **Spam and launch basics** (captcha, limits, terms, privacy policy, `lang="sv"`, logging, backups) | M | See the task description in the review |
+
+## Open before inviting users
+
+- **Email (blocks signups):** Supabase's built-in sender only reaches the Supabase team,
+  so ordinary users get no confirmation or password-reset email. Set up SMTP per
+  `docs/email-setup.md` (Gmail for a closed beta, or a domain + Resend). Marcus
+  postponed this on 2026-10-29. A domain also turns on "new message" emails.
+- **Test account deletion** once with a throwaway account on the live site.
 
 ## Known issues (summary of the review)
 
