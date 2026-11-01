@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { DEFAULTS, type SearchParams } from "@/lib/search/params";
+import { formatDates } from "@/lib/bookings";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { CATEGORY_ATTRIBUTES, SUBCATEGORIES, parseAttrFilter, stringifyAttrFilter } from "@/lib/search/attributes";
 
@@ -21,6 +22,7 @@ export function activeChips(p: SearchParams): Chip[] {
     const name = LOCATIONS.find((l) => l.slug === p.location)?.name ?? p.location;
     add("location", `${name} +${p.radius} km`, { location: DEFAULTS.location });
   }
+  if (p.from && p.to) add("dates", `Ledig ${formatDates(p.from, p.to)}`, { from: "", to: "" });
   if (p.priceMin) add("priceMin", `Från ${p.priceMin} kr`, { priceMin: 0 });
   if (p.priceMax) add("priceMax", `Max ${p.priceMax} kr`, { priceMax: 0 });
   if (p.owner !== "all") add("owner", p.owner === "private" ? "Privatpersoner" : "Företag", { owner: "all" });

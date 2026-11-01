@@ -36,7 +36,7 @@ function TermsPage() {
         <li>Du kan när som helst radera ditt konto under Mitt konto.</li>
       </ul>
 
-      <h2>3. Annonser</h2>
+      <h2>3. Annonser och bokningar</h2>
       <ul>
         <li>
           Du ansvarar för innehållet i dina annonser. Beskriv saken ärligt, med pris och skick.
@@ -47,6 +47,22 @@ function TermsPage() {
         </li>
         <li>Välj rätt kategori och lägg inte upp samma annons flera gånger.</li>
         <li>Pausa eller ta bort annonsen när saken inte längre går att hyra.</li>
+        <li>
+          En bokning gäller först när uthyraren har godkänt förfrågan. Då är dagarna bokade för den
+          som hyr.
+        </li>
+        <li>
+          Hyra och eventuell deposition betalar ni direkt till varandra. Hyrkoll är inte part i
+          hyresavtalet och förmedlar inga betalningar.
+        </li>
+        <li>
+          Följ uthyrarens villkor för upphämtning, regler och avbokning, och avboka i god tid om du
+          inte kan komma.
+        </li>
+        <li>
+          Den som hyr ansvarar för saken under hyrestiden och lämnar tillbaka den i samma skick. Fota
+          gärna skicket vid utlämning och återlämning.
+        </li>
       </ul>
 
       <h2>4. Förbjudet att annonsera</h2>

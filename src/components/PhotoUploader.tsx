@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Välj bilder från mobilen eller datorn. Bilderna laddas upp direkt; den första är omslagsbild.
  * `onRemove` får sökvägen till bilder som tas bort, så att formuläret kan städa upp.
+ * `cover={false}` för bilder utan omslagsbild (t.ex. skicket vid en bokning).
  */
 export function PhotoUploader({
   userId,
@@ -16,6 +17,7 @@ export function PhotoUploader({
   onRemove,
   onUploaded,
   onBusyChange,
+  cover = true,
 }: {
   userId: string;
   value: string[];
@@ -23,6 +25,7 @@ export function PhotoUploader({
   onRemove: (path: string) => void;
   onUploaded: (path: string) => void;
   onBusyChange: (busy: boolean) => void;
+  cover?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -67,7 +70,7 @@ export function PhotoUploader({
             className="group relative aspect-square overflow-hidden rounded-2xl bg-muted"
           >
             <img src={photoUrl(src)} alt={`Bild ${i + 1}`} className="h-full w-full object-cover" />
-            {i === 0 ? (
+            {!cover ? null : i === 0 ? (
               <span className="absolute left-1.5 top-1.5 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-semibold">
                 Omslagsbild
               </span>
@@ -126,7 +129,7 @@ export function PhotoUploader({
         }}
       />
       <p className="text-xs text-muted-foreground">
-        Upp till {MAX_PHOTOS} bilder. Den första blir omslagsbild. Bilderna förminskas och
+        Upp till {MAX_PHOTOS} bilder.{cover && " Den första blir omslagsbild."} Bilderna förminskas och
         platsinformation tas bort innan de laddas upp.
       </p>
       {value.length === 0 && (

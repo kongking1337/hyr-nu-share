@@ -43,7 +43,16 @@ export function useSearchResults(params: SearchParams, center: Center) {
 
   const queries = useQueries({
     queries: selected.map((p) => ({
-      queryKey: ["search", p.slug, params.q, params.category, center.label, center.wholeRegion ? 0 : params.radius],
+      queryKey: [
+        "search",
+        p.slug,
+        params.q,
+        params.category,
+        center.label,
+        center.wholeRegion ? 0 : params.radius,
+        params.from,
+        params.to,
+      ],
       queryFn: () =>
         p.search({
           text: params.q,

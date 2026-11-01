@@ -8,6 +8,7 @@ import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CATEGORY_ATTRIBUTES, SUBCATEGORIES, parseAttrFilter, stringifyAttrFilter } from "@/lib/search/attributes";
 import { RADIUS_OPTIONS, type SearchParams } from "@/lib/search/params";
+import { todayISO } from "@/lib/bookings";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { cn } from "@/lib/utils";
 import { REGION } from "@/lib/geo";
@@ -59,7 +60,7 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
   return (
     <Accordion
       type="multiple"
-      defaultValue={["kategori", "plats", "pris", "uthyrare"]}
+      defaultValue={["kategori", "plats", "datum", "pris", "uthyrare"]}
       className="w-full"
     >
       <AccordionItem value="kategori">
@@ -177,6 +178,37 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
               </button>
             ))}
           </div>
+        </AccordionContent>
+      </AccordionItem>
+
+      <AccordionItem value="datum">
+        <AccordionTrigger className="text-sm font-semibold">Datum</AccordionTrigger>
+        <AccordionContent className="space-y-3 pb-4">
+          <div className="grid grid-cols-2 gap-2">
+            <Row label="Från">
+              <Input
+                type="date"
+                min={todayISO()}
+                value={params.from}
+                onChange={(e) => {
+                  const from = e.target.value;
+                  patch({ from, to: params.to && from && params.to < from ? from : params.to || from });
+                }}
+              />
+            </Row>
+            <Row label="Till">
+              <Input
+                type="date"
+                min={params.from || todayISO()}
+                value={params.to}
+                onChange={(e) => {
+                  const to = e.target.value;
+                  patch({ to: params.from && to && to < params.from ? params.from : to, from: params.from || to });
+                }}
+              />
+            </Row>
+          </div>
+          <p className="text-xs text-muted-foreground">Visar bara saker som är lediga alla dagarna.</p>
         </AccordionContent>
       </AccordionItem>
 

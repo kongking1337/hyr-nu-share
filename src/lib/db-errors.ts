@@ -3,7 +3,7 @@
  * användaren och visas som de är. Tekniska fel ersätts med `fallback`.
  */
 const OWN_MESSAGE =
-  /^(Du |Kontot är spärrat|Högst \d|Bilder måste|Annonsen |Meddelandet |Exempelannonser|Det här är din|Logga in)/;
+  /^(Du |Kontot är spärrat|Högst \d|Bilder|Priset |Bara uthyraren|Annonsen |Meddelandet |Exempelannonser|Det här är din|Logga in|Den här saken|Välj |Startdatumet|Datumen |Förfrågan |Bokningen |Markera först|Hyran |Neka förfrågan|Uthyraren )/;
 
 export function userMessage(error: unknown, fallback: string): string {
   const message =

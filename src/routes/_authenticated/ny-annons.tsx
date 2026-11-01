@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +17,8 @@ import { userMessage } from "@/lib/db-errors";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/geo";
 import { CATEGORY_ATTRIBUTES } from "@/lib/search/attributes";
+import { CANCELLATION_POLICIES, asPolicy } from "@/lib/bookings";
+import type { CancellationPolicy } from "@/lib/providers/types";
 
 export const Route = createFileRoute("/_authenticated/ny-annons")({
   validateSearch: (s: Record<string, unknown>): { id?: string } =>
@@ -40,6 +43,10 @@ const EMPTY = {
   price_day: "",
   price_week: "",
   deposit: "",
+  min_days: "1",
+  delivery_fee: "",
+  included: "",
+  rental_rules: "",
 };
 
 /** Heltal ≥ 0 i kronor, eller null om fältet är tomt/ogiltigt. */
@@ -55,6 +62,9 @@ function ListingForm() {
   const { id: editId } = Route.useSearch();
 
   const [form, setForm] = useState(EMPTY);
+  const [pickup, setPickup] = useState(true);
+  const [delivery, setDelivery] = useState(false);
+  const [policy, setPolicy] = useState<CancellationPolicy>("flexible");
   const [attrs, setAttrs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -86,7 +96,14 @@ function ListingForm() {
       price_day: existing.price_day != null ? String(existing.price_day) : "",
       price_week: existing.price_week != null ? String(existing.price_week) : "",
       deposit: existing.deposit ? String(existing.deposit) : "",
+      min_days: String(existing.min_days ?? 1),
+      delivery_fee: existing.delivery_fee ? String(existing.delivery_fee) : "",
+      included: existing.included ?? "",
+      rental_rules: existing.rental_rules ?? "",
     });
+    setPickup(existing.pickup_available);
+    setDelivery(existing.delivery_available);
+    setPolicy(asPolicy(existing.cancellation_policy));
     setPhotos(existing.images ?? []);
     const a = (existing.attributes as Record<string, unknown>) ?? {};
     setAttrs(Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v)])));
@@ -104,6 +121,15 @@ function ListingForm() {
     if ((kronor(form.deposit) ?? 0) > 1_000_000) return "Depositionen får vara högst 1 000 000 kr.";
     if (form.price_week && kronor(form.price_week) == null) return "Veckopriset måste vara ett belopp i kronor.";
     if (form.deposit && kronor(form.deposit) == null) return "Depositionen måste vara ett belopp i kronor.";
+    const minDays = Number(form.min_days);
+    if (!Number.isInteger(minDays) || minDays < 1 || minDays > 30) return "Kortaste hyra ska vara 1–30 dygn.";
+    if (!pickup && !delivery) return "Välj upphämtning, leverans eller båda.";
+    if (delivery && form.delivery_fee && kronor(form.delivery_fee) == null) {
+      return "Leveransavgiften måste vara ett belopp i kronor.";
+    }
+    if (delivery && (kronor(form.delivery_fee) ?? 0) > 100_000) return "Leveransavgiften får vara högst 100 000 kr.";
+    if (form.included.length > 1000) return "”Det här ingår” får vara högst 1 000 tecken.";
+    if (form.rental_rules.length > 1000) return "Reglerna får vara högst 1 000 tecken.";
     return null;
   }
 
@@ -127,6 +153,13 @@ function ListingForm() {
       price_hour: null,
       price_month: null,
       deposit: kronor(form.deposit) ?? 0,
+      min_days: Number(form.min_days),
+      pickup_available: pickup,
+      delivery_available: delivery,
+      delivery_fee: delivery ? (kronor(form.delivery_fee) ?? 0) : 0,
+      included: form.included.trim(),
+      rental_rules: form.rental_rules.trim(),
+      cancellation_policy: policy,
       attributes: attrs,
       images: photos,
       ...(status ? { status } : {}),
@@ -228,6 +261,72 @@ function ListingForm() {
           <Input inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
         </F>
       </div>
+
+      <section className="space-y-4 rounded-3xl border border-border p-5">
+        <h2 className="font-display text-base font-semibold">Hyresvillkor</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <F label="Kortaste hyra (dygn)">
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={30}
+              value={form.min_days}
+              onChange={(e) => set("min_days", e.target.value)}
+            />
+          </F>
+          <F label="Avbokning">
+            <Select value={policy} onValueChange={(v) => setPolicy(asPolicy(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(CANCELLATION_POLICIES) as CancellationPolicy[]).map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {CANCELLATION_POLICIES[p].label} – {CANCELLATION_POLICIES[p].text}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </F>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Checkbox id="pickup" checked={pickup} onCheckedChange={(v) => setPickup(v === true)} />
+            <Label htmlFor="pickup" className="cursor-pointer font-normal">Upphämtning hos mig</Label>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <Checkbox id="delivery" checked={delivery} onCheckedChange={(v) => setDelivery(v === true)} />
+            <Label htmlFor="delivery" className="cursor-pointer font-normal">Jag kan leverera</Label>
+          </div>
+        </div>
+        {delivery && (
+          <F label="Leveransavgift (kr, 0 = ingår)">
+            <Input
+              inputMode="numeric"
+              value={form.delivery_fee}
+              placeholder="0"
+              onChange={(e) => set("delivery_fee", e.target.value)}
+            />
+          </F>
+        )}
+        <F label="Det här ingår (valfritt)">
+          <Textarea
+            rows={2}
+            maxLength={1000}
+            value={form.included}
+            placeholder="T.ex. 2 batterier, laddare och väska"
+            onChange={(e) => set("included", e.target.value)}
+          />
+        </F>
+        <F label="Regler (valfritt)">
+          <Textarea
+            rows={2}
+            maxLength={1000}
+            value={form.rental_rules}
+            placeholder="T.ex. Lämnas tillbaka rengjord. Visa legitimation vid upphämtning."
+            onChange={(e) => set("rental_rules", e.target.value)}
+          />
+        </F>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <F label="Kommun">

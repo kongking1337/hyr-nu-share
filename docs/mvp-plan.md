@@ -12,7 +12,7 @@ security issues) is summarized under "Known issues" below.
 | Category | Not decided. Recommendation below. |
 | Who runs the site | A company in the future. Right now: development, no public launch. |
 | Demo data (24 listings, 72 reviews) | **Keep for now.** Must be removed or clearly marked before real users are invited. |
-| Rental features (bookings, bidding, comparison, external sources, companies) | Hidden if needed. **Not deleted.** |
+| Rental features (bookings, bidding, comparison, external sources, companies) | Hidden if needed. **Not deleted.** Bookings came back in phase 1 (2026-11-01). |
 
 ## Category: recommendation
 
@@ -71,6 +71,20 @@ Alternatives:
 | 7 | **Minimum moderation** (admin role check, report reasons, hide listing, email on report) (done 2026-10-31) | M | Non-admins can't open `/admin`. Admin hides a listing in one click |
 | 8 | **Spam and launch basics** (captcha, limits, terms, privacy policy, `lang="sv"`, logging, backups) (code done 2026-11-01; setup in docs/operations.md) | M | See the task description in the review |
 | 9 | **Rent only** (Marcus, 2026-10-31) (done 2026-10-31) | S | Posting a listing only offers renting out. No Säljes/Uthyres filter or badges. Texts say "hyr och hyr ut". Old sale listings don't show in search or on the home page |
+| 10 | **Booking requests** (phase 1, Marcus 2026-11-01) | M–L | Pick dates on the listing and see the total → "Skicka förfrågan". The owner accepts or declines under Bokningar; every step is a message in the conversation. Owner approves every booking (no instant booking); payment directly between the two |
+| 11 | **Availability calendar** (phase 1) | M | Accepted bookings block their days; owners block days under Mina annonser → Kalender. The listing shows taken days; search has a "Ledig" date filter |
+| 12 | **Pickup and return** (phase 1) | S–M | "Markera som utlämnad" / "återlämnad", condition photos from both sides at each step; then the rental is finished |
+| 13 | **Rental rules per listing** (phase 1) | S | Minimum days, pickup and/or delivery with fee, what's included, rules, cancellation rule (flexible / normal / strict, shown but not enforced since no money is handled) |
+
+Tasks 10–13: code in `supabase/migrations/20261101150000_rental_flow.sql` and the
+`/bokningar` page; built 2026-11-01, the migration has to be run in the SQL Editor
+before the code goes live.
+
+## Next: phase 2, trust
+
+Reviews after a finished rental (both ways, shown when both have written or after 14
+days; delete the fake demo reviews), a public profile per user, a simple rental agreement
+per booking, verified phone number, blocking a user, and the hidden trust score (see Later).
 
 ## Open before inviting users
 
@@ -86,7 +100,9 @@ Alternatives:
 - **Test on the live site** with two accounts, since nothing could be clicked through
   in a browser during development: sign up and log in, post a listing with photos
   from an iPhone, an Android phone and a computer, send messages both ways, pause and
-  reactivate a listing, report a listing and handle it in `/admin`, and delete a throwaway account.
+  reactivate a listing, block days in the calendar, request a booking and accept it, mark
+  pickup and return with photos, cancel a booking, report a listing and handle it in
+  `/admin`, and delete a throwaway account.
   Password reset once email works.
 - **Remove the 24 demo listings** (and their fake reviews) before inviting real users.
 - **Choose the launch category** (all 8 are visible now): edit `src/lib/categories.ts`.
@@ -102,8 +118,16 @@ Alternatives:
 
 ## Later (after the first version)
 
-- **Rental features that are hidden today** can come back now that Hyrkoll is rent-only:
-  an availability calendar and booking requests (the code and tables are still there).
+- **Phase 3, email alerts (needs a domain):** emails for booking requests and answers,
+  reminders the day before pickup and return, and alerts for saved searches.
+- **Phase 4, money (needs the company):** payment through the site (e.g. Stripe: pay when
+  accepted, owner paid after return, deposit held), damage protection through an insurance
+  partner, BankID.
+- **Phase 5, growth:** link previews when a listing is shared (see server-rendered listing
+  pages below), rental companies with many items, map view in search, "Önskas hyra"
+  (post what you want to rent), suggested price when posting.
+- **Remove bidding and price comparison** (hidden prototype code that doesn't fit renting;
+  bidding is already switched off in the database since phase 1).
 - **Hidden seller rating** (Marcus, 2026-10-31): a trust score per seller that only
   admins see, based on how they behave, e.g. reports against them (and whether
   they were upheld), hidden listings, blocks, account age, and how they answer

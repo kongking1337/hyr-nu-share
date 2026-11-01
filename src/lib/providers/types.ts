@@ -19,6 +19,8 @@ export type ResultSource = {
 
 export type ListingType = "sale" | "rent";
 
+export type CancellationPolicy = "flexible" | "moderate" | "strict";
+
 export type UnifiedResult = {
   id: string;
   source: ResultSource;
@@ -50,6 +52,12 @@ export type UnifiedResult = {
   deliveryAvailable: boolean;
   deliveryFee: number;
   pickupAvailable: boolean;
+  /** Kortaste hyra i dygn */
+  minDays: number;
+  /** "Det här ingår" och uthyrarens regler, fritext */
+  included: string;
+  rentalRules: string;
+  cancellationPolicy: CancellationPolicy;
   instantBook: boolean;
   /** Interna annonser: uthyraren tar emot prisförslag/bud */
   allowOffers?: boolean;

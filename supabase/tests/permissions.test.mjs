@@ -109,11 +109,6 @@ async function createListing(owner, title, { instantBook = false } = {}) {
   return row.id;
 }
 
-const bookingSql = `
-  INSERT INTO public.bookings (listing_id, renter_id, owner_id, start_date, end_date, days, total_price, status)
-  VALUES ($1, $2, NULL, $3, $4, 99, 1000, 'confirmed')
-  RETURNING id, owner_id, status::text, days`;
-
 before(async () => {
   db = new PGlite();
   await db.exec(SUPABASE_BASE);
@@ -400,70 +395,357 @@ test("users cannot write reviews; everyone can still read them", async () => {
 
 // --- Bookings ------------------------------------------------------------------
 
-test("bookings get the right owner, status and length, whatever the browser sends", async () => {
-  const [b] = await as(u.bob, bookingSql, [
-    u.alice.listingId,
-    u.bob.id,
-    "2026-11-01",
-    "2026-11-03",
-  ]);
-  assert.deepEqual([b.owner_id, b.status, b.days], [u.alice.id, "requested", 3]);
-  u.bob.bookingId = b.id;
-});
+/** The date `n` days from today, as YYYY-MM-DD. */
+const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
-test("owners see bookings of their listings and can confirm them", async () => {
-  const rows = await as(u.alice, "SELECT id FROM public.bookings WHERE id = $1", [u.bob.bookingId]);
-  assert.equal(rows.length, 1);
-  await as(u.alice, "UPDATE public.bookings SET status = 'confirmed' WHERE id = $1", [
-    u.bob.bookingId,
-  ]);
-});
+const requestBooking = (who, listingId, start, end, { delivery = false, message = null } = {}) =>
+  as(who, "SELECT public.request_booking($1, $2, $3, $4, $5) AS r", [
+    listingId,
+    start,
+    end,
+    delivery,
+    message,
+  ]).then((rows) => rows[0].r);
 
-test("renters cannot confirm their own booking or change the price; they can cancel", async () => {
-  const [b] = await as(u.bob, bookingSql, [
-    u.alice.listingId,
-    u.bob.id,
-    "2026-12-01",
-    "2026-12-02",
-  ]);
-  await rejects(u.bob, "UPDATE public.bookings SET status = 'confirmed' WHERE id = $1", [b.id]);
-  await as(u.bob, "UPDATE public.bookings SET total_price = 1 WHERE id = $1", [b.id]);
-  const [after] = await platform(
-    "SELECT total_price::float AS total FROM public.bookings WHERE id = $1",
-    [b.id],
+const respond = (who, bookingId, action) =>
+  as(who, "SELECT public.respond_booking($1, $2) AS r", [bookingId, action]).then(
+    (rows) => rows[0].r,
   );
-  assert.equal(after.total, 1000);
-  await as(u.bob, "UPDATE public.bookings SET status = 'cancelled' WHERE id = $1", [b.id]);
+
+const setPhotos = (who, bookingId, stage, paths) =>
+  as(who, "SELECT public.set_booking_photos($1, $2, $3::text[])", [bookingId, stage, paths]);
+
+const photoOf = (who) => `${who.id}/${crypto.randomUUID()}.webp`;
+
+const bookingRow = async (id) =>
+  (
+    await platform(
+      `SELECT status::text, days, base_price::float AS base, delivery_fee::float AS fee,
+              deposit::float AS deposit, total_price::float AS total, owner_id,
+              pickup_photos, picked_up_at IS NOT NULL AS picked_up, returned_at IS NOT NULL AS returned
+         FROM public.bookings WHERE id = $1`,
+      [id],
+    )
+  )[0];
+
+test("bookings can only be written through the booking functions", async () => {
+  // Own users, so the message and inbox tests below keep their exact counts.
+  await createUser("olle", "Olle Ek");
+  await createUser("rut", "Rut Ros");
+  await createUser("carl", "Carl Cox");
+  await rejects(
+    u.rut,
+    `INSERT INTO public.bookings (listing_id, renter_id, start_date, end_date, status)
+     VALUES ($1, $2, $3, $4, 'confirmed')`,
+    [u.alice.listingId, u.rut.id, day(5), day(6)],
+  );
 });
 
-test("you cannot book your own listing or a demo listing", async () => {
-  await rejects(u.alice, bookingSql, [u.alice.listingId, u.alice.id, "2027-01-01", "2027-01-02"]);
+test("a request gets the listing's prices and owner, and shows up in the conversation", async () => {
+  const id = await createListing(u.olle, "Släpvagn"); // 199 kr per day
+  await as(
+    u.olle,
+    `UPDATE public.listings SET price_week = 900, deposit = 500, delivery_available = true,
+            delivery_fee = 150 WHERE id = $1`,
+    [id],
+  );
+  u.olle.trailerId = id;
+  const r = await requestBooking(u.rut, id, day(10), day(17), {
+    delivery: true,
+    message: "Hämtar på morgonen",
+  });
+  const b = await bookingRow(r.booking_id);
+  // 8 days: one week (900 kr) + one day (199 kr), plus delivery.
+  assert.deepEqual(
+    [b.status, b.days, b.base, b.fee, b.deposit, b.total, b.owner_id],
+    ["requested", 8, 1099, 150, 500, 1249, u.olle.id],
+  );
+  const msgs = await as(
+    u.olle,
+    "SELECT kind, body, booking_id FROM public.messages WHERE conversation_id = $1",
+    [r.conversation_id],
+  );
+  assert.equal(msgs.length, 1);
+  assert.deepEqual([msgs[0].kind, msgs[0].booking_id], ["booking", r.booking_id]);
+  assert.match(msgs[0].body, /^Bokningsförfrågan: .* \(8 dygn\), 1249 kr inkl\. leverans\.\n\nHämtar på morgonen$/);
+  u.rut.trailerBooking = r.booking_id;
+});
+
+test("requests are checked: dates, length, own and demo listings, one open request each", async () => {
+  const id = u.olle.trailerId;
+  await assert.rejects(requestBooking(u.rut, id, day(40), day(41)), /redan en förfrågan/);
+  await assert.rejects(requestBooking(u.carl, id, day(-1), day(2)), /redan varit/);
+  await assert.rejects(requestBooking(u.carl, id, day(5), day(4)), /Välj start/);
+  await assert.rejects(requestBooking(u.carl, id, day(5), day(100)), /90 dygn/);
+  await assert.rejects(requestBooking(u.carl, id, day(400), day(401)), /ett år/);
+  await assert.rejects(requestBooking(u.olle, id, day(5), day(6)), /egen annons/);
   const [demo] = await platform("SELECT id FROM public.listings WHERE owner_id IS NULL LIMIT 1");
-  await rejects(u.bob, bookingSql, [demo.id, u.bob.id, "2027-01-01", "2027-01-02"]);
+  await assert.rejects(requestBooking(u.rut, demo.id, day(5), day(6)), /Exempelannonser/);
+  await as(u.olle, "UPDATE public.listings SET min_days = 2 WHERE id = $1", [id]);
+  await assert.rejects(requestBooking(u.carl, id, day(5), day(5)), /minst 2 dygn/);
+  await as(u.olle, "UPDATE public.listings SET min_days = 1 WHERE id = $1", [id]);
+  const noDelivery = await createListing(u.olle, "Skruvdragare");
+  await assert.rejects(
+    requestBooking(u.carl, noDelivery, day(5), day(6), { delivery: true }),
+    /leverans/,
+  );
+  await rejects(null, "SELECT public.request_booking($1, $2, $3)", [id, day(5), day(6)]);
+  // The price the renter saw must still be right (2 days × 199 kr = 398 kr).
+  await assert.rejects(
+    as(u.carl, "SELECT public.request_booking($1, $2, $3, false, NULL, 300)", [id, day(5), day(6)]),
+    /Priset har ändrats till 398 kr/,
+  );
+  await as(u.olle, "UPDATE public.listings SET status = 'paused' WHERE id = $1", [noDelivery]);
+  await assert.rejects(requestBooking(u.carl, noDelivery, day(5), day(6)), /går inte att boka/);
+  await rejects(u.olle, "UPDATE public.listings SET min_days = 0 WHERE id = $1", [id]);
+  await rejects(u.olle, "UPDATE public.listings SET cancellation_policy = 'never' WHERE id = $1", [id]);
 });
 
-test("instant bookings cannot double-book confirmed dates", async () => {
-  const id = await createListing(u.alice, "Släpvagn", { instantBook: true });
-  u.alice.instantListingId = id;
-  const [b] = await as(u.bob, bookingSql, [id, u.bob.id, "2027-02-01", "2027-02-03"]);
-  assert.equal(b.status, "confirmed");
-  await rejects(u.mallory, bookingSql, [id, u.mallory.id, "2027-02-03", "2027-02-05"]);
+test("only the owner accepts or declines; accepting declines overlapping requests", async () => {
+  const id = u.olle.trailerId;
+  const m = await requestBooking(u.carl, id, day(15), day(16));
+  await assert.rejects(respond(u.rut, u.rut.trailerBooking, "accept"), /kan inte godkännas/);
+  await assert.rejects(respond(u.mallory, u.rut.trailerBooking, "decline"), /finns inte/);
+  await respond(u.olle, u.rut.trailerBooking, "accept");
+  assert.equal((await bookingRow(u.rut.trailerBooking)).status, "confirmed");
+  assert.equal((await bookingRow(m.booking_id)).status, "declined");
+  const msgs = await as(
+    u.carl,
+    "SELECT body FROM public.messages WHERE conversation_id = $1 ORDER BY created_at",
+    [m.conversation_id],
+  );
+  assert.match(msgs.at(-1).body, /nekades automatiskt/);
+  await assert.rejects(requestBooking(u.carl, id, day(12), day(13)), /inte lediga/);
+});
+
+test("owners block days; taken days are public, but not who booked them", async () => {
+  const id = u.olle.trailerId;
+  const block = "INSERT INTO public.listing_blocked_dates (listing_id, start_date, end_date) VALUES ($1, $2, $3)";
+  await as(u.olle, block, [id, day(30), day(32)]);
+  await rejects(u.rut, block, [id, day(40), day(41)]);
+  await rejects(u.olle, block, [id, day(40), day(39)]);
+  assert.deepEqual(await as(u.rut, "SELECT id FROM public.listing_blocked_dates"), []);
+  await rejects(null, "SELECT id FROM public.listing_blocked_dates");
+  assert.deepEqual(
+    await as(
+      null,
+      "SELECT start_date::text AS s, end_date::text AS e FROM public.booked_dates($1) ORDER BY 1",
+      [id],
+    ),
+    [
+      { s: day(10), e: day(17) },
+      { s: day(30), e: day(32) },
+    ],
+  );
+  await assert.rejects(requestBooking(u.carl, id, day(31), day(33)), /inte lediga/);
+  const taken = async (from, to) =>
+    (await as(null, "SELECT * FROM public.unavailable_listings($1, $2) AS id", [from, to])).map(
+      (r) => r.id,
+    );
+  assert.ok((await taken(day(31), day(31))).includes(id));
+  assert.ok((await taken(day(11), day(11))).includes(id));
+  assert.ok(!(await taken(day(50), day(51))).includes(id));
+});
+
+test("pickup and return with condition photos; then the rental is completed", async () => {
+  await assert.rejects(respond(u.rut, u.rut.trailerBooking, "picked_up"), /inte börjat/);
+  await assert.rejects(respond(u.olle, u.rut.trailerBooking, "returned"), /Markera först/);
+
+  const listing = await createListing(u.olle, "Högtryckstvätt");
+  const r = await requestBooking(u.rut, listing, day(1), day(2));
+  await assert.rejects(setPhotos(u.rut, r.booking_id, "pickup", [photoOf(u.rut)]), /godkända/);
+  await respond(u.olle, r.booking_id, "accept");
+
+  const alicePhoto = photoOf(u.olle);
+  await setPhotos(u.rut, r.booking_id, "pickup", [photoOf(u.rut)]);
+  await setPhotos(u.olle, r.booking_id, "pickup", [alicePhoto]);
+  await assert.rejects(setPhotos(u.rut, r.booking_id, "pickup", [photoOf(u.olle)]), /Hyrkoll/);
+  await assert.rejects(setPhotos(u.rut, r.booking_id, "pickup", ["https://evil.example/x.jpg"]));
+  await assert.rejects(setPhotos(u.mallory, r.booking_id, "pickup", [photoOf(u.mallory)]), /finns inte/);
+  await assert.rejects(
+    setPhotos(u.rut, r.booking_id, "pickup", Array.from({ length: 9 }, () => photoOf(u.rut))),
+    /Högst 8/,
+  );
+  // Bob removes his own photo; Alice's stays.
+  await setPhotos(u.rut, r.booking_id, "pickup", []);
+  assert.deepEqual((await bookingRow(r.booking_id)).pickup_photos, [alicePhoto]);
+
+  await respond(u.rut, r.booking_id, "picked_up");
+  await assert.rejects(respond(u.rut, r.booking_id, "cancel"), /kan inte avbokas/);
+  await assert.rejects(respond(u.rut, r.booking_id, "returned"), /Bara uthyraren/);
+  await respond(u.olle, r.booking_id, "returned");
+  const done = await bookingRow(r.booking_id);
+  assert.deepEqual([done.status, done.picked_up, done.returned], ["completed", true, true]);
+  // Returned before the planned end: the remaining days are free again.
+  assert.deepEqual(await as(null, "SELECT * FROM public.booked_dates($1)", [listing]), []);
+});
+
+test("renters withdraw requests, owners decline, and either side cancels before pickup", async () => {
+  const listing = await createListing(u.olle, "Tält");
+  const a = await requestBooking(u.rut, listing, day(5), day(6));
+  await assert.rejects(respond(u.olle, a.booking_id, "cancel"), /Neka/);
+  await respond(u.rut, a.booking_id, "cancel");
+  const b = await requestBooking(u.rut, listing, day(5), day(6));
+  await respond(u.olle, b.booking_id, "decline");
+  const c = await requestBooking(u.rut, listing, day(5), day(6));
+  await respond(u.olle, c.booking_id, "accept");
+  await respond(u.olle, c.booking_id, "cancel");
+  assert.deepEqual(
+    [(await bookingRow(a.booking_id)).status, (await bookingRow(b.booking_id)).status, (await bookingRow(c.booking_id)).status],
+    ["cancelled", "declined", "cancelled"],
+  );
+  await assert.rejects(respond(u.olle, b.booking_id, "accept"), /kan inte godkännas/);
+  // Cancelled days are free again.
+  await requestBooking(u.carl, listing, day(5), day(6));
+});
+
+test("accepting needs a listing that is still up and days that are still free", async () => {
+  const id = await createListing(u.olle, "Kajak");
+  const a = await requestBooking(u.rut, id, day(20), day(21));
+  await as(u.olle, "UPDATE public.listings SET status = 'draft' WHERE id = $1", [id]);
+  await assert.rejects(respond(u.olle, a.booking_id, "accept"), /inte att boka längre/);
+  await as(u.olle, "UPDATE public.listings SET status = 'published' WHERE id = $1", [id]);
+  await as(
+    u.olle,
+    "INSERT INTO public.listing_blocked_dates (listing_id, start_date, end_date) VALUES ($1, $2, $2)",
+    [id, day(21)],
+  );
+  await assert.rejects(respond(u.olle, a.booking_id, "accept"), /redan bokade eller blockerade/);
+});
+
+test("when moderators remove a listing, its open requests and coming bookings end", async () => {
+  const id = await createListing(u.olle, "Partytält");
+  const open = await requestBooking(u.rut, id, day(20), day(21));
+  const accepted = await requestBooking(u.carl, id, day(25), day(26));
+  await respond(u.olle, accepted.booking_id, "accept");
+  await as(u.admin, "SELECT public.admin_set_listing_hidden($1, true, 'Bedrägeri')", [id]);
+  assert.equal((await bookingRow(open.booking_id)).status, "declined");
+  assert.equal((await bookingRow(accepted.booking_id)).status, "cancelled");
+  const [last] = await as(
+    u.carl,
+    "SELECT body, sender_id FROM public.messages WHERE conversation_id = $1 ORDER BY created_at DESC LIMIT 1",
+    [accepted.conversation_id],
+  );
+  assert.deepEqual([last.sender_id, /moderatorer/.test(last.body)], [null, true]);
+  const taken = await as(null, "SELECT * FROM public.unavailable_listings($1, $1) AS id", [day(25)]);
+  assert.ok(!taken.some((r) => r.id === id));
+});
+
+test("bookings without an owner can't be changed", async () => {
+  const [demo] = await platform("SELECT id FROM public.listings WHERE owner_id IS NULL LIMIT 1");
+  const [b] = await platform(
+    `INSERT INTO public.bookings (listing_id, renter_id, owner_id, start_date, end_date, status)
+     VALUES ($1, $2, NULL, $3, $4, 'requested') RETURNING id`,
+    [demo.id, u.rut.id, day(5), day(6)],
+  );
+  for (const action of ["accept", "cancel", "picked_up"]) {
+    await assert.rejects(respond(u.rut, b.id, action), /finns inte/);
+  }
+  await assert.rejects(setPhotos(u.rut, b.id, "pickup", [photoOf(u.rut)]), /finns inte/);
+  assert.equal((await bookingRow(b.id)).status, "requested");
+});
+
+test("photos only on accepted bookings, at a known step", async () => {
+  const id = await createListing(u.olle, "Stege");
+  const r = await requestBooking(u.rut, id, day(5), day(6));
+  await respond(u.olle, r.booking_id, "decline");
+  await assert.rejects(setPhotos(u.rut, r.booking_id, "pickup", [photoOf(u.rut)]), /godkända/);
+  await assert.rejects(setPhotos(u.olle, u.rut.trailerBooking, "during", [photoOf(u.olle)]), /Okänt steg/);
+});
+
+test("public availability hides requests and unpublished listings", async () => {
+  const id = await createListing(u.olle, "Cykelkärra");
+  await requestBooking(u.rut, id, day(5), day(6));
+  assert.deepEqual(await as(null, "SELECT * FROM public.booked_dates($1)", [id]), []);
+  await as(
+    u.olle,
+    "INSERT INTO public.listing_blocked_dates (listing_id, start_date, end_date) VALUES ($1, $2, $2)",
+    [id, day(8)],
+  );
+  const takenOn = async (d) =>
+    (await as(null, "SELECT * FROM public.unavailable_listings($1, $1) AS id", [d])).map((r) => r.id);
+  assert.ok((await takenOn(day(8))).includes(id));
+  await as(u.olle, "UPDATE public.listings SET status = 'draft' WHERE id = $1", [id]);
+  assert.ok(!(await takenOn(day(8))).includes(id));
+  assert.deepEqual(await as(null, "SELECT * FROM public.booked_dates($1)", [id]), []);
+});
+
+test("old blocked periods don't count towards the limit of 50", async () => {
+  const id = await createListing(u.olle, "Släpkärra");
+  for (let i = 0; i < 50; i++) {
+    await platform(
+      "INSERT INTO public.listing_blocked_dates (listing_id, start_date, end_date) VALUES ($1, $2, $2)",
+      [id, day(-100 + i)],
+    );
+  }
+  const block = "INSERT INTO public.listing_blocked_dates (listing_id, start_date, end_date) VALUES ($1, $2, $2)";
+  await as(u.olle, block, [id, day(10)]);
+});
+
+test("at most 10 booking requests a day", async () => {
+  await createUser("dora", "Dora Dag");
+  const ids = await platform(
+    `INSERT INTO public.listings (owner_id, owner_name, title, category_slug, city, price_day, status)
+     SELECT $1, 'Olle E.', 'Borrmaskin ' || g, 'verktyg', 'Stockholm', 99, 'published'
+       FROM generate_series(1, 11) g
+     RETURNING id`,
+    [u.olle.id],
+  );
+  for (const { id } of ids.slice(0, 10)) await requestBooking(u.dora, id, day(5), day(6));
+  await assert.rejects(requestBooking(u.dora, ids[10].id, day(5), day(6)), /många förfrågningar/);
+});
+
+test("accounts can't be deleted in the middle of a rental", async () => {
+  await assert.rejects(as(u.rut, "SELECT public.delete_my_account()"), /inte är avslutade/);
+  await assert.rejects(as(u.olle, "SELECT public.delete_my_account()"), /inte är avslutade/);
+});
+
+test("my bookings show both sides with public names only", async () => {
+  const sql = "SELECT counterpart_name, i_am_owner, listing_title FROM public.my_bookings() WHERE id = $1";
+  assert.deepEqual(await as(u.rut, sql, [u.rut.trailerBooking]), [
+    { counterpart_name: "Olle E.", i_am_owner: false, listing_title: "Släpvagn" },
+  ]);
+  assert.deepEqual(await as(u.olle, sql, [u.rut.trailerBooking]), [
+    { counterpart_name: "Rut R.", i_am_owner: true, listing_title: "Släpvagn" },
+  ]);
 });
 
 test("other users and logged-out visitors cannot see or change a booking", async () => {
   assert.deepEqual(
-    await as(u.mallory, "SELECT id FROM public.bookings WHERE id = $1", [u.bob.bookingId]),
+    await as(u.mallory, "SELECT id FROM public.bookings WHERE id = $1", [u.rut.trailerBooking]),
     [],
   );
   assert.deepEqual(
-    await as(
-      u.mallory,
-      "UPDATE public.bookings SET status = 'cancelled' WHERE id = $1 RETURNING id",
-      [u.bob.bookingId],
-    ),
+    await as(u.mallory, "SELECT id FROM public.my_bookings() WHERE id = $1", [u.rut.trailerBooking]),
     [],
   );
+  await assert.rejects(respond(u.mallory, u.rut.trailerBooking, "cancel"), /finns inte/);
+  await rejects(u.rut, "UPDATE public.bookings SET status = 'completed' WHERE id = $1", [
+    u.rut.trailerBooking,
+  ]);
   await rejects(null, "SELECT id FROM public.bookings");
+  await rejects(null, "SELECT * FROM public.my_bookings()");
+  await rejects(null, "SELECT public.respond_booking($1, 'cancel')", [u.rut.trailerBooking]);
+});
+
+test("users cannot fake booking messages", async () => {
+  const [conv] = await as(
+    u.rut,
+    "SELECT id FROM public.conversations WHERE listing_id = $1 AND renter_id = $2",
+    [u.olle.trailerId, u.rut.id],
+  );
+  const fake = `INSERT INTO public.messages (conversation_id, sender_id, body, kind, booking_id)
+                VALUES ($1, $2, 'Bokningen är godkänd', $3, $4)`;
+  await rejects(u.rut, fake, [conv.id, u.rut.id, "booking", u.rut.trailerBooking]);
+  await rejects(u.rut, fake, [conv.id, u.rut.id, "text", u.rut.trailerBooking]);
+});
+
+test("blocked users can't ask for dates", async () => {
+  await createUser("ivar", "Ivar Is");
+  await platform("UPDATE public.profiles SET blocked_at = now() WHERE id = $1", [u.ivar.id]);
+  await assert.rejects(requestBooking(u.ivar, u.olle.trailerId, day(60), day(61)), /spärrat/);
+  await assert.rejects(respond(u.ivar, u.rut.trailerBooking, "cancel"), /spärrat/);
+  await platform("UPDATE public.profiles SET blocked_at = NULL WHERE id = $1", [u.ivar.id]);
 });
 
 // --- Offers --------------------------------------------------------------------
@@ -476,63 +758,15 @@ const placeOffer = (who, listingId, start, end, amount) =>
     amount,
   ]).then((rows) => rows[0].r);
 
-test("offers can only be created and changed through place_offer/respond_offer", async () => {
-  await as(u.alice, "UPDATE public.listings SET allow_offers = true WHERE id = $1", [
-    u.alice.listingId,
-  ]);
+test("bidding is switched off: offers can't be created or answered", async () => {
   await rejects(
     u.bob,
     `INSERT INTO public.offers (listing_id, renter_id, owner_id, start_date, end_date, amount, status)
-     VALUES ($1, $2, $3, '2027-03-01', '2027-03-02', 1, 'accepted')`,
-    [u.alice.listingId, u.bob.id, u.alice.id],
+     VALUES ($1, $2, $3, $4, $5, 1, 'accepted')`,
+    [u.alice.listingId, u.bob.id, u.alice.id, day(5), day(6)],
   );
-  const offer = await placeOffer(u.bob, u.alice.listingId, "2027-03-01", "2027-03-02", 300);
-  assert.equal(offer.status, "active");
-  await rejects(u.bob, "UPDATE public.offers SET status = 'accepted', amount = 1 WHERE id = $1", [
-    offer.offer_id,
-  ]);
-  u.bob.offerId = offer.offer_id;
-});
-
-test("owners can accept an offer, which creates a confirmed booking", async () => {
-  const [{ r }] = await as(u.alice, "SELECT public.respond_offer($1, 'accept') AS r", [
-    u.bob.offerId,
-  ]);
-  assert.equal(r.status, "accepted");
-  const [b] = await platform("SELECT status::text FROM public.bookings WHERE id = $1", [
-    r.booking_id,
-  ]);
-  assert.equal(b.status, "confirmed");
-});
-
-test("auto-accepted offers never double-book dates", async () => {
-  // The "Hyr ut" page saves offer settings with an upsert.
-  await as(
-    u.alice,
-    `INSERT INTO public.listing_offer_settings (listing_id, auto_accept_total) VALUES ($1, 100)
-     ON CONFLICT (listing_id) DO UPDATE SET auto_accept_total = excluded.auto_accept_total`,
-    [u.alice.instantListingId],
-  );
-  const taken = await placeOffer(
-    u.mallory,
-    u.alice.instantListingId,
-    "2027-02-02",
-    "2027-02-04",
-    500,
-  );
-  assert.equal(taken.status, "active");
-  const free = await placeOffer(
-    u.mallory,
-    u.alice.instantListingId,
-    "2027-04-01",
-    "2027-04-02",
-    500,
-  );
-  assert.equal(free.status, "accepted");
-});
-
-test("offers with the end date before the start date are rejected", async () => {
-  await assert.rejects(placeOffer(u.bob, u.alice.listingId, "2027-05-05", "2027-05-01", 300));
+  await assert.rejects(placeOffer(u.bob, u.alice.listingId, day(5), day(6), 300));
+  await rejects(u.alice, "SELECT public.respond_offer(gen_random_uuid(), 'accept')");
 });
 
 // --- Conversations and messages --------------------------------------------------
@@ -773,8 +1007,9 @@ test("logged-out visitors can still browse listings, categories and booked dates
   const [{ n }] = await as(null, "SELECT count(*)::int AS n FROM public.listings");
   assert.ok(n >= 24);
   assert.ok((await as(null, "SELECT slug FROM public.categories")).length >= 8);
+  // The trailer: Rut's booking and the blocked days.
   assert.equal(
-    (await as(null, "SELECT * FROM public.booked_dates($1)", [u.alice.instantListingId])).length,
+    (await as(null, "SELECT * FROM public.booked_dates($1)", [u.olle.trailerId])).length,
     2,
   );
   assert.deepEqual(

@@ -20,8 +20,17 @@
 - First version (docs/mvp-plan.md): Hyrkoll is for renting only (rent out your things, rent
   other people's). New listings get `listing_type` "rent", and search and the home page
   only show those; old "sale" listings stay in the database. Only Stockholm county
-  (`src/lib/geo.ts`), and the visible categories are listed in `src/lib/categories.ts`. Bookings, bids, comparison, company profiles and the
-  statistics page are hidden from the UI but their code and tables remain.
+  (`src/lib/geo.ts`), and the visible categories are listed in `src/lib/categories.ts`.
+  Bids, comparison, company profiles and the statistics page are hidden from the UI but
+  their code and tables remain.
+- Bookings (`supabase/migrations/20261101150000_rental_flow.sql`): the browser never writes
+  `bookings` directly. Renters call `request_booking`; `respond_booking` handles accept,
+  decline, cancel, pickup and return; `set_booking_photos` stores condition photos;
+  `my_bookings` lists them with public names. Each step posts a `kind = 'booking'` message.
+  Taken days are public via `booked_dates` / `unavailable_listings` (never who booked);
+  owners block days in `listing_blocked_dates`. The price formula is in both SQL and
+  `src/lib/bookings.ts` (`bookingPrice`): change them together. No payments are handled.
+  Bidding (`place_offer` / `respond_offer`) is switched off in the database.
 - Messaging: buyers start conversations with the `start_conversation` RPC; the inbox
   uses `my_conversations` (public names only, never emails). New-message emails are
   sent by the server function in `src/lib/notify.functions.ts` via Resend

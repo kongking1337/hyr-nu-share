@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
+import { addDays, todayISO } from "@/lib/bookings";
+import { userMessage } from "@/lib/db-errors";
 import { removeAllMyPhotos } from "@/lib/photos";
 
 export const Route = createFileRoute("/_authenticated/konto")({
@@ -66,12 +68,21 @@ function AccountPage() {
 
   async function deleteAccount() {
     setBusy(true);
+    // Mitt i en hyra går det inte att radera kontot (databasen stoppar det också).
+    // Kolla först, så att bilderna inte hinner tas bort.
+    const { data: bookings } = await supabase.rpc("my_bookings");
+    const cutoff = addDays(todayISO(), -14);
+    if ((bookings ?? []).some((b) => b.status === "confirmed" && b.end_date >= cutoff)) {
+      setBusy(false);
+      toast.error("Du har bokningar som inte är avslutade. Avboka dem eller avsluta hyran under Bokningar först.");
+      return;
+    }
     // Bildfilerna tas bort via Storage innan kontot raderas.
     await removeAllMyPhotos(user!.id).catch(() => undefined);
     const { error } = await supabase.rpc("delete_my_account");
     if (error) {
       setBusy(false);
-      toast.error("Kontot kunde inte raderas. Försök igen eller kontakta oss.");
+      toast.error(userMessage(error, "Kontot kunde inte raderas. Försök igen eller kontakta oss."));
       return;
     }
     await supabase.auth.signOut();

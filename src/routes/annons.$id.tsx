@@ -2,11 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Info, MapPin, Truck, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BookingRequest } from "@/components/BookingRequest";
 import { ContactSeller } from "@/components/ContactSeller";
 import { ExampleBadge } from "@/components/ExampleBadge";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { ReportDialog } from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { CANCELLATION_POLICIES } from "@/lib/bookings";
 import { rowToUnified } from "@/lib/providers/internal";
 import { kr, priceLabel } from "@/lib/pricing";
 
@@ -24,6 +27,7 @@ export const Route = createFileRoute("/annons/$id")({
 
 function ListingPage() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
 
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
@@ -44,6 +48,7 @@ function ListingPage() {
   }
 
   const sale = listing.listingType === "sale";
+  const mine = !!user && user.id === listing.ownerId;
   const counterpart = sale ? "säljaren" : "uthyraren";
 
   return (
@@ -74,11 +79,53 @@ function ListingPage() {
 
           <p className="whitespace-pre-line leading-relaxed text-muted-foreground">{listing.description}</p>
 
+          {!sale && (
+            <div className="rounded-3xl border border-border p-5">
+              <h2 className="font-display text-lg font-semibold">Hyresvillkor</h2>
+              <dl className="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_1fr]">
+                <dt className="font-medium">Kortaste hyra</dt>
+                <dd className="text-muted-foreground">{listing.minDays === 1 ? "1 dygn" : `${listing.minDays} dygn`}</dd>
+                <dt className="font-medium">Upphämtning</dt>
+                <dd className="text-muted-foreground">
+                  {[
+                    listing.pickupAvailable && "Hämtas hos uthyraren",
+                    listing.deliveryAvailable &&
+                      `Leverans ${listing.deliveryFee > 0 ? `för ${kr(listing.deliveryFee)}` : "ingår"}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" eller ")}
+                </dd>
+                <dt className="font-medium">Deposition</dt>
+                <dd className="text-muted-foreground">
+                  {listing.deposit > 0 ? `${kr(listing.deposit)}, tillbaka när saken lämnas tillbaka` : "Ingen"}
+                </dd>
+                <dt className="font-medium">Avbokning</dt>
+                <dd className="text-muted-foreground">
+                  {CANCELLATION_POLICIES[listing.cancellationPolicy].label}:{" "}
+                  {CANCELLATION_POLICIES[listing.cancellationPolicy].text.toLowerCase()}
+                </dd>
+                {listing.included && (
+                  <>
+                    <dt className="font-medium">Det här ingår</dt>
+                    <dd className="whitespace-pre-line text-muted-foreground">{listing.included}</dd>
+                  </>
+                )}
+                {listing.rentalRules && (
+                  <>
+                    <dt className="font-medium">Regler</dt>
+                    <dd className="whitespace-pre-line text-muted-foreground">{listing.rentalRules}</dd>
+                  </>
+                )}
+              </dl>
+            </div>
+          )}
+
           <div className="rounded-3xl border border-border p-5">
             <h2 className="font-display text-lg font-semibold">Bra att veta</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Hyrkoll tar inga avgifter och förmedlar inga betalningar. Betalning
-              {sale ? "" : ", eventuell deposition"} och upphämtning kommer du överens om direkt med {counterpart}.
+              {sale
+                ? `Hyrkoll tar inga avgifter och förmedlar inga betalningar. Betalning och upphämtning kommer du överens om direkt med ${counterpart}.`
+                : "Skicka en förfrågan med de datum du vill hyra. När uthyraren godkänt är dagarna bokade, och ni bestämmer tid och plats under Meddelanden. Hyrkoll tar inga avgifter och förmedlar inga betalningar: hyran och eventuell deposition betalar ni direkt till varandra, t.ex. med Swish när saken hämtas. Fota gärna skicket vid utlämning och återlämning."}{" "}
               Träffas gärna på en offentlig plats och betala inte i förskott till någon du inte känner.
             </p>
           </div>
@@ -104,8 +151,20 @@ function ListingPage() {
               <Info className="mt-0.5 h-4 w-4 shrink-0" />
               Det här är en exempelannons som visar hur sajten fungerar. Den går inte att svara på.
             </p>
-          ) : (
+          ) : sale || mine ? (
             <ContactSeller listing={listing} />
+          ) : (
+            <>
+              <BookingRequest listing={listing} />
+              <details className="group border-t border-border pt-3">
+                <summary className="cursor-pointer text-sm font-medium text-primary">
+                  Har du en fråga först? Skicka ett meddelande
+                </summary>
+                <div className="mt-3">
+                  <ContactSeller listing={listing} />
+                </div>
+              </details>
+            </>
           )}
         </aside>
       </div>

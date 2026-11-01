@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PLACEHOLDER_PHOTO, photoUrl } from "@/lib/photos";
+import { daysBetween } from "@/lib/bookings";
 import { distanceKm, normalize } from "../geo";
+import { asPolicy } from "@/lib/bookings";
 import type { ProviderQuery, RentalProvider, UnifiedResult } from "./types";
 
 export const BRAND = "Hyrkoll";
@@ -36,6 +38,10 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     delivery_available: boolean;
     delivery_fee: number;
     pickup_available: boolean;
+    min_days?: number;
+    included?: string;
+    rental_rules?: string;
+    cancellation_policy?: string;
     instant_book: boolean;
     allow_offers?: boolean;
     offer_validity_hours?: number;
@@ -68,6 +74,10 @@ export function rowToUnified(row: Record<string, unknown>): UnifiedResult {
     deliveryAvailable: r.delivery_available,
     deliveryFee: Number(r.delivery_fee),
     pickupAvailable: r.pickup_available,
+    minDays: Number(r.min_days ?? 1),
+    included: r.included ?? "",
+    rentalRules: r.rental_rules ?? "",
+    cancellationPolicy: asPolicy(r.cancellation_policy),
     instantBook: r.instant_book,
     allowOffers: !!r.allow_offers,
     offerValidityHours: Number(r.offer_validity_hours ?? 24),
@@ -108,6 +118,18 @@ export const internalProvider: RentalProvider = {
     }
     if (q.lat != null && q.lng != null && q.radiusKm) {
       results = results.filter((r) => distanceKm(q.lat!, q.lng!, r.lat, r.lng) <= q.radiusKm!);
+    }
+    // "Ledig": bort med annonser som är bokade eller blockerade någon dag i perioden,
+    // eller som hyrs ut längre tid än perioden.
+    if (q.startDate && q.endDate && q.endDate >= q.startDate) {
+      const { data: taken, error: takenError } = await supabase.rpc("unavailable_listings", {
+        _start: q.startDate,
+        _end: q.endDate,
+      });
+      if (takenError) throw takenError;
+      const busy = new Set(taken ?? []);
+      const days = daysBetween(q.startDate, q.endDate);
+      results = results.filter((r) => !busy.has(r.id) && r.minDays <= days);
     }
     return results;
   },

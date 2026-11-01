@@ -34,6 +34,10 @@ function PrivacyPage() {
           Platsinformation (GPS) tas bort ur bilderna innan de laddas upp.
         </li>
         <li>Meddelanden mellan dig och andra användare.</li>
+        <li>
+          Bokningar: datum, pris, status, din hälsning och de bilder på skicket som du eller den
+          andra lägger till.
+        </li>
         <li>Anmälningar du gör, och anmälningar som gäller dig eller dina annonser.</li>
         <li>Favoriter och sparade sökningar.</li>
         <li>
@@ -66,6 +70,10 @@ function PrivacyPage() {
         <li>
           Meddelanden ser bara du och den du skriver med. Våra moderatorer kan läsa en konversation
           först när någon i den har anmält den.
+        </li>
+        <li>
+          Bokningar och bilder på skicket ser bara du och den du hyr av eller till. Vilka dagar en sak
+          är bokad visas för alla, men inte vem som har bokat.
         </li>
       </ul>
 

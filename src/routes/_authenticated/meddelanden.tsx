@@ -63,7 +63,7 @@ function MessagesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("id, sender_id, body, kind, created_at")
+        .select("id, sender_id, body, kind, booking_id, created_at")
         .eq("conversation_id", active!)
         .order("created_at");
       if (error) throw error;
@@ -218,9 +218,16 @@ function MessagesPage() {
                     )}
                   >
                     {m.kind !== "text" && (
-                      <p className="mb-1 text-[11px] uppercase opacity-70">Systemmeddelande</p>
+                      <p className="mb-1 text-[11px] uppercase opacity-70">
+                        {m.kind === "booking" ? "Bokning" : "Systemmeddelande"}
+                      </p>
                     )}
                     {m.body}
+                    {m.kind === "booking" && (
+                      <Link to="/bokningar" className="mt-1.5 block text-xs font-semibold underline-offset-4 hover:underline">
+                        Visa bokningen →
+                      </Link>
+                    )}
                   </div>
                   <span className="mt-0.5 text-[11px] text-muted-foreground">
                     {formatTime(m.created_at)}

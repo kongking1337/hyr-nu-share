@@ -96,6 +96,10 @@ function toUnified(seed: Seed, item: Seed["items"][number], i: number): UnifiedR
     deliveryAvailable: !!item.delivery,
     deliveryFee: item.deliveryFee ?? 0,
     pickupAvailable: true,
+    minDays: 1,
+    included: "",
+    rentalRules: "",
+    cancellationPolicy: "flexible",
     instantBook: false,
     externalUrl: `https://${seed.host}/erbjudande/${seed.slug}-${i}`,
   };

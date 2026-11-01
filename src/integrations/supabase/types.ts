@@ -28,7 +28,11 @@ export type Database = {
           listing_id: string
           message: string | null
           owner_id: string | null
+          picked_up_at: string | null
+          pickup_photos: string[]
           renter_id: string
+          return_photos: string[]
+          returned_at: string | null
           service_fee: number
           start_date: string
           status: Database["public"]["Enums"]["booking_status"]
@@ -47,7 +51,11 @@ export type Database = {
           listing_id: string
           message?: string | null
           owner_id?: string | null
+          picked_up_at?: string | null
+          pickup_photos?: string[]
           renter_id: string
+          return_photos?: string[]
+          returned_at?: string | null
           service_fee?: number
           start_date: string
           status?: Database["public"]["Enums"]["booking_status"]
@@ -66,7 +74,11 @@ export type Database = {
           listing_id?: string
           message?: string | null
           owner_id?: string | null
+          picked_up_at?: string | null
+          pickup_photos?: string[]
           renter_id?: string
+          return_photos?: string[]
+          returned_at?: string | null
           service_fee?: number
           start_date?: string
           status?: Database["public"]["Enums"]["booking_status"]
@@ -277,6 +289,38 @@ export type Database = {
           },
         ]
       }
+      listing_blocked_dates: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          listing_id: string
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          listing_id: string
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          listing_id?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_blocked_dates_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_offer_settings: {
         Row: {
           auto_accept_total: number | null
@@ -318,6 +362,7 @@ export type Database = {
           area: string | null
           attributes: Json
           booking_count: number
+          cancellation_policy: string
           category_slug: string
           city: string
           clicks_count: number
@@ -331,11 +376,13 @@ export type Database = {
           favorite_count: number
           id: string
           images: string[]
+          included: string
           instant_book: boolean
           insurance_fee: number
           lat: number
           listing_type: string
           lng: number
+          min_days: number
           moderation_reason: string | null
           offer_validity_hours: number
           owner_id: string | null
@@ -349,6 +396,7 @@ export type Database = {
           price_week: number | null
           published_at: string
           quality_score: number | null
+          rental_rules: string
           rating: number
           request_count: number
           review_count: number
@@ -364,6 +412,7 @@ export type Database = {
           area?: string | null
           attributes?: Json
           booking_count?: number
+          cancellation_policy?: string
           category_slug: string
           city: string
           clicks_count?: number
@@ -377,11 +426,13 @@ export type Database = {
           favorite_count?: number
           id?: string
           images?: string[]
+          included?: string
           instant_book?: boolean
           insurance_fee?: number
           lat?: number
           listing_type?: string
           lng?: number
+          min_days?: number
           moderation_reason?: string | null
           offer_validity_hours?: number
           owner_id?: string | null
@@ -395,6 +446,7 @@ export type Database = {
           price_week?: number | null
           published_at?: string
           quality_score?: number | null
+          rental_rules?: string
           rating?: number
           request_count?: number
           review_count?: number
@@ -410,6 +462,7 @@ export type Database = {
           area?: string | null
           attributes?: Json
           booking_count?: number
+          cancellation_policy?: string
           category_slug?: string
           city?: string
           clicks_count?: number
@@ -423,11 +476,13 @@ export type Database = {
           favorite_count?: number
           id?: string
           images?: string[]
+          included?: string
           instant_book?: boolean
           insurance_fee?: number
           lat?: number
           listing_type?: string
           lng?: number
+          min_days?: number
           moderation_reason?: string | null
           offer_validity_hours?: number
           owner_id?: string | null
@@ -441,6 +496,7 @@ export type Database = {
           price_week?: number | null
           published_at?: string
           quality_score?: number | null
+          rental_rules?: string
           rating?: number
           request_count?: number
           review_count?: number
@@ -471,6 +527,7 @@ export type Database = {
       messages: {
         Row: {
           body: string
+          booking_id: string | null
           conversation_id: string
           created_at: string
           id: string
@@ -481,6 +538,7 @@ export type Database = {
         }
         Insert: {
           body?: string
+          booking_id?: string | null
           conversation_id: string
           created_at?: string
           id?: string
@@ -491,6 +549,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          booking_id?: string | null
           conversation_id?: string
           created_at?: string
           id?: string
@@ -917,6 +976,58 @@ export type Database = {
           _start: string
         }
         Returns: Json
+      }
+      my_bookings: {
+        Args: never
+        Returns: {
+          base_price: number
+          cancellation_policy: string
+          conversation_id: string | null
+          counterpart_name: string
+          created_at: string
+          days: number
+          delivery: boolean
+          delivery_fee: number
+          deposit: number
+          end_date: string
+          i_am_owner: boolean
+          id: string
+          listing_city: string | null
+          listing_id: string
+          listing_image: string | null
+          listing_title: string
+          message: string | null
+          picked_up_at: string | null
+          pickup_photos: string[]
+          return_photos: string[]
+          returned_at: string | null
+          start_date: string
+          status: string
+          total_price: number
+        }[]
+      }
+      request_booking: {
+        Args: {
+          _delivery?: boolean
+          _end: string
+          _expected_total?: number
+          _listing_id: string
+          _message?: string
+          _start: string
+        }
+        Returns: Json
+      }
+      respond_booking: {
+        Args: { _action: string; _booking_id: string }
+        Returns: Json
+      }
+      set_booking_photos: {
+        Args: { _booking_id: string; _paths: string[]; _stage: string }
+        Returns: undefined
+      }
+      unavailable_listings: {
+        Args: { _end: string; _start: string }
+        Returns: string[]
       }
       start_conversation: {
         Args: { _body: string; _listing_id: string }

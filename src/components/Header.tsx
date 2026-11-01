@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, LayoutList, Menu, MessageSquare, Moon, Plus, Search, Sun, User } from "lucide-react";
+import { CalendarDays, Heart, LayoutList, Menu, MessageSquare, Moon, Plus, Search, Sun, User } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useTheme } from "@/hooks/useTheme";
+import { todayISO } from "@/lib/bookings";
 import { DEFAULTS } from "@/lib/search/params";
 
 export function Header() {
@@ -23,6 +24,22 @@ export function Header() {
     queryFn: async () => (await supabase.rpc("unread_conversation_count")).data ?? 0,
   });
 
+  // Bokningsförfrågningar som väntar på mitt svar.
+  const { data: pendingBookings = 0 } = useQuery({
+    queryKey: ["pending-bookings", user?.id],
+    enabled: !!user,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", user!.id)
+        .eq("status", "requested")
+        .gte("start_date", todayISO());
+      return count ?? 0;
+    },
+  });
+
   const { data: openReports = 0 } = useQuery({
     queryKey: ["admin-report-count", user?.id],
     enabled: isAdmin,
@@ -35,6 +52,9 @@ export function Header() {
     { to: "/ny-annons", label: "+ Lägg upp annons" },
     ...(user ? [{ to: "/mina-annonser", label: "Mina annonser" }] : []),
     { to: "/meddelanden", label: unread ? `Meddelanden (${unread} olästa)` : "Meddelanden" },
+    ...(user
+      ? [{ to: "/bokningar", label: pendingBookings ? `Bokningar (${pendingBookings} att svara på)` : "Bokningar" }]
+      : []),
     { to: "/favoriter", label: "Favoriter" },
     { to: user ? "/konto" : "/auth", label: user ? "Mitt konto" : "Logga in" },
     ...(isAdmin ? [{ to: "/admin", label: openReports ? `Moderering (${openReports})` : "Moderering" }] : []),
@@ -87,6 +107,22 @@ export function Header() {
             )}
           </Link>
           {user && (
+            <Link to="/bokningar" className="relative hidden sm:block">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={pendingBookings ? `Bokningar, ${pendingBookings} att svara på` : "Bokningar"}
+              >
+                <CalendarDays className="h-5 w-5" />
+              </Button>
+              {pendingBookings > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                  {pendingBookings}
+                </span>
+              )}
+            </Link>
+          )}
+          {user && (
             <Link to="/mina-annonser" className="hidden md:block">
               <Button variant="ghost" size="sm" className="rounded-full">
                 <LayoutList className="mr-1 h-4 w-4" /> Mina annonser
@@ -108,7 +144,7 @@ export function Header() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="relative sm:hidden" aria-label={unread ? `Meny, ${unread} olästa meddelanden` : "Meny"}>
                 <Menu className="h-5 w-5" />
-                {unread > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />}
+                {unread + pendingBookings > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />}
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-72">

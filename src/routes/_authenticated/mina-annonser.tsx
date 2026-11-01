@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AvailabilityDialog } from "@/components/AvailabilityDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -208,6 +209,7 @@ function MyListings() {
                     {l.status === "paused" ? <><Play className="mr-1 h-4 w-4" /> Aktivera</> : <><Pause className="mr-1 h-4 w-4" /> Pausa</>}
                   </Button>
                 )}
+                {active && <AvailabilityDialog listingId={l.id} title={l.title} />}
                 {l.status === "sold" && (
                   <Button size="sm" variant="outline" className="rounded-full" onClick={() => setStatus(l.id, "published")}>
                     <Play className="mr-1 h-4 w-4" /> Publicera igen
