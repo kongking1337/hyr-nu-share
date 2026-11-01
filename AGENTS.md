@@ -31,6 +31,13 @@
   owners block days in `listing_blocked_dates`. The price formula is in both SQL and
   `src/lib/bookings.ts` (`bookingPrice`): change them together. No payments are handled.
   Bidding (`place_offer` / `respond_offer`) is switched off in the database.
+- Trust (`supabase/migrations/20261101180000_trust.sql`): reviews are written with
+  `leave_review` (both ways, after a finished rental) and read through `public_reviews`;
+  `published_at` hides a review until both have written or 14 days have passed. Public
+  profiles come from `public_profile` (profiles themselves stay private). Rental agreements:
+  `booking_agreement` / `accept_agreement` (full names only to the two parties).
+  `user_blocks` stops messages and requests both ways. `profiles.phone_verified` follows
+  Supabase Auth via a trigger on `auth.users`. `admin_trust_scores` is admin only.
 - Messaging: buyers start conversations with the `start_conversation` RPC; the inbox
   uses `my_conversations` (public names only, never emails). New-message emails are
   sent by the server function in `src/lib/notify.functions.ts` via Resend

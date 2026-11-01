@@ -127,7 +127,7 @@ function RootComponent() {
       <main className="min-h-[70vh]">
         <Outlet />
       </main>
-      <footer className="mt-16 border-t border-border py-10">
+      <footer className="mt-16 border-t border-border py-10 print:hidden">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 text-sm text-muted-foreground">
           <p className="font-display text-base font-semibold text-foreground">Hyrkoll</p>
           <p>

@@ -17,6 +17,7 @@ export type Database = {
       bookings: {
         Row: {
           base_price: number
+          agreement: Json | null
           created_at: string
           days: number
           delivery: boolean
@@ -27,10 +28,12 @@ export type Database = {
           insurance_fee: number
           listing_id: string
           message: string | null
+          owner_agreed_at: string | null
           owner_id: string | null
           picked_up_at: string | null
           pickup_photos: string[]
           renter_id: string
+          renter_agreed_at: string | null
           return_photos: string[]
           returned_at: string | null
           service_fee: number
@@ -40,6 +43,7 @@ export type Database = {
         }
         Insert: {
           base_price?: number
+          agreement?: Json | null
           created_at?: string
           days?: number
           delivery?: boolean
@@ -50,10 +54,12 @@ export type Database = {
           insurance_fee?: number
           listing_id: string
           message?: string | null
+          owner_agreed_at?: string | null
           owner_id?: string | null
           picked_up_at?: string | null
           pickup_photos?: string[]
           renter_id: string
+          renter_agreed_at?: string | null
           return_photos?: string[]
           returned_at?: string | null
           service_fee?: number
@@ -63,6 +69,7 @@ export type Database = {
         }
         Update: {
           base_price?: number
+          agreement?: Json | null
           created_at?: string
           days?: number
           delivery?: boolean
@@ -73,10 +80,12 @@ export type Database = {
           insurance_fee?: number
           listing_id?: string
           message?: string | null
+          owner_agreed_at?: string | null
           owner_id?: string | null
           picked_up_at?: string | null
           pickup_photos?: string[]
           renter_id?: string
+          renter_agreed_at?: string | null
           return_photos?: string[]
           returned_at?: string | null
           service_fee?: number
@@ -772,7 +781,10 @@ export type Database = {
           created_at: string
           id: string
           listing_id: string | null
+          published_at: string | null
           rating: number
+          subject_id: string | null
+          subject_role: string | null
           verified: boolean
         }
         Insert: {
@@ -783,7 +795,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id?: string | null
+          published_at?: string | null
           rating?: number
+          subject_id?: string | null
+          subject_role?: string | null
           verified?: boolean
         }
         Update: {
@@ -794,7 +809,10 @@ export type Database = {
           created_at?: string
           id?: string
           listing_id?: string | null
+          published_at?: string | null
           rating?: number
+          subject_id?: string | null
+          subject_role?: string | null
           verified?: boolean
         }
         Relationships: [
@@ -844,6 +862,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -867,6 +903,65 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_agreement: { Args: { _booking_id: string }; Returns: Json }
+      admin_delete_review: { Args: { _review_id: string }; Returns: undefined }
+      admin_trust_scores: {
+        Args: never
+        Returns: {
+          blocked: boolean
+          blocked_by: number
+          completed_rentals: number
+          listings: number
+          member_days: number
+          name: string
+          rating: number | null
+          removed_listings: number
+          reports_open: number
+          reports_upheld: number
+          review_count: number
+          score: number
+          user_id: string
+        }[]
+      }
+      booking_agreement: { Args: { _booking_id: string }; Returns: Json }
+      leave_review: {
+        Args: { _body?: string; _booking_id: string; _rating: number }
+        Returns: undefined
+      }
+      my_blocked_users: {
+        Args: never
+        Returns: { created_at: string; id: string; name: string }[]
+      }
+      public_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          account_type: string
+          bio: string | null
+          city: string | null
+          id: string
+          listing_count: number
+          member_since: string
+          name: string
+          phone_verified: boolean
+          rating: number | null
+          rentals_as_owner: number
+          rentals_as_renter: number
+          response_hours: number | null
+          review_count: number
+        }[]
+      }
+      public_reviews: {
+        Args: { _user_id: string }
+        Returns: {
+          author_name: string
+          body: string
+          id: string
+          listing_title: string
+          published_at: string
+          rating: number
+          subject_role: string | null
+        }[]
+      }
       admin_blocked_users: {
         Args: never
         Returns: { blocked_at: string; id: string; name: string }[]

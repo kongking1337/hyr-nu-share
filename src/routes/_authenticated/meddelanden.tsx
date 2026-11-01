@@ -11,6 +11,7 @@ import { MAX_MESSAGE_LENGTH, sendMessage } from "@/lib/messages";
 import { photoUrl } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
 import { ReportDialog } from "@/components/ReportDialog";
+import { BlockUserButton, useIsBlocked } from "@/components/BlockUserButton";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/meddelanden")({
@@ -55,6 +56,23 @@ function MessagesPage() {
     },
   });
   const current = conversations?.find((c) => c.id === active);
+
+  // Den andras id (för profillänken och blockering). Bara de två i konversationen kan läsa den.
+  const { data: parties } = useQuery({
+    queryKey: ["conversation-parties", active],
+    enabled: !!active,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("renter_id, owner_id")
+        .eq("id", active!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const counterpartId = parties ? (parties.owner_id === user?.id ? parties.renter_id : parties.owner_id) : null;
+  const { data: iBlocked } = useIsBlocked(counterpartId);
 
   const { data: messages, refetch } = useQuery({
     queryKey: ["messages", active],
@@ -191,13 +209,27 @@ function MessagesPage() {
                 ) : (
                   <p className="truncate font-medium">{current?.listing_title ?? "Konversation"}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  {current
-                    ? `${current.counterpart_name} · ${current.i_am_seller ? "intresserad av din annons" : "annonsör"}`
-                    : ""}
-                </p>
+                {current && (
+                  <p className="text-xs text-muted-foreground">
+                    {counterpartId ? (
+                      <Link
+                        to="/profil/$id"
+                        params={{ id: counterpartId }}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {current.counterpart_name}
+                      </Link>
+                    ) : (
+                      current.counterpart_name
+                    )}
+                    {` · ${current.i_am_seller ? "intresserad av din annons" : "annonsör"}`}
+                  </p>
+                )}
               </div>
-              <div className="ml-auto shrink-0">
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                {counterpartId && current && (
+                  <BlockUserButton userId={counterpartId} name={current.counterpart_name} />
+                )}
                 <ReportDialog targetType="conversation" targetId={active} label="Anmäl" />
               </div>
             </div>
@@ -238,7 +270,14 @@ function MessagesPage() {
             <div ref={bottom} />
           </div>
 
-          {active && (
+          {active && iBlocked && (
+            <p className="mt-3 rounded-2xl bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+              Du har blockerat {current?.counterpart_name ?? "den här personen"}. Ta bort blockeringen för
+              att skriva igen.
+            </p>
+          )}
+
+          {active && !iBlocked && (
             <div className="mt-3 flex items-end gap-2">
               <Textarea
                 rows={2}

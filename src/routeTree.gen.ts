@@ -28,6 +28,8 @@ import { Route as AuthenticatedMinaAnnonserRouteImport } from './routes/_authent
 import { Route as AuthenticatedNyAnnonsRouteImport } from './routes/_authenticated/ny-annons'
 import { Route as AnnonsIdRouteImport } from './routes/annons.$id'
 import { Route as HyraKategoriRouteImport } from './routes/hyra.$kategori'
+import { Route as ProfilIdRouteImport } from './routes/profil.$id'
+import { Route as AuthenticatedAvtalIdRouteImport } from './routes/_authenticated/avtal.$id'
 import { Route as HyraStadKategoriRouteImport } from './routes/hyra.$stad.$kategori'
 import { Route as AuthenticatedAnnonserIdStatistikRouteImport } from './routes/_authenticated/annonser.$id.statistik'
 
@@ -127,6 +129,16 @@ const HyraKategoriRoute = HyraKategoriRouteImport.update({
   path: '/hyra/$kategori',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfilIdRoute = ProfilIdRouteImport.update({
+  id: '/profil/$id',
+  path: '/profil/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAvtalIdRoute = AuthenticatedAvtalIdRouteImport.update({
+  id: '/avtal/$id',
+  path: '/avtal/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const HyraStadKategoriRoute = HyraStadKategoriRouteImport.update({
   id: '/hyra/$stad/$kategori',
   path: '/hyra/$stad/$kategori',
@@ -158,6 +170,8 @@ export interface FileRoutesByFullPath {
   '/ny-annons': typeof AuthenticatedNyAnnonsRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
+  '/profil/$id': typeof ProfilIdRoute
+  '/avtal/$id': typeof AuthenticatedAvtalIdRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
   '/annonser/$id/statistik': typeof AuthenticatedAnnonserIdStatistikRoute
 }
@@ -180,6 +194,8 @@ export interface FileRoutesByTo {
   '/ny-annons': typeof AuthenticatedNyAnnonsRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
+  '/profil/$id': typeof ProfilIdRoute
+  '/avtal/$id': typeof AuthenticatedAvtalIdRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
   '/annonser/$id/statistik': typeof AuthenticatedAnnonserIdStatistikRoute
 }
@@ -204,6 +220,8 @@ export interface FileRoutesById {
   '/_authenticated/ny-annons': typeof AuthenticatedNyAnnonsRoute
   '/annons/$id': typeof AnnonsIdRoute
   '/hyra/$kategori': typeof HyraKategoriRoute
+  '/profil/$id': typeof ProfilIdRoute
+  '/_authenticated/avtal/$id': typeof AuthenticatedAvtalIdRoute
   '/hyra/$stad/$kategori': typeof HyraStadKategoriRoute
   '/_authenticated/annonser/$id/statistik': typeof AuthenticatedAnnonserIdStatistikRoute
 }
@@ -228,6 +246,8 @@ export interface FileRouteTypes {
     | '/ny-annons'
     | '/annons/$id'
     | '/hyra/$kategori'
+    | '/profil/$id'
+    | '/avtal/$id'
     | '/hyra/$stad/$kategori'
     | '/annonser/$id/statistik'
   fileRoutesByTo: FileRoutesByTo
@@ -250,6 +270,8 @@ export interface FileRouteTypes {
     | '/ny-annons'
     | '/annons/$id'
     | '/hyra/$kategori'
+    | '/profil/$id'
+    | '/avtal/$id'
     | '/hyra/$stad/$kategori'
     | '/annonser/$id/statistik'
   id:
@@ -273,6 +295,8 @@ export interface FileRouteTypes {
     | '/_authenticated/ny-annons'
     | '/annons/$id'
     | '/hyra/$kategori'
+    | '/profil/$id'
+    | '/_authenticated/avtal/$id'
     | '/hyra/$stad/$kategori'
     | '/_authenticated/annonser/$id/statistik'
   fileRoutesById: FileRoutesById
@@ -289,6 +313,7 @@ export interface RootRouteChildren {
   VillkorRoute: typeof VillkorRoute
   AnnonsIdRoute: typeof AnnonsIdRoute
   HyraKategoriRoute: typeof HyraKategoriRoute
+  ProfilIdRoute: typeof ProfilIdRoute
   HyraStadKategoriRoute: typeof HyraStadKategoriRoute
 }
 
@@ -427,6 +452,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HyraKategoriRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profil/$id': {
+      id: '/profil/$id'
+      path: '/profil/$id'
+      fullPath: '/profil/$id'
+      preLoaderRoute: typeof ProfilIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/avtal/$id': {
+      id: '/_authenticated/avtal/$id'
+      path: '/avtal/$id'
+      fullPath: '/avtal/$id'
+      preLoaderRoute: typeof AuthenticatedAvtalIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/hyra/$stad/$kategori': {
       id: '/hyra/$stad/$kategori'
       path: '/hyra/$stad/$kategori'
@@ -453,6 +492,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeddelandenRoute: typeof AuthenticatedMeddelandenRoute
   AuthenticatedMinaAnnonserRoute: typeof AuthenticatedMinaAnnonserRoute
   AuthenticatedNyAnnonsRoute: typeof AuthenticatedNyAnnonsRoute
+  AuthenticatedAvtalIdRoute: typeof AuthenticatedAvtalIdRoute
   AuthenticatedAnnonserIdStatistikRoute: typeof AuthenticatedAnnonserIdStatistikRoute
 }
 
@@ -465,6 +505,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeddelandenRoute: AuthenticatedMeddelandenRoute,
   AuthenticatedMinaAnnonserRoute: AuthenticatedMinaAnnonserRoute,
   AuthenticatedNyAnnonsRoute: AuthenticatedNyAnnonsRoute,
+  AuthenticatedAvtalIdRoute: AuthenticatedAvtalIdRoute,
   AuthenticatedAnnonserIdStatistikRoute: AuthenticatedAnnonserIdStatistikRoute,
 }
 
@@ -483,6 +524,7 @@ const rootRouteChildren: RootRouteChildren = {
   VillkorRoute: VillkorRoute,
   AnnonsIdRoute: AnnonsIdRoute,
   HyraKategoriRoute: HyraKategoriRoute,
+  ProfilIdRoute: ProfilIdRoute,
   HyraStadKategoriRoute: HyraStadKategoriRoute,
 }
 export const routeTree = rootRouteImport

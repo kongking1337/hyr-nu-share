@@ -29,6 +29,24 @@ logins stop working in between:
 
 To turn it off again: disable it in Supabase first, then empty the key in `.env`.
 
+## Verified phone numbers (SMS)
+
+Built but off. Users verify their number with a code by SMS; profiles then show
+"Verifierat telefonnummer" (never the number). Turning it on costs money per SMS, and any
+logged-in user can make Supabase send a text (the captcha doesn't cover that step), so the
+hourly SMS limit in step 4 is the real cap. Do it in this order:
+
+1. Turn on the captcha first (above), so bots can't create accounts or log in by SMS.
+2. Create an account with an SMS provider that Supabase supports (e.g. Twilio, Vonage,
+   MessageBird) and get its keys.
+3. Supabase → Authentication → Sign In / Providers → **Phone**: enable it, choose the
+   provider and paste the keys. Enabling Phone also lets people log in with a code by SMS
+   instead of email. The site doesn't offer that, but the API does.
+4. Supabase → Authentication → Rate Limits: keep SMS per hour low (e.g. 30).
+
+The "Verifiera telefonnummer" box under Mitt konto appears by itself once Phone is enabled.
+To turn it off again, disable Phone in Supabase.
+
 ## Spam limits (in the database)
 
 Per user: at most 20 new listings a day and 50 active listings, 10 new conversations

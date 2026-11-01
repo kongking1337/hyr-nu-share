@@ -26,8 +26,8 @@ function PrivacyPage() {
       <h2>Vilka uppgifter vi behandlar</h2>
       <ul>
         <li>
-          Konto: e-postadress, lösenord (lagras krypterat, vi kan inte se det), namn, ort och
-          kontotyp.
+          Konto: e-postadress, lösenord (lagras krypterat, vi kan inte se det), namn, ort, kontotyp,
+          det du skriver under "Om mig" och, om du verifierar det, ditt telefonnummer.
         </li>
         <li>
           Annonser: rubrik, beskrivning, pris, kategori, kommun och område samt bilder.
@@ -37,6 +37,10 @@ function PrivacyPage() {
         <li>
           Bokningar: datum, pris, status, din hälsning och de bilder på skicket som du eller den
           andra lägger till.
+        </li>
+        <li>
+          Omdömen som du skriver och som andra skriver om dig, vilka du har blockerat och när ni
+          godkände hyresavtal.
         </li>
         <li>Anmälningar du gör, och anmälningar som gäller dig eller dina annonser.</li>
         <li>Favoriter och sparade sökningar.</li>
@@ -67,6 +71,19 @@ function PrivacyPage() {
           företagsnamnet.
         </li>
         <li>Din e-postadress och ditt telefonnummer visas aldrig för andra användare.</li>
+        <li>
+          Din profil är offentlig: namn som i annonserna, ort, "Om mig", när du blev medlem, om ditt
+          telefonnummer är verifierat, antal avslutade hyror, hur snabbt du brukar svara och de
+          omdömen andra har skrivit om dig.
+        </li>
+        <li>
+          I hyresavtalet för en godkänd bokning ser ni två varandras fullständiga namn. Ingen annan
+          ser avtalet.
+        </li>
+        <li>
+          Vilka du har blockerat ser bara du. Våra administratörer ser, för att upptäcka bedrägerier,
+          en sammanställning per användare av anmälningar, dolda annonser, blockeringar och omdömen.
+        </li>
         <li>
           Meddelanden ser bara du och den du skriver med. Våra moderatorer kan läsa en konversation
           först när någon i den har anmält den.

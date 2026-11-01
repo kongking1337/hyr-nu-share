@@ -29,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { photoUrl, removeUnusedPhotos } from "@/lib/photos";
+import { userMessage } from "@/lib/db-errors";
 import { priceLabel } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/mina-annonser")({
@@ -106,7 +107,7 @@ function MyListings() {
   async function remove(id: string) {
     const images = listings.find((l) => l.id === id)?.images ?? [];
     const { error } = await supabase.from("listings").delete().eq("id", id);
-    if (error) { toast.error("Kunde inte ta bort annonsen."); return; }
+    if (error) { toast.error(userMessage(error, "Kunde inte ta bort annonsen.")); return; }
     void removeUnusedPhotos(user!.id, images);
     toast.success("Annonsen är borttagen.");
     refetch();

@@ -27,19 +27,28 @@ const REASONS = [
   "Annat",
 ];
 
-/** Anmäl en annons eller konversation med skäl. Anmälan syns bara för administratörer. */
+const USER_REASONS = [
+  "Bedrägeri eller misstänkt bedrägeri",
+  "Trakasserier eller hot",
+  "Lämnade inte tillbaka saken eller skadade den",
+  "Falskt eller kränkande omdöme",
+  "Annat",
+];
+
+/** Anmäl en annons, konversation eller användare med skäl. Anmälan syns bara för administratörer. */
 export function ReportDialog({
   targetType,
   targetId,
   label,
 }: {
-  targetType: "listing" | "conversation";
+  targetType: "listing" | "conversation" | "user";
   targetId: string;
   label: string;
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState(REASONS[0]!);
+  const reasons = targetType === "user" ? USER_REASONS : REASONS;
+  const [reason, setReason] = useState(reasons[0]!);
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -101,7 +110,7 @@ export function ReportDialog({
           </DialogDescription>
         </DialogHeader>
         <RadioGroup value={reason} onValueChange={setReason} className="space-y-1">
-          {REASONS.map((r) => (
+          {reasons.map((r) => (
             <div key={r} className="flex items-center gap-2.5">
               <RadioGroupItem id={`reason-${r}`} value={r} />
               <Label htmlFor={`reason-${r}`} className="cursor-pointer font-normal">

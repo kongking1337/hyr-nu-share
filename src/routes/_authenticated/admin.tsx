@@ -50,7 +50,7 @@ function useAdminActions() {
   const queryClient = useQueryClient();
   const refresh = () =>
     Promise.all(
-      ["admin-reports", "admin-listings", "admin-blocked", "admin-report-count"].map((key) =>
+      ["admin-reports", "admin-listings", "admin-blocked", "admin-report-count", "admin-trust"].map((key) =>
         queryClient.invalidateQueries({ queryKey: [key] }),
       ),
     );
@@ -118,6 +118,7 @@ function AdminPage() {
           <TabsTrigger value="reports">Anmälningar</TabsTrigger>
           <TabsTrigger value="listings">Annonser</TabsTrigger>
           <TabsTrigger value="blocked">Spärrade användare</TabsTrigger>
+          <TabsTrigger value="trust">Förtroende</TabsTrigger>
         </TabsList>
         <TabsContent value="reports" className="pt-4">
           <ReportsTab />
@@ -127,6 +128,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="blocked" className="pt-4">
           <BlockedTab />
+        </TabsContent>
+        <TabsContent value="trust" className="pt-4">
+          <TrustTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -440,6 +444,84 @@ function BlockedTab() {
         När spärren hävs kommer annonserna inte tillbaka automatiskt. Återställ dem under "Annonser"
         om det behövs.
       </p>
+    </div>
+  );
+}
+
+/**
+ * Dolt förtroendevärde 0–100 per användare (admin_trust_scores), lägst först. Syns bara
+ * här, aldrig för användaren själv eller andra.
+ */
+function TrustTab() {
+  const actions = useAdminActions();
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["admin-trust"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_trust_scores");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Ett grovt värde för att hitta troliga bedragare tidigt. Börjar på 50. Upp: kontots ålder,
+        avslutade hyror och bra omdömen. Ner: anmälningar (−5 öppna, −15 åtgärdade), dolda annonser
+        (−10), användare som blockerat personen (−5) och spärr. Lägst först.
+      </p>
+      {isLoading && <p className="text-sm text-muted-foreground">Hämtar …</p>}
+      {users?.map((u) => (
+        <div
+          key={u.user_id}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-3 text-sm"
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className={cn(
+                "grid h-10 w-10 shrink-0 place-items-center rounded-full font-semibold tabular-nums",
+                u.score < 30
+                  ? "bg-destructive/15 text-destructive"
+                  : u.score < 50
+                    ? "bg-accent/30 text-foreground"
+                    : "bg-primary/15 text-primary",
+              )}
+              title="Förtroendevärde"
+            >
+              {u.score}
+            </span>
+            <span>
+              {u.blocked ? (
+                <span className="font-medium">{u.name}</span>
+              ) : (
+                <Link to="/profil/$id" params={{ id: u.user_id }} className="font-medium hover:underline">
+                  {u.name}
+                </Link>
+              )}
+              {u.blocked && <span className="ml-2 text-xs text-destructive">spärrad</span>}
+              <span className="block text-xs text-muted-foreground">
+                {u.member_days} dagar · {u.listings} annonser · {u.completed_rentals} hyror
+                {u.review_count > 0 && ` · ${u.rating} i snitt (${u.review_count})`}
+                {u.reports_open + u.reports_upheld > 0 &&
+                  ` · anmälningar: ${u.reports_open} öppna, ${u.reports_upheld} åtgärdade`}
+                {u.removed_listings > 0 && ` · ${u.removed_listings} dolda annonser`}
+                {u.blocked_by > 0 && ` · blockerad av ${u.blocked_by}`}
+              </span>
+            </span>
+          </div>
+          {!u.blocked && u.score < 30 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full text-destructive"
+              onClick={() => void actions.block(u.user_id, u.name)}
+            >
+              Spärra
+            </Button>
+          )}
+        </div>
+      ))}
+      {users?.length === 0 && <p className="text-sm text-muted-foreground">Inga användare än.</p>}
     </div>
   );
 }

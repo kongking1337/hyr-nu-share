@@ -94,6 +94,18 @@ function TermsPage() {
         </li>
         <li>Inga trakasserier, hot eller kränkande meddelanden. Ingen spam eller massutskick.</li>
         <li>Använd meddelandefunktionen för affären som annonsen gäller, inte för reklam.</li>
+        <li>
+          Omdömen ska vara ärliga och handla om hyran. Inga personangrepp, inga påhittade omdömen
+          och inga omdömen i utbyte mot något. Vi tar bort omdömen som bryter mot villkoren.
+        </li>
+        <li>
+          Hyresavtalet under Bokningar sammanfattar vad ni kommit överens om. Det gäller mellan er
+          två; Hyrkoll är inte part i det.
+        </li>
+        <li>
+          Du kan blockera en användare. Då kan ni inte skicka meddelanden eller bokningsförfrågningar
+          till varandra.
+        </li>
       </ul>
       <p>
         Tips: träffas på en offentlig plats, titta på saken innan du betalar och betala aldrig i

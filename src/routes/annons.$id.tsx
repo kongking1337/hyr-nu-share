@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Info, MapPin, Truck, User } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,7 +69,14 @@ function ListingPage() {
                 <MapPin className="h-4 w-4" /> {listing.area ? `${listing.area}, ` : ""}{listing.city}
               </span>
               <span className="flex items-center gap-1">
-                <User className="h-4 w-4" /> {listing.ownerType === "company" ? "Företag" : "Privatperson"} · {listing.ownerName}
+                <User className="h-4 w-4" /> {listing.ownerType === "company" ? "Företag" : "Privatperson"} ·{" "}
+                {listing.ownerId && !listing.example ? (
+                  <Link to="/profil/$id" params={{ id: listing.ownerId }} className="text-primary hover:underline">
+                    {listing.ownerName}
+                  </Link>
+                ) : (
+                  listing.ownerName
+                )}
               </span>
               {listing.publishedAt && (
                 <span>Publicerad {new Date(listing.publishedAt).toLocaleDateString("sv-SE")}</span>

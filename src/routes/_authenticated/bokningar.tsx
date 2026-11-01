@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Check, MessageSquare, PackageCheck, PackageOpen, Undo2, X } from "lucide-react";
+import { Check, FileText, MessageSquare, PackageCheck, PackageOpen, Star, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,15 +16,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { BookingPhotos } from "@/components/BookingPhotos";
+import { Stars } from "@/components/Stars";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  BOOKING_STATUS,
-  CANCELLATION_POLICIES,
   addDays,
   asPolicy,
+  BOOKING_STATUS,
+  CANCELLATION_POLICIES,
   formatDates,
+  fromISODate,
   lateCancellation,
   todayISO,
   type BookingStatus,
@@ -71,6 +83,34 @@ function BookingsPage() {
       const { data, error } = await supabase.rpc("my_bookings");
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  // my_bookings visar bara namn; id:n behövs för länken till den andras profil.
+  const { data: counterparts = {} } = useQuery({
+    queryKey: ["booking-parties", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("bookings").select("id, owner_id, renter_id");
+      if (error) throw error;
+      return Object.fromEntries(
+        (data ?? []).map((r) => [r.id, r.owner_id === user!.id ? r.renter_id : r.owner_id]),
+      ) as Record<string, string | null>;
+    },
+  });
+
+  const { data: myReviews, refetch: refetchReviews } = useQuery({
+    queryKey: ["my-reviews", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("booking_id, rating")
+        .eq("author_id", user!.id);
+      if (error) throw error;
+      return Object.fromEntries(
+        (data ?? []).filter((r) => r.booking_id).map((r) => [r.booking_id!, r.rating]),
+      ) as Record<string, number>;
     },
   });
 
@@ -145,8 +185,11 @@ function BookingsPage() {
                 b={b}
                 userId={user!.id}
                 busy={busy === b.id}
+                counterpartId={counterparts[b.id] ?? null}
+                myRating={myReviews ? (myReviews[b.id] ?? null) : undefined}
                 onAction={(a) => void act(b, a)}
                 onPhotosSaved={() => void refetch()}
+                onReviewed={() => void refetchReviews()}
               />
             ))}
           </div>
@@ -160,14 +203,21 @@ function BookingCard({
   b,
   userId,
   busy,
+  counterpartId,
+  myRating,
   onAction,
   onPhotosSaved,
+  onReviewed,
 }: {
   b: Booking;
   userId: string;
   busy: boolean;
+  counterpartId: string | null;
+  /** undefined medan omdömena hämtas */
+  myRating: number | null | undefined;
   onAction: (a: Action) => void;
   onPhotosSaved: () => void;
+  onReviewed: () => void;
 }) {
   const today = todayISO();
   const status = (b.status in BOOKING_STATUS ? b.status : "requested") as BookingStatus;
@@ -175,6 +225,22 @@ function BookingCard({
   const meta = expired ? { label: "Utgången", className: "bg-muted text-muted-foreground" } : BOOKING_STATUS[status];
   const policy = asPolicy(b.cancellation_policy);
   const confirmed = status === "confirmed";
+  // Omdömen kan lämnas i 14 dagar efter återlämningen, eller (om saken aldrig markerats som
+  // återlämnad) från tre dagar efter sista dagen. Databasen avgör till slut.
+  const ended =
+    status === "completed" && b.returned_at
+      ? new Date(b.returned_at).getTime()
+      : confirmed && b.picked_up_at && today > addDays(b.end_date, 3)
+        ? fromISODate(addDays(b.end_date, 3)).getTime()
+        : null;
+  const reviewOpen = ended !== null && Date.now() - ended < 14 * 86_400_000;
+  const name = counterpartId ? (
+    <Link to="/profil/$id" params={{ id: counterpartId }} className="text-primary hover:underline">
+      {b.counterpart_name}
+    </Link>
+  ) : (
+    b.counterpart_name
+  );
 
   return (
     <div className="rounded-3xl border border-border p-4 sm:p-5">
@@ -198,7 +264,7 @@ function BookingCard({
             </Link>
           </h3>
           <p className="text-sm text-muted-foreground">
-            {b.i_am_owner ? `${b.counterpart_name} vill hyra` : `Du hyr av ${b.counterpart_name}`} ·{" "}
+            {b.i_am_owner ? <>{name} vill hyra</> : <>Du hyr av {name}</>} ·{" "}
             {formatDates(b.start_date, b.end_date)} ({b.days} dygn)
           </p>
           <p className="text-sm">
@@ -252,6 +318,21 @@ function BookingCard({
             Uthyraren markerar när saken är tillbaka.
           </p>
         )}
+        {(confirmed || status === "completed") && (
+          <Button size="sm" variant="outline" className="rounded-full" asChild>
+            <Link to="/avtal/$id" params={{ id: b.id }}>
+              <FileText className="mr-1 h-4 w-4" /> Hyresavtal
+            </Link>
+          </Button>
+        )}
+        {myRating != null && (
+          <span className="flex items-center gap-1 self-center text-xs text-muted-foreground">
+            Ditt omdöme: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {myRating}
+          </span>
+        )}
+        {reviewOpen && myRating === null && (
+          <ReviewDialog b={b} onDone={onReviewed} />
+        )}
         {b.conversation_id && (
           <Button size="sm" variant="outline" className="rounded-full" asChild>
             <Link to="/meddelanden" search={{ c: b.conversation_id }}>
@@ -297,5 +378,72 @@ function BookingCard({
         </div>
       )}
     </div>
+  );
+}
+
+/** Omdöme om den andra efter en avslutad hyra. Går inte att ändra efteråt. */
+function ReviewDialog({ b, onDone }: { b: Booking; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function send() {
+    if (rating < 1) {
+      toast.error("Välj 1–5 stjärnor.");
+      return;
+    }
+    setSending(true);
+    const { error } = await supabase.rpc("leave_review", {
+      _booking_id: b.id,
+      _rating: rating,
+      _body: body.trim(),
+    });
+    setSending(false);
+    if (error) {
+      toast.error(userMessage(error, "Omdömet kunde inte sparas. Försök igen."));
+      return;
+    }
+    toast.success("Tack för ditt omdöme!");
+    setOpen(false);
+    onDone();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="rounded-full">
+          <Star className="mr-1 h-4 w-4" /> Lämna omdöme
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Omdöme om {b.counterpart_name}</DialogTitle>
+          <DialogDescription>
+            Omdömet visas när ni båda har skrivit, eller efter 14 dagar. Det går inte att ändra.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Stars value={rating} onChange={setRating} size="lg" />
+          <Textarea
+            rows={4}
+            maxLength={1000}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            aria-label="Omdöme (valfritt)"
+            placeholder={
+              b.i_am_owner
+                ? "Hur gick hyran? T.ex. kom i tid, var rädd om saken, lämnade tillbaka den i samma skick (valfritt)"
+                : "Hur gick hyran? T.ex. stämde saken med annonsen, var upphämtningen smidig (valfritt)"
+            }
+          />
+        </div>
+        <DialogFooter>
+          <Button className="rounded-full" onClick={() => void send()} disabled={sending || rating < 1}>
+            Skicka omdöme
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

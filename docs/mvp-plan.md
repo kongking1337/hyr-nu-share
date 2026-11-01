@@ -80,11 +80,20 @@ Tasks 10–13: code in `supabase/migrations/20261101150000_rental_flow.sql` and 
 `/bokningar` page; built 2026-11-01, the migration has to be run in the SQL Editor
 before the code goes live.
 
-## Next: phase 2, trust
+## Phase 2: trust (Marcus, 2026-11-01)
 
-Reviews after a finished rental (both ways, shown when both have written or after 14
-days; delete the fake demo reviews), a public profile per user, a simple rental agreement
-per booking, verified phone number, blocking a user, and the hidden trust score (see Later).
+| # | Task | Effort | Done when |
+|---|---|---|---|
+| 14 | **Reviews after a rental** | M | Both sides rate each other (1–5 stars + text) within 14 days of the return. A review shows when both have written, or 14 days after the return. One each, can't be changed; admins can delete. The 72 fake demo reviews are deleted |
+| 15 | **Public profile** (`/profil/:id`) | M | Name as in listings, city, "Om mig", member since, verified phone badge, finished rentals, typical response time, rating, reviews and listings. Linked from listings, bookings and messages |
+| 16 | **Rental agreement** (`/avtal/:id`) | S–M | Each accepted booking: parties (full names, only to the two of them), item, dates, price, deposit, rules, cancellation, standard terms. Both click "Godkänn"; the terms are saved at the first approval. Printable |
+| 17 | **Verified phone number** | S–M | Code by SMS through Supabase Auth; the profile shows "Verifierat telefonnummer", never the number. Built but switched off until an SMS provider is set up (`docs/operations.md`) |
+| 18 | **Block a user** | S | No messages or booking requests between the two, open requests between them end. Only the blocker sees it; list under Mitt konto |
+| 19 | **Hidden trust score** | M | 0–100 per user for admins (`/admin` → Förtroende), lowest first, from account age, rentals, reviews, reports, hidden listings, blocks. Never shown to users |
+
+Tasks 14–19: `supabase/migrations/20261101180000_trust.sql`, built 2026-11-01. Not done yet
+from the trust score idea: holding a low scorer's new listings for review, or ranking them
+lower in search.
 
 ## Open before inviting users
 
@@ -128,7 +137,9 @@ per booking, verified phone number, blocking a user, and the hidden trust score 
   (post what you want to rent), suggested price when posting.
 - **Remove bidding and price comparison** (hidden prototype code that doesn't fit renting;
   bidding is already switched off in the database since phase 1).
-- **Hidden seller rating** (Marcus, 2026-10-31): a trust score per seller that only
+- **More from the trust score** (the score itself is task 19): hold new listings from low
+  scorers for review, rank them lower in search, show the score next to reports in `/admin`.
+- **Hidden seller rating** (Marcus, 2026-10-31, built as task 19): a trust score per seller that only
   admins see, based on how they behave, e.g. reports against them (and whether
   they were upheld), hidden listings, blocks, account age, and how they answer
   messages. Used to spot likely scammers early: flag them in `/admin` and, for
