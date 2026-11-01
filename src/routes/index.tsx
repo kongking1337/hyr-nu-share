@@ -15,6 +15,11 @@ import { pushRecentSearch } from "@/lib/search/suggest";
 import { DEFAULTS, cleanParams } from "@/lib/search/params";
 import { CITIES, REGION } from "@/lib/geo";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
+// PROTOTYP – ta bort när en variant valts.
+import { PrototypeSwitcher, usePrototypeVariant } from "@/components/prototype-home/shared";
+import { VariantA } from "@/components/prototype-home/VariantA";
+import { VariantB } from "@/components/prototype-home/VariantB";
+import { VariantC } from "@/components/prototype-home/VariantC";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,6 +49,21 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 function Index() {
+  const variant = usePrototypeVariant();
+  if (variant) {
+    return (
+      <>
+        {variant === "A" && <VariantA />}
+        {variant === "B" && <VariantB />}
+        {variant === "C" && <VariantC />}
+        <PrototypeSwitcher current={variant} />
+      </>
+    );
+  }
+  return <CurrentIndex />;
+}
+
+function CurrentIndex() {
   const navigate = useNavigate();
   const [location, setLocation] = useState(REGION.slug);
 

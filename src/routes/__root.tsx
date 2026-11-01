@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { usePrototypeVariant } from "@/components/prototype-home/shared";
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
@@ -119,11 +120,13 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // PROTOTYP: startsidans varianter har eget sidhuvud.
+  const prototyping = usePrototypeVariant() !== "";
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Header />
+      {!prototyping && <Header />}
       <main className="min-h-[70vh]">
         <Outlet />
       </main>
