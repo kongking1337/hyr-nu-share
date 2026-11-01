@@ -4,6 +4,8 @@
 > Don't rewrite published git history (force pushing, or rebasing/amending/squashing
 > commits that are already pushed).
 
+- Design ("Hyrlapp": orange price tags, Bricolage Grotesque + Instrument Sans, header with one
+  account menu, mobile tab bar) and the redesign phases: `docs/design.md`.
 - Stack: TanStack Start + React, hosted on Cloudflare Workers. Database and login:
   our own Supabase project (ref in `supabase/config.toml`).
 - `.env` is checked in on purpose and holds only public values (Supabase URL and

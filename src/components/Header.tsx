@@ -1,167 +1,177 @@
-import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Heart, LayoutList, Menu, MessageSquare, Moon, Plus, Search, Sun, User } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { LogOut, Moon, Plus, Search, Sun, User } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { useTheme } from "@/hooks/useTheme";
-import { todayISO } from "@/lib/bookings";
-import { DEFAULTS } from "@/lib/search/params";
+import { DEFAULTS, cleanParams } from "@/lib/search/params";
+import { interpretQuery } from "@/lib/search/parse-query";
+import { pushRecentSearch } from "@/lib/search/suggest";
+import { cn } from "@/lib/utils";
 
-export function Header() {
+/** Ordmärket "hyrkoll." */
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn("font-display text-2xl font-extrabold tracking-tight", className)}>
+      hyrkoll<span className="text-primary">.</span>
+    </span>
+  );
+}
+
+export function Count({ n, className }: { n: number; className?: string }) {
+  if (n <= 0) return null;
+  return (
+    <span
+      className={cn(
+        "grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground",
+        className,
+      )}
+    >
+      {n}
+    </span>
+  );
+}
+
+function HeaderSearch() {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  return (
+    <form
+      role="search"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const intent = interpretQuery(q);
+        pushRecentSearch(q);
+        setQ("");
+        void navigate({ to: "/sok", search: cleanParams({ ...DEFAULTS, ...intent.patch, q }) as never });
+      }}
+      className="hidden w-full max-w-sm items-center gap-2 rounded-full border border-input bg-card px-4 focus-within:ring-2 focus-within:ring-ring md:flex"
+    >
+      <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Vad vill du hyra?"
+        aria-label="Sök bland saker att hyra"
+        className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+      />
+    </form>
+  );
+}
+
+function AccountMenu() {
+  const navigate = useNavigate();
   const { dark, toggle } = useTheme();
-  const { user } = useAuth();
-  const isAdmin = useIsAdmin();
-  const [open, setOpen] = useState(false);
-
-  const { data: unread = 0 } = useQuery({
-    queryKey: ["unread-count", user?.id],
-    enabled: !!user,
-    refetchInterval: 60_000,
-    queryFn: async () => (await supabase.rpc("unread_conversation_count")).data ?? 0,
-  });
-
-  // Bokningsförfrågningar som väntar på mitt svar.
-  const { data: pendingBookings = 0 } = useQuery({
-    queryKey: ["pending-bookings", user?.id],
-    enabled: !!user,
-    refetchInterval: 60_000,
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("bookings")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_id", user!.id)
-        .eq("status", "requested")
-        .gte("start_date", todayISO());
-      return count ?? 0;
-    },
-  });
-
-  const { data: openReports = 0 } = useQuery({
-    queryKey: ["admin-report-count", user?.id],
-    enabled: isAdmin,
-    refetchInterval: 120_000,
-    queryFn: async () => (await supabase.rpc("admin_open_report_count")).data ?? 0,
-  });
-
-  const mobileLinks = [
-    { to: "/sok", label: "Sök" },
-    { to: "/ny-annons", label: "+ Lägg upp annons" },
-    ...(user ? [{ to: "/mina-annonser", label: "Mina annonser" }] : []),
-    { to: "/meddelanden", label: unread ? `Meddelanden (${unread} olästa)` : "Meddelanden" },
-    ...(user
-      ? [{ to: "/bokningar", label: pendingBookings ? `Bokningar (${pendingBookings} att svara på)` : "Bokningar" }]
-      : []),
-    { to: "/favoriter", label: "Favoriter" },
-    { to: user ? "/konto" : "/auth", label: user ? "Mitt konto" : "Logga in" },
-    ...(isAdmin ? [{ to: "/admin", label: openReports ? `Moderering (${openReports})` : "Moderering" }] : []),
-  ];
+  const { user, isAdmin, unread, pendingBookings, openReports } = useNotificationCounts();
+  const total = unread + pendingBookings + openReports;
+  const initial = (user?.email ?? "?").slice(0, 1).toUpperCase();
 
   return (
-    <header className="print:hidden sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-primary text-primary-foreground font-display text-lg font-bold">
-            H
-          </span>
-          <span className="font-display text-lg font-semibold tracking-tight">Hyrkoll</span>
-        </Link>
-
-        <nav className="ml-4 hidden items-center gap-1 md:flex">
-          <Link
-            to="/sok"
-            search={DEFAULTS}
-            className="flex items-center gap-1 rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Search className="h-4 w-4" /> Sök
-          </Link>
-        </nav>
-
-        <div className="ml-auto flex items-center gap-1">
-          {isAdmin && (
-            <Link to="/admin" className="hidden sm:block">
-              <Button variant={openReports ? "destructive" : "ghost"} size="sm" className="rounded-full">
-                Moderering{openReports ? ` (${openReports})` : ""}
-              </Button>
-            </Link>
-          )}
-          <Button variant="ghost" size="icon" onClick={toggle} aria-label="Växla mörkt läge">
-            {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-          <Link to="/favoriter" className="hidden sm:block">
-            <Button variant="ghost" size="icon" aria-label="Favoriter">
-              <Heart className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Link to="/meddelanden" search={{}} className="relative hidden sm:block">
-            <Button variant="ghost" size="icon" aria-label={unread ? `Meddelanden, ${unread} olästa` : "Meddelanden"}>
-              <MessageSquare className="h-5 w-5" />
-            </Button>
-            {unread > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                {unread}
-              </span>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="relative flex h-10 items-center gap-2 rounded-full border border-border bg-card pl-3 pr-1 text-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={total ? `Kontomeny, ${total} saker att se` : "Kontomeny"}
+      >
+        <span className="hidden sm:inline">{user ? "Konto" : "Logga in"}</span>
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+          {user ? initial : <User className="h-4 w-4" />}
+        </span>
+        {total > 0 && <Count n={total} className="absolute -right-1.5 -top-1.5 ring-2 ring-background" />}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        {user ? (
+          <>
+            <DropdownMenuLabel className="truncate font-normal text-muted-foreground">{user.email}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/bokningar" className="justify-between">
+                Bokningar <Count n={pendingBookings} />
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/meddelanden" search={{}} className="justify-between">
+                Meddelanden <Count n={unread} />
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/mina-annonser">Mina annonser</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/favoriter">Favoriter och sparade sökningar</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/konto">Mitt konto</Link>
+            </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem asChild>
+                <Link to="/admin" className="justify-between">
+                  Moderering <Count n={openReports} />
+                </Link>
+              </DropdownMenuItem>
             )}
-          </Link>
-          {user && (
-            <Link to="/bokningar" className="relative hidden sm:block">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={pendingBookings ? `Bokningar, ${pendingBookings} att svara på` : "Bokningar"}
-              >
-                <CalendarDays className="h-5 w-5" />
-              </Button>
-              {pendingBookings > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                  {pendingBookings}
-                </span>
-              )}
-            </Link>
-          )}
-          {user && (
-            <Link to="/mina-annonser" className="hidden md:block">
-              <Button variant="ghost" size="sm" className="rounded-full">
-                <LayoutList className="mr-1 h-4 w-4" /> Mina annonser
-              </Button>
-            </Link>
-          )}
-          <Link to="/ny-annons" className="hidden sm:block">
-            <Button className="rounded-full" size="sm">
-              <Plus className="mr-1 h-4 w-4" /> Lägg upp annons
-            </Button>
-          </Link>
-          <Link to={user ? "/konto" : "/auth"} className="hidden sm:block">
-            <Button variant="outline" size="sm" className="rounded-full">
-              <User className="mr-1 h-4 w-4" /> {user ? "Mitt konto" : "Logga in"}
-            </Button>
-          </Link>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/auth">Logga in eller skapa konto</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/favoriter">Favoriter</Link>
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            toggle();
+          }}
+        >
+          {dark ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+          {dark ? "Ljust läge" : "Mörkt läge"}
+        </DropdownMenuItem>
+        {user && (
+          <DropdownMenuItem
+            onSelect={async () => {
+              await supabase.auth.signOut();
+              void navigate({ to: "/" });
+            }}
+          >
+            <LogOut className="mr-2 h-4 w-4" /> Logga ut
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative sm:hidden" aria-label={unread ? `Meny, ${unread} olästa meddelanden` : "Meny"}>
-                <Menu className="h-5 w-5" />
-                {unread + pendingBookings > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <div className="mt-8 flex flex-col gap-1">
-                {mobileLinks.map((n) => (
-                  <Link
-                    key={n.to}
-                    to={n.to}
-                    onClick={() => setOpen(false)}
-                    className="rounded-xl px-3 py-3 text-sm hover:bg-muted"
-                  >
-                    {n.label}
-                  </Link>
-                ))}
-              </div>
-            </SheetContent>
-          </Sheet>
+export function Header() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const showSearch = pathname !== "/" && pathname !== "/sok";
+
+  return (
+    <header className="print:hidden sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+        <Link to="/" aria-label="Hyrkoll, till startsidan" className="shrink-0">
+          <Wordmark />
+        </Link>
+        {showSearch && <HeaderSearch />}
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            to="/ny-annons"
+            className="hidden items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition-opacity hover:opacity-90 sm:flex"
+          >
+            <Plus className="h-4 w-4" /> Hyr ut
+          </Link>
+          <AccountMenu />
         </div>
       </div>
     </header>

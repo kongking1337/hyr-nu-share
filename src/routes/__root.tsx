@@ -7,18 +7,18 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { usePrototypeVariant } from "@/components/prototype-home/shared";
 import type { ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { Header } from "@/components/Header";
+import { BottomTabs } from "@/components/BottomTabs";
+import { Header, Wordmark } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
+        <h1 className="font-display text-7xl font-extrabold text-primary">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Sidan finns inte</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Sidan du letar efter finns inte eller har flyttats.
@@ -26,7 +26,7 @@ function NotFoundComponent() {
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Till startsidan
           </Link>
@@ -55,13 +55,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Försök igen
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-full border border-input bg-background px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Till startsidan
           </a>
@@ -120,31 +120,32 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  // PROTOTYP: startsidans varianter har eget sidhuvud.
-  const prototyping = usePrototypeVariant() !== "";
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {!prototyping && <Header />}
+      <Header />
       <main className="min-h-[70vh]">
         <Outlet />
       </main>
-      <footer className="mt-16 border-t border-border py-10 print:hidden">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 text-sm text-muted-foreground">
-          <p className="font-display text-base font-semibold text-foreground">Hyrkoll</p>
-          <p>
-            Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är under
-            utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll tar inga
-            avgifter och förmedlar inga betalningar.
-          </p>
-          <nav className="mt-2 flex flex-wrap gap-x-4 gap-y-1" aria-label="Om Hyrkoll">
+      <footer className="mt-20 border-t border-border pb-28 pt-10 md:pb-12 print:hidden">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 text-sm text-muted-foreground sm:px-6 md:grid-cols-[1fr_auto]">
+          <div className="max-w-xl">
+            <Wordmark className="text-xl text-foreground" />
+            <p className="mt-2">
+              Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är under
+              utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll tar inga
+              avgifter och förmedlar inga betalningar.
+            </p>
+          </div>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2 md:flex-col" aria-label="Om Hyrkoll">
             <Link to="/villkor" className="hover:text-foreground hover:underline">Användarvillkor</Link>
             <Link to="/integritet" className="hover:text-foreground hover:underline">Integritetspolicy</Link>
             <Link to="/kontakt" className="hover:text-foreground hover:underline">Kontakt</Link>
           </nav>
         </div>
       </footer>
+      <BottomTabs />
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
