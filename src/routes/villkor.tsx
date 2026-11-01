@@ -21,8 +21,8 @@ function TermsPage() {
     <LegalPage title="Användarvillkor">
       <h2>1. Om Hyrkoll</h2>
       <p>
-        Hyrkoll är en annonsplats där privatpersoner och företag i Stockholms län kan sälja och hyra
-        ut saker och kontakta varandra. Hyrkoll drivs av {operatorText}. Hyrkoll är inte part i
+        Hyrkoll är en annonsplats där privatpersoner och företag i Stockholms län kan hyra ut saker
+        till varandra och kontakta varandra. Hyrkoll drivs av {operatorText}. Hyrkoll är inte part i
         affärer mellan användare, förmedlar inga betalningar och tar inga avgifter.
       </p>
 
@@ -43,11 +43,10 @@ function TermsPage() {
         </li>
         <li>Använd egna bilder, eller bilder som du har rätt att använda.</li>
         <li>
-          En annons ska gälla en sak (eller ett paket) som du faktiskt har och får sälja eller hyra
-          ut.
+          En annons ska gälla en sak (eller ett paket) som du faktiskt har och får hyra ut.
         </li>
         <li>Välj rätt kategori och lägg inte upp samma annons flera gånger.</li>
-        <li>Markera annonsen som såld eller ta bort den när den inte längre är aktuell.</li>
+        <li>Pausa eller ta bort annonsen när saken inte längre går att hyra.</li>
       </ul>
 
       <h2>4. Förbjudet att annonsera</h2>
@@ -63,8 +62,7 @@ function TermsPage() {
         <li>Pengar, värdepapper, kryptovalutor, lotter och spel om pengar.</li>
         <li>Sexuella tjänster eller pornografiskt material.</li>
         <li>
-          Återkallade eller farliga produkter, och annat som är olagligt att sälja eller hyra ut i
-          Sverige.
+          Återkallade eller farliga produkter, och annat som är olagligt att hyra ut i Sverige.
         </li>
         <li>
           Annonser som bara syftar till att samla in kontaktuppgifter eller locka till andra

@@ -75,15 +75,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Hyrkoll – köp, sälj och hyr i Stockholm" },
+      { title: "Hyrkoll – hyr och hyr ut saker i Stockholm" },
       {
         name: "description",
         content:
-          "Köp, sälj och hyr av privatpersoner och företag i Stockholms län – verktyg, släpvagnar, barnsaker och mycket mer.",
+          "Hyr saker av privatpersoner och företag i Stockholms län – verktyg, släpvagnar, barnsaker och mycket mer.",
       },
       { name: "author", content: "Hyrkoll" },
-      { property: "og:title", content: "Hyrkoll – köp, sälj och hyr i Stockholm" },
-      { property: "og:description", content: "Annonser från privatpersoner och företag i Stockholms län." },
+      { property: "og:title", content: "Hyrkoll – hyr och hyr ut saker i Stockholm" },
+      { property: "og:description", content: "Hyr saker av privatpersoner och företag i Stockholms län." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -131,7 +131,7 @@ function RootComponent() {
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 text-sm text-muted-foreground">
           <p className="font-display text-base font-semibold text-foreground">Hyrkoll</p>
           <p>
-            Köp, sälj och hyr av privatpersoner och företag i Stockholms län. Hyrkoll är under
+            Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är under
             utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll tar inga
             avgifter och förmedlar inga betalningar.
           </p>

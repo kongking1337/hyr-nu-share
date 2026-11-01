@@ -19,14 +19,14 @@ import { ACTIVE_CATEGORIES } from "@/lib/categories";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Hyrkoll – köp, sälj och hyr i Stockholm" },
+      { title: "Hyrkoll – hyr och hyr ut saker i Stockholm" },
       {
         name: "description",
         content:
-          "Köp, sälj och hyr av privatpersoner och företag i Stockholms län. Sök på vanlig svenska – verktyg, släpvagnar, barnsaker och mycket mer.",
+          "Hyr saker av privatpersoner och företag i Stockholms län, eller hyr ut det du sällan använder. Sök på vanlig svenska – verktyg, släpvagnar, barnsaker och mycket mer.",
       },
-      { property: "og:title", content: "Hyrkoll – köp, sälj och hyr i Stockholm" },
-      { property: "og:description", content: "Annonser från privatpersoner och företag i Stockholms län." },
+      { property: "og:title", content: "Hyrkoll – hyr och hyr ut saker i Stockholm" },
+      { property: "og:description", content: "Hyr saker av privatpersoner och företag i Stockholms län." },
     ],
   }),
   component: Index,
@@ -54,6 +54,7 @@ function Index() {
         .from("listings")
         .select("*")
         .eq("status", "published")
+        .eq("listing_type", "rent")
         .in("city", CITIES.map((c) => c.name))
         .order("published_at", { ascending: false })
         .limit(6);
@@ -83,13 +84,13 @@ function Index() {
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-primary/8 to-transparent">
         <div className="mx-auto max-w-4xl px-4 py-14 text-center sm:py-20">
           <p className="mb-3 inline-flex rounded-full bg-primary/12 px-3 py-1 text-xs font-medium text-primary">
-            Köp, sälj och hyr i Stockholm
+            Hyr och hyr ut i Stockholm
           </p>
           <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
             Vad letar du efter?
           </h1>
           <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-            Skriv precis som du tänker. Vi visar vad grannar och företag i Stockholms län säljer och hyr ut.
+            Skriv precis som du tänker. Vi visar vad grannar och företag i Stockholms län hyr ut.
           </p>
 
           <div className="mt-7 text-left">
@@ -110,7 +111,7 @@ function Index() {
 
           <Button asChild variant="outline" className="mt-8 rounded-full">
             <Link to="/ny-annons">
-              <Plus className="mr-1 h-4 w-4" /> Har du något att sälja eller hyra ut?
+              <Plus className="mr-1 h-4 w-4" /> Har du något att hyra ut?
             </Link>
           </Button>
         </div>

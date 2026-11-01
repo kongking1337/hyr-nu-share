@@ -83,7 +83,13 @@ export const internalProvider: RentalProvider = {
   kind: "internal",
   demo: false,
   search: async (q: ProviderQuery) => {
-    let query = supabase.from("listings").select("*").eq("status", "published").limit(200);
+    // Hyrkoll är bara för uthyrning; gamla "säljes"-annonser visas inte i sökningen.
+    let query = supabase
+      .from("listings")
+      .select("*")
+      .eq("status", "published")
+      .eq("listing_type", "rent")
+      .limit(200);
     if (q.category) query = query.eq("category_slug", q.category);
     const { data, error } = await query;
     if (error) throw error;

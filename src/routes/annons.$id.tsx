@@ -6,7 +6,6 @@ import { ContactSeller } from "@/components/ContactSeller";
 import { ExampleBadge } from "@/components/ExampleBadge";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { ReportDialog } from "@/components/ReportDialog";
-import { ListingTypeBadge } from "@/components/ListingTypeBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { rowToUnified } from "@/lib/providers/internal";
 import { kr, priceLabel } from "@/lib/pricing";
@@ -17,7 +16,7 @@ export const Route = createFileRoute("/annons/$id")({
       { title: "Annons – Hyrkoll" },
       { name: "description", content: "Se bilder, pris, plats och beskrivning på Hyrkoll." },
       { property: "og:title", content: "Annons – Hyrkoll" },
-      { property: "og:description", content: "Köp, sälj och hyr i Stockholm." },
+      { property: "og:description", content: "Hyr och hyr ut saker i Stockholm." },
     ],
   }),
   component: ListingPage,
@@ -39,7 +38,7 @@ function ListingPage() {
   if (!listing) {
     return (
       <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
-        Annonsen finns inte längre. Den kan vara såld, pausad eller borttagen.
+        Annonsen finns inte längre. Den kan vara pausad eller borttagen.
       </div>
     );
   }
@@ -54,10 +53,11 @@ function ListingPage() {
       <div className="mt-6 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-1.5">
-              <ListingTypeBadge type={listing.listingType} />
-              {listing.example && <ExampleBadge />}
-            </div>
+            {listing.example && (
+              <div className="flex flex-wrap gap-1.5">
+                <ExampleBadge />
+              </div>
+            )}
             <h1 className="font-display text-3xl font-semibold">{listing.title}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">

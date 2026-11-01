@@ -105,7 +105,7 @@ function AccountPage() {
         <span>
           <span className="block font-display text-lg font-semibold">Mina annonser</span>
           <span className="block text-sm text-muted-foreground">
-            Redigera, pausa, markera som såld och ta bort dina annonser.
+            Redigera, pausa och ta bort dina annonser.
           </span>
         </span>
         <span className="text-sm text-primary">Öppna →</span>

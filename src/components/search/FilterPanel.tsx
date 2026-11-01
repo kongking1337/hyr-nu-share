@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CATEGORY_ATTRIBUTES, SUBCATEGORIES, parseAttrFilter, stringifyAttrFilter } from "@/lib/search/attributes";
-import { RADIUS_OPTIONS, TYPE_OPTIONS, type SearchParams } from "@/lib/search/params";
+import { RADIUS_OPTIONS, type SearchParams } from "@/lib/search/params";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { cn } from "@/lib/utils";
 import { REGION } from "@/lib/geo";
@@ -59,28 +59,9 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
   return (
     <Accordion
       type="multiple"
-      defaultValue={["typ", "kategori", "plats", "pris", "saljare"]}
+      defaultValue={["kategori", "plats", "pris", "uthyrare"]}
       className="w-full"
     >
-      <AccordionItem value="typ">
-        <AccordionTrigger className="text-sm font-semibold">Typ</AccordionTrigger>
-        <AccordionContent className="flex flex-wrap gap-1.5 pb-4">
-          {TYPE_OPTIONS.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              onClick={() => patch({ type: o.value })}
-              className={cn(
-                "rounded-full border border-border px-3 py-1 text-xs",
-                params.type === o.value && "border-primary bg-primary/10 text-primary",
-              )}
-            >
-              {o.label}
-            </button>
-          ))}
-        </AccordionContent>
-      </AccordionItem>
-
       <AccordionItem value="kategori">
         <AccordionTrigger className="text-sm font-semibold">Kategori</AccordionTrigger>
         <AccordionContent className="space-y-3 pb-4">
@@ -226,10 +207,10 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
         </AccordionContent>
       </AccordionItem>
 
-      <AccordionItem value="saljare">
-        <AccordionTrigger className="text-sm font-semibold">Säljare</AccordionTrigger>
+      <AccordionItem value="uthyrare">
+        <AccordionTrigger className="text-sm font-semibold">Uthyrare</AccordionTrigger>
         <AccordionContent className="space-y-3 pb-4">
-          <Row label="Säljare">
+          <Row label="Uthyrare">
             <Select value={params.owner} onValueChange={(v) => patch({ owner: v as SearchParams["owner"] })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>

@@ -17,9 +17,10 @@
   Platform-owned columns (ratings, counters, seller name, verification) are kept
   by `*_guard` triggers in the `private` schema; see
   `supabase/migrations/20261026120000_harden_permissions.sql`.
-- First version (docs/mvp-plan.md): listings are "sale" or "rent" (`listing_type`),
-  only in Stockholm county (`src/lib/geo.ts`), and the visible categories are listed in
-  `src/lib/categories.ts`. Bookings, bids, comparison, company profiles and the
+- First version (docs/mvp-plan.md): Hyrkoll is for renting only (rent out your things, rent
+  other people's). New listings get `listing_type` "rent", and search and the home page
+  only show those; old "sale" listings stay in the database. Only Stockholm county
+  (`src/lib/geo.ts`), and the visible categories are listed in `src/lib/categories.ts`. Bookings, bids, comparison, company profiles and the
   statistics page are hidden from the UI but their code and tables remain.
 - Messaging: buyers start conversations with the `start_conversation` RPC; the inbox
   uses `my_conversations` (public names only, never emails). New-message emails are

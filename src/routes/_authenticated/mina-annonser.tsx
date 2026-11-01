@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  CircleCheck,
   Copy,
   ExternalLink,
   Pause,
@@ -29,7 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { photoUrl, removeUnusedPhotos } from "@/lib/photos";
-import { LISTING_TYPE_LABEL, priceLabel } from "@/lib/pricing";
+import { priceLabel } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/mina-annonser")({
   head: () => ({
@@ -56,13 +55,11 @@ const TABS = [
   { key: "published", label: "Publicerade" },
   { key: "paused", label: "Pausade" },
   { key: "draft", label: "Utkast" },
-  { key: "sold", label: "Sålda" },
 ];
 
 const STATUS_TOAST: Record<string, string> = {
   paused: "Annonsen är pausad.",
   published: "Annonsen är publicerad.",
-  sold: "Annonsen är markerad som såld och syns inte längre i sökningen.",
 };
 
 function MyListings() {
@@ -176,7 +173,7 @@ function MyListings() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className={`rounded-full border-0 ${meta.className}`}>{meta.label}</Badge>
                     <span className="text-xs text-muted-foreground">
-                      {LISTING_TYPE_LABEL[listingType]} · publicerad{" "}
+                      Publicerad{" "}
                       {new Date(l.published_at ?? l.created_at).toLocaleDateString("sv-SE")}
                     </span>
                   </div>
@@ -209,11 +206,6 @@ function MyListings() {
                     onClick={() => setStatus(l.id, l.status === "paused" ? "published" : "paused")}
                   >
                     {l.status === "paused" ? <><Play className="mr-1 h-4 w-4" /> Aktivera</> : <><Pause className="mr-1 h-4 w-4" /> Pausa</>}
-                  </Button>
-                )}
-                {active && listingType === "sale" && (
-                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => setStatus(l.id, "sold")}>
-                    <CircleCheck className="mr-1 h-4 w-4" /> Markera som såld
                   </Button>
                 )}
                 {l.status === "sold" && (

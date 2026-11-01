@@ -29,7 +29,7 @@ export const Route = createFileRoute("/auth")({
       { title: "Logga in eller skapa konto – Hyrkoll" },
       {
         name: "description",
-        content: "Skapa konto som privatperson eller företag för att köpa, sälja och hyra.",
+        content: "Skapa konto som privatperson eller företag för att hyra och hyra ut saker.",
       },
       { property: "og:title", content: "Logga in – Hyrkoll" },
       { property: "og:description", content: "Konto för privatpersoner och företag." },
@@ -224,7 +224,7 @@ function AuthPage() {
     <div className="mx-auto max-w-md px-4 py-14">
       <h1 className="font-display text-3xl font-semibold">Välkommen till Hyrkoll</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Skapa konto som privatperson eller företag för att köpa, sälja, hyra och skicka meddelanden.
+        Skapa konto som privatperson eller företag för att hyra, hyra ut och skicka meddelanden.
       </p>
 
       <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")} className="mt-7">

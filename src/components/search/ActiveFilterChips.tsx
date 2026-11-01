@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
-import { DEFAULTS, TYPE_OPTIONS, type SearchParams } from "@/lib/search/params";
+import { DEFAULTS, type SearchParams } from "@/lib/search/params";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { CATEGORY_ATTRIBUTES, SUBCATEGORIES, parseAttrFilter, stringifyAttrFilter } from "@/lib/search/attributes";
 
@@ -11,7 +11,6 @@ export function activeChips(p: SearchParams): Chip[] {
   const add = (key: string, label: string, patch: Partial<SearchParams>) => chips.push({ key, label, patch });
 
   if (p.q) add("q", `”${p.q}”`, { q: "" });
-  if (p.type !== "all") add("type", TYPE_OPTIONS.find((o) => o.value === p.type)?.label ?? p.type, { type: "all" });
   if (p.category !== "all")
     add("category", CATEGORY_SYNONYMS[p.category]?.name ?? p.category, { category: "all", sub: "all", attrs: "" });
   if (p.sub !== "all") {

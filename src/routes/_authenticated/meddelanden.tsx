@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/meddelanden")({
   head: () => ({
     meta: [
       { title: "Meddelanden – Hyrkoll" },
-      { name: "description", content: "Dina konversationer med köpare, säljare och uthyrare." },
+      { name: "description", content: "Dina konversationer med uthyrare och de som vill hyra dina saker." },
       { property: "og:title", content: "Meddelanden – Hyrkoll" },
       { property: "og:description", content: "Dina konversationer på Hyrkoll." },
     ],

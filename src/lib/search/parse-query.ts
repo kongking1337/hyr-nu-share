@@ -30,15 +30,6 @@ export function interpretQuery(raw: string): QueryIntent {
     patch.sort = map[base.sort] ?? "recommended";
   }
 
-  // "köpa", "begagnad" → säljes; "hyra" → uthyres
-  if (/\b(kop|kopa|koper|begagnad|saljes|skankes|gratis)\b/.test(n)) {
-    patch.type = "sale";
-    notes.push("Annonstyp: säljes");
-  } else if (/\bhyr/.test(n)) {
-    patch.type = "rent";
-    notes.push("Annonstyp: uthyres");
-  }
-
   // "billig" utan explicit sortering → lägst pris
   if (/\bbillig|prisvard|budget/.test(n) && !patch.sort) {
     patch.sort = "price";

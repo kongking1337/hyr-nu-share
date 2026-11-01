@@ -158,7 +158,7 @@ export function parseSearch(raw: string): ParsedSearch {
 
 export const EXAMPLE_QUERIES = [
   "Hyra släpvagn i Huddinge",
-  "Begagnad barnvagn i Nacka",
+  "Barnvagn i Nacka",
   "Högtryckstvätt nära Solna",
   "Billig skruvdragare",
   "Partytält i Täby",

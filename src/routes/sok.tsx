@@ -12,10 +12,10 @@ export const Route = createFileRoute("/sok")({
       {
         name: "description",
         content:
-          "Sök på vanlig svenska bland saker som säljs och hyrs ut i Stockholms län. Filtrera på kategori, plats och pris.",
+          "Sök på vanlig svenska bland saker som hyrs ut i Stockholms län. Filtrera på kategori, plats och pris.",
       },
       { property: "og:title", content: "Sök annonser i Stockholm – Hyrkoll" },
-      { property: "og:description", content: "Köp, sälj och hyr i Stockholms län." },
+      { property: "og:description", content: "Hyr och hyr ut saker i Stockholms län." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

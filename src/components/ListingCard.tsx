@@ -3,7 +3,6 @@ import { Heart, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ExampleBadge } from "@/components/ExampleBadge";
-import { ListingTypeBadge } from "@/components/ListingTypeBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { priceLabel } from "@/lib/pricing";
@@ -45,10 +44,11 @@ export function ListingCard({
           decoding="async"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          <ListingTypeBadge type={r.listingType} />
-          {r.example && <ExampleBadge />}
-        </div>
+        {r.example && (
+          <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+            <ExampleBadge />
+          </div>
+        )}
         <button
           onClick={favorite}
           aria-label="Spara som favorit"

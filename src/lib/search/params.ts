@@ -2,7 +2,7 @@ import { CITIES, REGION } from "@/lib/geo";
 
 /**
  * Delbar URL-modell för /sok.
- * Exempel: /sok?q=slapvagn&type=rent&location=solna&radius=10&priceMax=500&sort=price
+ * Exempel: /sok?q=slapvagn&location=solna&radius=10&priceMax=500&sort=price
  */
 export type SortKey =
   | "recommended"
@@ -39,19 +39,10 @@ export const PRICE_BASES: Array<{ value: PriceBase; label: string }> = [
 
 export const RADIUS_OPTIONS = [5, 10, 25, 50];
 
-export type ListingTypeFilter = "all" | "sale" | "rent";
-
-export const TYPE_OPTIONS: Array<{ value: ListingTypeFilter; label: string }> = [
-  { value: "all", label: "Säljes och uthyres" },
-  { value: "sale", label: "Säljes" },
-  { value: "rent", label: "Uthyres" },
-];
-
 const LOCATION_SLUGS = new Set([REGION.slug, "nara-mig", ...CITIES.map((c) => c.slug)]);
 
 export type SearchParams = {
   q: string;
-  type: ListingTypeFilter;
   location: string;
   radius: number;
   category: string;
@@ -78,7 +69,6 @@ export type SearchParams = {
 
 export const DEFAULTS: SearchParams = {
   q: "",
-  type: "all",
   location: REGION.slug,
   radius: 25,
   category: "all",
@@ -115,7 +105,6 @@ const bool = (v: unknown, d: boolean) => (v === true || v === "true" ? true : v 
 export function validateSearchParams(search: Partial<Record<keyof SearchParams, unknown>>): SearchParams {
   return {
     q: str(search["q"], DEFAULTS.q),
-    type: oneOf(search["type"], TYPE_OPTIONS.map((o) => o.value), DEFAULTS.type),
     // Okända platser (t.ex. gamla länkar till Göteborg) blir hela Stockholm.
     location: oneOf(search["location"], [...LOCATION_SLUGS], DEFAULTS.location),
     radius: num(search["radius"], DEFAULTS.radius),

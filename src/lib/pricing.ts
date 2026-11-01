@@ -13,8 +13,6 @@ export function priceLabel(r: Priced): string {
   return `${kr(r.priceDay)}/dygn`;
 }
 
-export const LISTING_TYPE_LABEL = { sale: "Säljes", rent: "Uthyres" } as const;
-
 export type Quote = {
   days: number;
   base: number;

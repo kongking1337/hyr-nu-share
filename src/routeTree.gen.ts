@@ -17,7 +17,6 @@ import { Route as JamforRouteImport } from './routes/jamfor'
 import { Route as KontaktRouteImport } from './routes/kontakt'
 import { Route as NyttLosenordRouteImport } from './routes/nytt-losenord'
 import { Route as SokRouteImport } from './routes/sok'
-import { Route as TestStartsidaRouteImport } from './routes/test-startsida'
 import { Route as VillkorRouteImport } from './routes/villkor'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBokningarRouteImport } from './routes/_authenticated/bokningar'
@@ -69,11 +68,6 @@ const NyttLosenordRoute = NyttLosenordRouteImport.update({
 const SokRoute = SokRouteImport.update({
   id: '/sok',
   path: '/sok',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TestStartsidaRoute = TestStartsidaRouteImport.update({
-  id: '/test-startsida',
-  path: '/test-startsida',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VillkorRoute = VillkorRouteImport.update({
@@ -153,7 +147,6 @@ export interface FileRoutesByFullPath {
   '/kontakt': typeof KontaktRoute
   '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
-  '/test-startsida': typeof TestStartsidaRoute
   '/villkor': typeof VillkorRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
@@ -176,7 +169,6 @@ export interface FileRoutesByTo {
   '/kontakt': typeof KontaktRoute
   '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
-  '/test-startsida': typeof TestStartsidaRoute
   '/villkor': typeof VillkorRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bokningar': typeof AuthenticatedBokningarRoute
@@ -201,7 +193,6 @@ export interface FileRoutesById {
   '/kontakt': typeof KontaktRoute
   '/nytt-losenord': typeof NyttLosenordRoute
   '/sok': typeof SokRoute
-  '/test-startsida': typeof TestStartsidaRoute
   '/villkor': typeof VillkorRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bokningar': typeof AuthenticatedBokningarRoute
@@ -226,7 +217,6 @@ export interface FileRouteTypes {
     | '/kontakt'
     | '/nytt-losenord'
     | '/sok'
-    | '/test-startsida'
     | '/villkor'
     | '/admin'
     | '/bokningar'
@@ -249,7 +239,6 @@ export interface FileRouteTypes {
     | '/kontakt'
     | '/nytt-losenord'
     | '/sok'
-    | '/test-startsida'
     | '/villkor'
     | '/admin'
     | '/bokningar'
@@ -273,7 +262,6 @@ export interface FileRouteTypes {
     | '/kontakt'
     | '/nytt-losenord'
     | '/sok'
-    | '/test-startsida'
     | '/villkor'
     | '/_authenticated/admin'
     | '/_authenticated/bokningar'
@@ -298,7 +286,6 @@ export interface RootRouteChildren {
   KontaktRoute: typeof KontaktRoute
   NyttLosenordRoute: typeof NyttLosenordRoute
   SokRoute: typeof SokRoute
-  TestStartsidaRoute: typeof TestStartsidaRoute
   VillkorRoute: typeof VillkorRoute
   AnnonsIdRoute: typeof AnnonsIdRoute
   HyraKategoriRoute: typeof HyraKategoriRoute
@@ -361,13 +348,6 @@ declare module '@tanstack/react-router' {
       path: '/sok'
       fullPath: '/sok'
       preLoaderRoute: typeof SokRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/test-startsida': {
-      id: '/test-startsida'
-      path: '/test-startsida'
-      fullPath: '/test-startsida'
-      preLoaderRoute: typeof TestStartsidaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/villkor': {
@@ -500,7 +480,6 @@ const rootRouteChildren: RootRouteChildren = {
   KontaktRoute: KontaktRoute,
   NyttLosenordRoute: NyttLosenordRoute,
   SokRoute: SokRoute,
-  TestStartsidaRoute: TestStartsidaRoute,
   VillkorRoute: VillkorRoute,
   AnnonsIdRoute: AnnonsIdRoute,
   HyraKategoriRoute: HyraKategoriRoute,

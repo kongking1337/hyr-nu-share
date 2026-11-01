@@ -28,8 +28,7 @@ export const Route = createFileRoute("/hyra/$kategori")({
 function CategoryPage() {
   const { kategori } = Route.useParams();
   const search = Route.useSearch();
-  // /hyra-sidorna visar bara saker som hyrs ut.
-  const params = { ...search, category: kategori, type: "rent" as const };
+  const params = { ...search, category: kategori };
   const { patch, reset } = useUrlSearchState(params);
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (

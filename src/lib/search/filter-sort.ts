@@ -6,14 +6,13 @@ import type { Center } from "./useSearchResults";
 import type { SearchParams } from "./params";
 
 /**
- * Första versionen filtrerar på typ, kategori, plats, pris och säljare.
+ * Första versionen filtrerar på kategori, plats, pris och uthyrare.
  * Övriga fält i SearchParams (datum, leverans, bokningssätt …) finns kvar för gamla länkar men används inte.
  */
 export function filterResults(results: UnifiedResult[], p: SearchParams, center: Center): UnifiedResult[] {
   const attrs = parseAttrFilter(p.attrs);
   return results.filter((r) => {
     if (!inRegion(r.city)) return false;
-    if (p.type !== "all" && r.listingType !== p.type) return false;
     if (p.category !== "all" && r.category !== p.category) return false;
     if (p.sub !== "all" && subCategoryOf(r) !== p.sub) return false;
     if (!center.wholeRegion && distanceKm(center.lat, center.lng, r.lat, r.lng) > p.radius) return false;

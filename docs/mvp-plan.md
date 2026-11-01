@@ -7,7 +7,7 @@ security issues) is summarized under "Known issues" below.
 
 | Question | Decision |
 |---|---|
-| Rent or sell? | **Both.** A listing is either "Säljes" or "Uthyres". |
+| Rent or sell? | **Rent only** (changed by Marcus on 2026-10-31; on 2026-10-25 it was "both"). Hyrkoll is where you rent out your things and rent other people's things, like Hygglo. It is not a general classifieds site like Blocket or Craigslist. |
 | Geography | Start **only in Stockholm** (Stockholm county). Other big cities later. |
 | Category | Not decided. Recommendation below. |
 | Who runs the site | A company in the future. Right now: development, no public launch. |
@@ -19,8 +19,8 @@ security issues) is summarized under "Known issues" below.
 **Recommendation: "Verktyg, släp & maskiner"** (tools, trailers, garden and construction
 machines) as the only category at launch in Stockholm.
 
-- **Fits both renting and selling.** People rent pressure washers and trailers, and sell used
-  tools. Both kinds of listings make sense side by side.
+- **Made for renting.** People need a pressure washer, a trailer or a tile cutter for a day
+  or a weekend, and rarely want to own one.
 - **Real need in Stockholm.** Many live in apartments without storage space or a car with a
   tow bar, so renting beats buying.
 - **Supply you can recruit:** homeowners in the suburbs, and small rental companies
@@ -30,10 +30,10 @@ machines) as the only category at launch in Stockholm.
 - **Works all year.** Indoor renovation goes on in winter, and garden and trailers peak in spring.
 
 Alternatives:
-- **Sport & friluftsliv** (skis, kayaks, camping): both rent and sell, enthusiast groups to
+- **Sport & friluftsliv** (skis, kayaks, camping): often rented for a trip, enthusiast groups to
   recruit from, peaks in winter and summer. More seasonal.
-- **Barn & familj** (prams, car seats, clothes): mostly selling, very high turnover. But
-  Facebook groups, Blocket, Tradera and Sellpy are strong here.
+- **Barn & familj** (prams, car seats, travel cots): rented for trips and visiting
+  grandchildren. A smaller rental market; most is bought and sold.
 - **Flytt** (trailers, boxes, furniture): lots of moves in Stockholm, but each user only needs it occasionally.
 
 **Simple test before deciding:** try to get 30 real listings in two weeks in your top candidate
@@ -41,10 +41,12 @@ Alternatives:
 
 ## What this changes in the plan
 
-- **Listing model:** new field `listing_type` (`sale` / `rent`).
-  - Sale: price in kr (0 = "Skänkes"), status active / paused / **sold**.
-  - Rent: price per day (optional week), status active / paused. Dates are agreed in
-    messages; the booking calendar stays hidden.
+- **Listing model:** field `listing_type`. Since 2026-10-31 only `rent` is created and shown:
+  price per day (optional week price and deposit), status active / paused. Dates are agreed
+  in messages; the booking calendar stays hidden.
+  - Selling ("Säljes", "Skänkes", "Mark as sold") was built in task 3 and removed from the
+    interface again on 2026-10-31. Old `sale` listings stay in the database but don't show
+    in search or on the home page; editing one turns it into a rental listing.
 - **Place:** municipalities in Stockholm county + optional area/neighbourhood (free text),
   instead of 12 cities across Sweden. Search: "Hela Stockholm" or one municipality.
 - **Categories:** only the chosen category group is shown. The rest stay in the database.
@@ -68,6 +70,7 @@ Alternatives:
 | 6 | **Account basics** (password reset, own SMTP, Swedish errors, delete account) (code done 2026-10-29; SMTP setup in docs/email-setup.md) | S–M | Reset email arrives and works. Errors are in Swedish. The account can be deleted |
 | 7 | **Minimum moderation** (admin role check, report reasons, hide listing, email on report) (done 2026-10-31) | M | Non-admins can't open `/admin`. Admin hides a listing in one click |
 | 8 | **Spam and launch basics** (captcha, limits, terms, privacy policy, `lang="sv"`, logging, backups) (code done 2026-11-01; setup in docs/operations.md) | M | See the task description in the review |
+| 9 | **Rent only** (Marcus, 2026-10-31) (done 2026-10-31) | S | Posting a listing only offers renting out. No Säljes/Uthyres filter or badges. Texts say "hyr och hyr ut". Old sale listings don't show in search or on the home page |
 
 ## Open before inviting users
 
@@ -82,8 +85,8 @@ Alternatives:
   the site's address in Site URL / Redirect URLs (`docs/email-setup.md`).
 - **Test on the live site** with two accounts, since nothing could be clicked through
   in a browser during development: sign up and log in, post a listing with photos
-  from an iPhone, an Android phone and a computer, send messages both ways, mark as
-  sold, report a listing and handle it in `/admin`, and delete a throwaway account.
+  from an iPhone, an Android phone and a computer, send messages both ways, pause and
+  reactivate a listing, report a listing and handle it in `/admin`, and delete a throwaway account.
   Password reset once email works.
 - **Remove the 24 demo listings** (and their fake reviews) before inviting real users.
 - **Choose the launch category** (all 8 are visible now): edit `src/lib/categories.ts`.
@@ -99,6 +102,8 @@ Alternatives:
 
 ## Later (after the first version)
 
+- **Rental features that are hidden today** can come back now that Hyrkoll is rent-only:
+  an availability calendar and booking requests (the code and tables are still there).
 - **Hidden seller rating** (Marcus, 2026-10-31): a trust score per seller that only
   admins see, based on how they behave, e.g. reports against them (and whether
   they were upheld), hidden listings, blocks, account age, and how they answer

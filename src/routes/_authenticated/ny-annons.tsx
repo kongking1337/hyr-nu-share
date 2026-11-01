@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,8 +15,6 @@ import { PHOTO_BUCKET, removeUnusedPhotos } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/geo";
-import { LISTING_TYPE_LABEL } from "@/lib/pricing";
-import type { ListingType } from "@/lib/providers/types";
 import { CATEGORY_ATTRIBUTES } from "@/lib/search/attributes";
 
 export const Route = createFileRoute("/_authenticated/ny-annons")({
@@ -26,9 +23,9 @@ export const Route = createFileRoute("/_authenticated/ny-annons")({
   head: () => ({
     meta: [
       { title: "Lägg upp annons – Hyrkoll" },
-      { name: "description", content: "Sälj eller hyr ut något i Stockholm. Bilder, beskrivning, pris och plats på en sida." },
+      { name: "description", content: "Hyr ut något i Stockholm. Bilder, beskrivning, pris och plats på en sida." },
       { property: "og:title", content: "Lägg upp annons – Hyrkoll" },
-      { property: "og:description", content: "Sälj eller hyr ut något i Stockholm." },
+      { property: "og:description", content: "Hyr ut något i Stockholm." },
     ],
   }),
   component: ListingForm,
@@ -40,7 +37,6 @@ const EMPTY = {
   category_slug: ACTIVE_CATEGORIES[0]?.slug ?? "verktyg",
   city: "Stockholm",
   area: "",
-  price: "",
   price_day: "",
   price_week: "",
   deposit: "",
@@ -58,8 +54,6 @@ function ListingForm() {
   const navigate = useNavigate();
   const { id: editId } = Route.useSearch();
 
-  const [type, setType] = useState<ListingType>("sale");
-  const [free, setFree] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [attrs, setAttrs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -82,16 +76,13 @@ function ListingForm() {
 
   useEffect(() => {
     if (!existing) return;
-    const sale = existing.listing_type === "sale";
-    setType(sale ? "sale" : "rent");
-    setFree(sale && Number(existing.price) === 0);
+    // En gammal "säljes"-annons blir en uthyrningsannons när den sparas (den har inget dygnspris än).
     setForm({
       title: existing.title,
       description: existing.description ?? "",
       category_slug: existing.category_slug,
       city: existing.city,
       area: existing.area ?? "",
-      price: sale && Number(existing.price) > 0 ? String(existing.price) : "",
       price_day: existing.price_day != null ? String(existing.price_day) : "",
       price_week: existing.price_week != null ? String(existing.price_week) : "",
       deposit: existing.deposit ? String(existing.deposit) : "",
@@ -106,9 +97,7 @@ function ListingForm() {
     if (title.length < 3) return "Skriv en rubrik på minst 3 tecken.";
     if (title.length > 100) return "Rubriken får vara högst 100 tecken.";
     if (form.description.length > 5000) return "Beskrivningen får vara högst 5 000 tecken.";
-    if (type === "sale" && !free && kronor(form.price) == null) return "Ange ett pris i kronor, eller välj Skänkes.";
-    if (type === "rent" && kronor(form.price_day) == null) return "Ange ett pris per dygn i kronor.";
-    if ((kronor(form.price) ?? 0) > 10_000_000) return "Priset får vara högst 10 000 000 kr.";
+    if (kronor(form.price_day) == null) return "Ange ett pris per dygn i kronor.";
     if ((kronor(form.price_day) ?? 0) > 1_000_000 || (kronor(form.price_week) ?? 0) > 1_000_000) {
       return "Hyrespriset får vara högst 1 000 000 kr.";
     }
@@ -123,9 +112,8 @@ function ListingForm() {
     if (problem) { toast.error(problem); return; }
     setBusy(true);
     const city = CITIES.find((c) => c.name === form.city) ?? CITIES[0]!;
-    const sale = type === "sale";
     const payload = {
-      listing_type: type,
+      listing_type: "rent",
       title: form.title.trim(),
       description: form.description.trim(),
       category_slug: form.category_slug,
@@ -133,12 +121,12 @@ function ListingForm() {
       area: form.area.trim() || null,
       lat: city.lat,
       lng: city.lng,
-      price: sale ? (free ? 0 : kronor(form.price)) : null,
-      price_day: sale ? null : kronor(form.price_day),
-      price_week: sale ? null : kronor(form.price_week),
+      price: null,
+      price_day: kronor(form.price_day),
+      price_week: kronor(form.price_week),
       price_hour: null,
       price_month: null,
-      deposit: sale ? 0 : (kronor(form.deposit) ?? 0),
+      deposit: kronor(form.deposit) ?? 0,
       attributes: attrs,
       images: photos,
       ...(status ? { status } : {}),
@@ -182,22 +170,6 @@ function ListingForm() {
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <h1 className="font-display text-3xl font-semibold">{editId ? "Redigera annons" : "Lägg upp annons"}</h1>
 
-      <F label="Vad vill du göra?">
-        <div className="grid grid-cols-2 gap-2">
-          {(["sale", "rent"] as const).map((t) => (
-            <Button
-              key={t}
-              type="button"
-              variant={type === t ? "default" : "outline"}
-              className="rounded-full"
-              onClick={() => setType(t)}
-            >
-              {t === "sale" ? "Sälja" : "Hyra ut"}
-            </Button>
-          ))}
-        </div>
-      </F>
-
       <F label="Bilder">
         {user && <PhotoUploader
           userId={user.id}
@@ -219,7 +191,7 @@ function ListingForm() {
         <Input
           value={form.title}
           maxLength={100}
-          placeholder={type === "sale" ? "T.ex. Skruvdragare Makita 18V" : "T.ex. Släpvagn 750 kg"}
+          placeholder="T.ex. Släpvagn 750 kg"
           onChange={(e) => set("title", e.target.value)}
         />
       </F>
@@ -229,7 +201,7 @@ function ListingForm() {
           rows={6}
           value={form.description}
           maxLength={5000}
-          placeholder="Skick, vad som ingår, mått, när det kan hämtas …"
+          placeholder="Skick, vad som ingår, mått, när det kan hämtas och lämnas tillbaka …"
           onChange={(e) => set("description", e.target.value)}
         />
       </F>
@@ -245,35 +217,17 @@ function ListingForm() {
         </Select>
       </F>
 
-      {type === "sale" ? (
-        <div className="space-y-3">
-          <F label="Pris (kr)">
-            <Input
-              inputMode="numeric"
-              value={free ? "" : form.price}
-              disabled={free}
-              placeholder={free ? "Skänkes" : "T.ex. 450"}
-              onChange={(e) => set("price", e.target.value)}
-            />
-          </F>
-          <div className="flex items-center gap-2.5">
-            <Checkbox id="free" checked={free} onCheckedChange={(v) => setFree(v === true)} />
-            <Label htmlFor="free" className="cursor-pointer font-normal">Skänkes (gratis)</Label>
-          </div>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <F label="Pris per dygn (kr)">
-            <Input inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
-          </F>
-          <F label="Pris per vecka (valfritt)">
-            <Input inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
-          </F>
-          <F label="Deposition (valfritt)">
-            <Input inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
-          </F>
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <F label="Pris per dygn (kr)">
+          <Input inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
+        </F>
+        <F label="Pris per vecka (valfritt)">
+          <Input inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
+        </F>
+        <F label="Deposition (valfritt)">
+          <Input inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
+        </F>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <F label="Kommun">
@@ -338,7 +292,7 @@ function ListingForm() {
         ) : (
           <>
             <Button className="flex-1 rounded-full" onClick={() => save("published")} disabled={busy || uploading}>
-              Publicera ({LISTING_TYPE_LABEL[type].toLowerCase()})
+              Publicera
             </Button>
             <Button variant="outline" className="rounded-full" onClick={() => save("draft")} disabled={busy || uploading}>
               Spara som utkast

@@ -31,8 +31,7 @@ function CityCategoryPage() {
   const { stad, kategori } = Route.useParams();
   const search = Route.useSearch();
   const city = cityBySlug(stad);
-  // /hyra-sidorna visar bara saker som hyrs ut.
-  const params = { ...search, category: kategori, type: "rent" as const, location: city?.slug ?? search.location };
+  const params = { ...search, category: kategori, location: city?.slug ?? search.location };
   const { patch, reset } = useUrlSearchState(params);
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
