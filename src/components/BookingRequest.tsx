@@ -122,7 +122,11 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
       </p>
 
       {listing.deliveryAvailable && listing.pickupAvailable && (
-        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Upphämtning eller leverans">
+        <div
+          className="grid grid-cols-2 gap-2"
+          role="radiogroup"
+          aria-label="Upphämtning eller leverans"
+        >
           {[false, true].map((d) => (
             <button
               key={String(d)}
@@ -132,7 +136,8 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
               onClick={() => setDelivery(d)}
               className={cn(
                 "rounded-xl border border-input bg-card px-3 py-2.5 text-left text-sm font-medium transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                delivery === d && "border-foreground ring-1 ring-foreground hover:border-foreground",
+                delivery === d &&
+                  "border-foreground ring-1 ring-foreground hover:border-foreground",
               )}
             >
               {d ? "Leverans" : "Hämtar själv"}
@@ -156,12 +161,15 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
           ) : (
             <>
               <Row label="Hyra" value={kr(rent)} />
-              {delivery && <Row label="Leverans" value={deliveryFee > 0 ? kr(deliveryFee) : "Ingår"} />}
+              {delivery && (
+                <Row label="Leverans" value={deliveryFee > 0 ? kr(deliveryFee) : "Ingår"} />
+              )}
               <div className="my-1 border-t border-border" />
               <Row label="Totalt" value={kr(rent + deliveryFee)} strong />
               {listing.deposit > 0 && (
                 <p className="pt-1 text-xs text-muted-foreground">
-                  Plus deposition {kr(listing.deposit)}, som du får tillbaka när saken lämnas tillbaka.
+                  Plus deposition {kr(listing.deposit)}, som du får tillbaka när saken lämnas
+                  tillbaka.
                 </p>
               )}
             </>
@@ -184,8 +192,14 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
               onChange={(e) => setMessage(e.target.value)}
             />
           </div>
-          <Button size="lg" className="w-full" onClick={send} disabled={busy || !start || !!problem}>
-            <CalendarCheck aria-hidden /> {busy ? "Skickar …" : start ? "Skicka förfrågan" : "Välj datum först"}
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={send}
+            disabled={busy || !start || !!problem}
+          >
+            <CalendarCheck aria-hidden />{" "}
+            {busy ? "Skickar …" : start ? "Skicka förfrågan" : "Välj datum först"}
           </Button>
           <p className="text-xs text-muted-foreground">
             Inget är bokat förrän uthyraren godkänt. Hyran betalar ni direkt till varandra.

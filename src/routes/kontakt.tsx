@@ -27,7 +27,9 @@ function ContactPage() {
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-muted p-5">
             <div className="min-w-0">
               <p className="text-sm text-muted-foreground">E-post</p>
-              <p className="break-all font-display text-xl font-bold">{SITE.contactEmail || contactText}</p>
+              <p className="break-all font-display text-xl font-bold">
+                {SITE.contactEmail || contactText}
+              </p>
             </div>
             {SITE.contactEmail && (
               <Button asChild>
@@ -56,15 +58,8 @@ function ContactPage() {
       <p>Myndigheter når oss på samma e-postadress. Vi svarar på svenska och engelska.</p>
 
       <p>
-        Läs även{" "}
-        <Link to="/villkor">
-          användarvillkoren
-        </Link>{" "}
-        och{" "}
-        <Link to="/integritet">
-          integritetspolicyn
-        </Link>
-        .
+        Läs även <Link to="/villkor">användarvillkoren</Link> och{" "}
+        <Link to="/integritet">integritetspolicyn</Link>.
       </p>
     </LegalPage>
   );

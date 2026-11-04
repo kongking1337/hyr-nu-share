@@ -137,8 +137,12 @@ function Shell({
         >
           <Wordmark />
         </Link>
-        <h1 className="mt-6 font-display text-3xl font-bold leading-tight tracking-tight">{title}</h1>
-        {description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>}
+        <h1 className="mt-6 font-display text-3xl font-bold leading-tight tracking-tight">
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        )}
         {children}
       </div>
     </Page>

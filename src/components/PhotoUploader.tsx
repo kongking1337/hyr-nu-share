@@ -73,7 +73,11 @@ export function PhotoUploader({
           className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-input bg-card px-4 py-8 text-center transition-colors hover:border-primary hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
         >
           <span className="grid h-11 w-11 place-items-center rounded-full bg-accent text-primary">
-            {progress ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+            {progress ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <ImagePlus className="h-5 w-5" />
+            )}
           </span>
           <span className="font-semibold">
             {progress ? `Laddar upp ${progress.done} av ${progress.total} …` : "Välj bilder"}
@@ -83,8 +87,15 @@ export function PhotoUploader({
       ) : (
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {value.map((src, i) => (
-            <li key={src} className="group relative aspect-square overflow-hidden rounded-xl bg-muted">
-              <img src={photoUrl(src)} alt={`Bild ${i + 1}`} className="h-full w-full object-cover" />
+            <li
+              key={src}
+              className="group relative aspect-square overflow-hidden rounded-xl bg-muted"
+            >
+              <img
+                src={photoUrl(src)}
+                alt={`Bild ${i + 1}`}
+                className="h-full w-full object-cover"
+              />
               {!cover ? null : i === 0 ? (
                 <span className="absolute bottom-1.5 left-1.5 rounded-full bg-background/90 px-2 py-0.5 text-[11px] font-semibold backdrop-blur">
                   Omslagsbild
@@ -124,7 +135,11 @@ export function PhotoUploader({
                   progress && "opacity-60",
                 )}
               >
-                {progress ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+                {progress ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-5 w-5" />
+                )}
                 {progress ? `${progress.done} av ${progress.total}` : "Lägg till"}
               </button>
             </li>
@@ -144,8 +159,8 @@ export function PhotoUploader({
         }}
       />
       <p className="text-xs text-muted-foreground">
-        Upp till {MAX_PHOTOS} bilder.{cover && " Den första blir omslagsbild."} Bilderna förminskas och
-        platsinformation tas bort innan de laddas upp.
+        Upp till {MAX_PHOTOS} bilder.{cover && " Den första blir omslagsbild."} Bilderna förminskas
+        och platsinformation tas bort innan de laddas upp.
       </p>
     </div>
   );

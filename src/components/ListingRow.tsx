@@ -7,7 +7,15 @@ import { cn } from "@/lib/utils";
 const kr = (n: number) => `${Math.round(n).toLocaleString("sv-SE")} kr`;
 
 /** Priset som en hyrlapp: orange etikett med hål. Sajtens kännetecken, använd för pris per dygn. */
-export function PriceTag({ value, unit = "/dygn", className }: { value: number; unit?: string; className?: string }) {
+export function PriceTag({
+  value,
+  unit = "/dygn",
+  className,
+}: {
+  value: number;
+  unit?: string;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -31,10 +39,18 @@ export function ListingRow({ result: r }: { result: UnifiedResult }) {
       className="group flex gap-4 rounded-2xl p-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-32">
-        <img src={r.images[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        <img
+          src={r.images[0]}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
       </div>
       <div className="flex min-w-0 flex-1 flex-col py-1">
-        <h3 className="line-clamp-2 font-sans font-semibold leading-snug tracking-normal">{r.title}</h3>
+        <h3 className="line-clamp-2 font-sans font-semibold leading-snug tracking-normal">
+          {r.title}
+        </h3>
         <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">

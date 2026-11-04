@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/PhotoUploader";
@@ -28,7 +34,10 @@ export const Route = createFileRoute("/_authenticated/ny-annons")({
   head: () => ({
     meta: [
       { title: "Lägg upp annons – Hyrkoll" },
-      { name: "description", content: "Hyr ut något i Stockholm. Bilder, beskrivning, pris och plats på en sida." },
+      {
+        name: "description",
+        content: "Hyr ut något i Stockholm. Bilder, beskrivning, pris och plats på en sida.",
+      },
       { property: "og:title", content: "Lägg upp annons – Hyrkoll" },
       { property: "og:description", content: "Hyr ut något i Stockholm." },
     ],
@@ -82,7 +91,8 @@ function ListingForm() {
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["edit-listing", editId],
     enabled: !!editId,
-    queryFn: async () => (await supabase.from("listings").select("*").eq("id", editId!).maybeSingle()).data,
+    queryFn: async () =>
+      (await supabase.from("listings").select("*").eq("id", editId!).maybeSingle()).data,
   });
   const notOwner = !!existing && existing.owner_id !== user?.id;
 
@@ -121,15 +131,19 @@ function ListingForm() {
       return "Hyrespriset får vara högst 1 000 000 kr.";
     }
     if ((kronor(form.deposit) ?? 0) > 1_000_000) return "Depositionen får vara högst 1 000 000 kr.";
-    if (form.price_week && kronor(form.price_week) == null) return "Veckopriset måste vara ett belopp i kronor.";
-    if (form.deposit && kronor(form.deposit) == null) return "Depositionen måste vara ett belopp i kronor.";
+    if (form.price_week && kronor(form.price_week) == null)
+      return "Veckopriset måste vara ett belopp i kronor.";
+    if (form.deposit && kronor(form.deposit) == null)
+      return "Depositionen måste vara ett belopp i kronor.";
     const minDays = Number(form.min_days);
-    if (!Number.isInteger(minDays) || minDays < 1 || minDays > 30) return "Kortaste hyra ska vara 1–30 dygn.";
+    if (!Number.isInteger(minDays) || minDays < 1 || minDays > 30)
+      return "Kortaste hyra ska vara 1–30 dygn.";
     if (!pickup && !delivery) return "Välj upphämtning, leverans eller båda.";
     if (delivery && form.delivery_fee && kronor(form.delivery_fee) == null) {
       return "Leveransavgiften måste vara ett belopp i kronor.";
     }
-    if (delivery && (kronor(form.delivery_fee) ?? 0) > 100_000) return "Leveransavgiften får vara högst 100 000 kr.";
+    if (delivery && (kronor(form.delivery_fee) ?? 0) > 100_000)
+      return "Leveransavgiften får vara högst 100 000 kr.";
     if (form.included.length > 1000) return "”Det här ingår” får vara högst 1 000 tecken.";
     if (form.rental_rules.length > 1000) return "Reglerna får vara högst 1 000 tecken.";
     return null;
@@ -137,7 +151,10 @@ function ListingForm() {
 
   async function save(status?: "published" | "draft") {
     const problem = validate();
-    if (problem) { toast.error(problem); return; }
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
     setBusy(true);
     const city = CITIES.find((c) => c.name === form.city) ?? CITIES[0]!;
     const payload = {
@@ -170,7 +187,10 @@ function ListingForm() {
     if (editId) {
       const { error } = await supabase.from("listings").update(payload).eq("id", editId);
       setBusy(false);
-      if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
+      if (error) {
+        toast.error(userMessage(error, "Kunde inte spara annonsen."));
+        return;
+      }
       void removeUnusedPhotos(user!.id, removedSaved.current);
       toast.success("Annonsen är uppdaterad.");
       navigate({ to: "/mina-annonser" });
@@ -183,7 +203,10 @@ function ListingForm() {
       .select("id")
       .single();
     setBusy(false);
-    if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
+    if (error) {
+      toast.error(userMessage(error, "Kunde inte spara annonsen."));
+      return;
+    }
     if (status === "draft") {
       toast.success("Utkast sparat.");
       navigate({ to: "/mina-annonser" });
@@ -231,7 +254,11 @@ function ListingForm() {
           // Enter i ett fält ska inte publicera; knapparna längst ner sparar.
           onSubmit={(e) => e.preventDefault()}
         >
-          <FormSection n={1} title="Bilder" description="Bra bilder i dagsljus gör att fler vill hyra. Visa gärna det som ingår.">
+          <FormSection
+            n={1}
+            title="Bilder"
+            description="Bra bilder i dagsljus gör att fler vill hyra. Visa gärna det som ingår."
+          >
             {user && (
               <PhotoUploader
                 userId={user.id}
@@ -251,7 +278,11 @@ function ListingForm() {
           </FormSection>
 
           <FormSection n={2} title="Om saken">
-            <F id="title" label="Rubrik" hint="Säg vad det är, gärna med märke, storlek eller modell.">
+            <F
+              id="title"
+              label="Rubrik"
+              hint="Säg vad det är, gärna med märke, storlek eller modell."
+            >
               <Input
                 id="title"
                 value={form.title}
@@ -261,7 +292,11 @@ function ListingForm() {
               />
             </F>
 
-            <F id="description" label="Beskrivning" hint="Skick, mått och det man behöver veta innan man hyr.">
+            <F
+              id="description"
+              label="Beskrivning"
+              hint="Skick, mått och det man behöver veta innan man hyr."
+            >
               <Textarea
                 id="description"
                 rows={6}
@@ -273,11 +308,21 @@ function ListingForm() {
             </F>
 
             <F id="category" label="Kategori">
-              <Select value={form.category_slug} onValueChange={(v) => { set("category_slug", v); setAttrs({}); }}>
-                <SelectTrigger id="category"><SelectValue /></SelectTrigger>
+              <Select
+                value={form.category_slug}
+                onValueChange={(v) => {
+                  set("category_slug", v);
+                  setAttrs({});
+                }}
+              >
+                <SelectTrigger id="category">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {ACTIVE_CATEGORIES.map((c) => (
-                    <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
+                    <SelectItem key={c.slug} value={c.slug}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -287,7 +332,10 @@ function ListingForm() {
               <details className="group rounded-xl border border-border">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                   Fler detaljer (valfritt)
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+                  <ChevronDown
+                    className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180"
+                    aria-hidden
+                  />
                 </summary>
                 <div className="space-y-4 border-t border-border px-4 py-4">
                   {attrDefs.map((d) => {
@@ -296,10 +344,19 @@ function ListingForm() {
                       <div key={d.key} className="space-y-1.5">
                         <Label htmlFor={id}>{d.label}</Label>
                         {d.type === "select" ? (
-                          <Select value={attrs[d.key] ?? ""} onValueChange={(v) => setAttrs((a) => ({ ...a, [d.key]: v }))}>
-                            <SelectTrigger id={id}><SelectValue placeholder="Välj" /></SelectTrigger>
+                          <Select
+                            value={attrs[d.key] ?? ""}
+                            onValueChange={(v) => setAttrs((a) => ({ ...a, [d.key]: v }))}
+                          >
+                            <SelectTrigger id={id}>
+                              <SelectValue placeholder="Välj" />
+                            </SelectTrigger>
                             <SelectContent>
-                              {(d.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                              {(d.options ?? []).map((o) => (
+                                <SelectItem key={o} value={o}>
+                                  {o}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         ) : d.type === "bool" ? (
@@ -308,7 +365,9 @@ function ListingForm() {
                             <Switch
                               id={id}
                               checked={attrs[d.key] === "true"}
-                              onCheckedChange={(c) => setAttrs((a) => ({ ...a, [d.key]: String(c) }))}
+                              onCheckedChange={(c) =>
+                                setAttrs((a) => ({ ...a, [d.key]: String(c) }))
+                              }
                             />
                           </div>
                         ) : (
@@ -328,16 +387,43 @@ function ListingForm() {
             )}
           </FormSection>
 
-          <FormSection n={3} title="Pris" description="Hyra och deposition betalas direkt mellan er. Hyrkoll tar inga avgifter.">
+          <FormSection
+            n={3}
+            title="Pris"
+            description="Hyra och deposition betalas direkt mellan er. Hyrkoll tar inga avgifter."
+          >
             <div className="grid gap-4 sm:grid-cols-3">
               <F id="price-day" label="Pris per dygn (kr)" hint="Syns på hyrlappen i sökningen.">
-                <Input id="price-day" inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
+                <Input
+                  id="price-day"
+                  inputMode="numeric"
+                  value={form.price_day}
+                  onChange={(e) => set("price_day", e.target.value)}
+                />
               </F>
-              <F id="price-week" label="Pris per vecka (valfritt)" hint="Gäller hyror på 7 dygn eller mer.">
-                <Input id="price-week" inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
+              <F
+                id="price-week"
+                label="Pris per vecka (valfritt)"
+                hint="Gäller hyror på 7 dygn eller mer."
+              >
+                <Input
+                  id="price-week"
+                  inputMode="numeric"
+                  value={form.price_week}
+                  onChange={(e) => set("price_week", e.target.value)}
+                />
               </F>
-              <F id="deposit" label="Deposition (valfritt)" hint="Betalas tillbaka när saken är tillbaka utan skador.">
-                <Input id="deposit" inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
+              <F
+                id="deposit"
+                label="Deposition (valfritt)"
+                hint="Betalas tillbaka när saken är tillbaka utan skador."
+              >
+                <Input
+                  id="deposit"
+                  inputMode="numeric"
+                  value={form.deposit}
+                  onChange={(e) => set("deposit", e.target.value)}
+                />
               </F>
             </div>
           </FormSection>
@@ -357,7 +443,9 @@ function ListingForm() {
               </F>
               <F id="policy" label="Avbokning">
                 <Select value={policy} onValueChange={(v) => setPolicy(asPolicy(v))}>
-                  <SelectTrigger id="policy"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="policy">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {(Object.keys(CANCELLATION_POLICIES) as CancellationPolicy[]).map((p) => (
                       <SelectItem key={p} value={p}>
@@ -375,14 +463,22 @@ function ListingForm() {
                   htmlFor="pickup"
                   className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 font-normal transition-colors hover:bg-muted/60 has-[[data-state=checked]]:border-foreground"
                 >
-                  <Checkbox id="pickup" checked={pickup} onCheckedChange={(v) => setPickup(v === true)} />
+                  <Checkbox
+                    id="pickup"
+                    checked={pickup}
+                    onCheckedChange={(v) => setPickup(v === true)}
+                  />
                   Upphämtning hos mig
                 </Label>
                 <Label
                   htmlFor="delivery"
                   className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 font-normal transition-colors hover:bg-muted/60 has-[[data-state=checked]]:border-foreground"
                 >
-                  <Checkbox id="delivery" checked={delivery} onCheckedChange={(v) => setDelivery(v === true)} />
+                  <Checkbox
+                    id="delivery"
+                    checked={delivery}
+                    onCheckedChange={(v) => setDelivery(v === true)}
+                  />
                   Jag kan leverera
                 </Label>
               </div>
@@ -410,7 +506,11 @@ function ListingForm() {
                 onChange={(e) => set("included", e.target.value)}
               />
             </F>
-            <F id="rules" label="Regler (valfritt)" hint="Hyresgästen ser reglerna innan den bokar, och de kommer med i hyresavtalet.">
+            <F
+              id="rules"
+              label="Regler (valfritt)"
+              hint="Hyresgästen ser reglerna innan den bokar, och de kommer med i hyresavtalet."
+            >
               <Textarea
                 id="rules"
                 rows={2}
@@ -422,18 +522,34 @@ function ListingForm() {
             </F>
           </FormSection>
 
-          <FormSection n={5} title="Plats" description="Visas ungefärligt i annonsen. Exakt adress bestämmer ni i meddelanden.">
+          <FormSection
+            n={5}
+            title="Plats"
+            description="Visas ungefärligt i annonsen. Exakt adress bestämmer ni i meddelanden."
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <F id="city" label="Kommun">
                 <Select value={form.city} onValueChange={(v) => set("city", v)}>
-                  <SelectTrigger id="city"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="city">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {CITIES.map((c) => <SelectItem key={c.slug} value={c.name}>{c.name}</SelectItem>)}
+                    {CITIES.map((c) => (
+                      <SelectItem key={c.slug} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </F>
               <F id="area" label="Område (valfritt)">
-                <Input id="area" value={form.area} maxLength={60} placeholder="T.ex. Södermalm" onChange={(e) => set("area", e.target.value)} />
+                <Input
+                  id="area"
+                  value={form.area}
+                  maxLength={60}
+                  placeholder="T.ex. Södermalm"
+                  onChange={(e) => set("area", e.target.value)}
+                />
               </F>
             </div>
           </FormSection>
@@ -447,7 +563,13 @@ function ListingForm() {
             {editId ? (
               <>
                 {existing?.status === "draft" && (
-                  <Button type="button" variant="outline" size="lg" onClick={() => save("published")} disabled={disabled}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => save("published")}
+                    disabled={disabled}
+                  >
                     Publicera
                   </Button>
                 )}
@@ -457,10 +579,21 @@ function ListingForm() {
               </>
             ) : (
               <>
-                <Button type="button" variant="outline" size="lg" onClick={() => save("draft")} disabled={disabled}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => save("draft")}
+                  disabled={disabled}
+                >
                   Spara som utkast
                 </Button>
-                <Button type="button" size="lg" onClick={() => save("published")} disabled={disabled}>
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={() => save("published")}
+                  disabled={disabled}
+                >
                   Publicera
                 </Button>
               </>
@@ -507,7 +640,17 @@ function FormSection({
 }
 
 /** Etikett, fält och hjälptext. Fältet ska ha samma `id`. */
-function F({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
+function F({
+  id,
+  label,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>

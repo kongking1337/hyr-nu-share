@@ -22,7 +22,9 @@ export function LegalPage({
     <Page width="text">
       <article className="max-w-[70ch]">
         <header className="border-b border-border pb-6">
-          <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{title}</h1>
+          <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+            {title}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">Senast ändrad {SITE.updated}</p>
           {intro && <div className="mt-4 text-lg leading-relaxed">{intro}</div>}
         </header>
@@ -34,8 +36,8 @@ export function LegalPage({
           >
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <p>
-              <span className="font-semibold">Utkast:</span> uppgifter om vem som driver Hyrkoll och hur
-              du når oss fylls i före lansering.
+              <span className="font-semibold">Utkast:</span> uppgifter om vem som driver Hyrkoll och
+              hur du når oss fylls i före lansering.
             </p>
           </div>
         )}

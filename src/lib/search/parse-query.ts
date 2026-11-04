@@ -55,7 +55,9 @@ export function interpretQuery(raw: string): QueryIntent {
   if (cap) notes.push(`Kapacitet: ${cap[1]} personer`);
 
   // produktnamn (PS5, partytält …) → underkategori
-  const term = TERMS.find((t) => n.includes(normalize(t.label)) || normalize(t.label).startsWith(n));
+  const term = TERMS.find(
+    (t) => n.includes(normalize(t.label)) || normalize(t.label).startsWith(n),
+  );
   if (term && !patch.category) {
     patch.category = term.category;
     notes.push(`Kategori: ${term.category}`);

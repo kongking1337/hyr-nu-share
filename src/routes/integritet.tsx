@@ -81,16 +81,17 @@ function PrivacyPage() {
           ser avtalet.
         </li>
         <li>
-          Vilka du har blockerat ser bara du. Våra administratörer ser, för att upptäcka bedrägerier,
-          en sammanställning per användare av anmälningar, dolda annonser, blockeringar och omdömen.
+          Vilka du har blockerat ser bara du. Våra administratörer ser, för att upptäcka
+          bedrägerier, en sammanställning per användare av anmälningar, dolda annonser, blockeringar
+          och omdömen.
         </li>
         <li>
           Meddelanden ser bara du och den du skriver med. Våra moderatorer kan läsa en konversation
           först när någon i den har anmält den.
         </li>
         <li>
-          Bokningar och bilder på skicket ser bara du och den du hyr av eller till. Vilka dagar en sak
-          är bokad visas för alla, men inte vem som har bokat.
+          Bokningar och bilder på skicket ser bara du och den du hyr av eller till. Vilka dagar en
+          sak är bokad visas för alla, men inte vem som har bokat.
         </li>
       </ul>
 
@@ -128,11 +129,7 @@ function PrivacyPage() {
       </p>
 
       <p>
-        Se även{" "}
-        <Link to="/villkor">
-          användarvillkoren
-        </Link>
-        .
+        Se även <Link to="/villkor">användarvillkoren</Link>.
       </p>
     </LegalPage>
   );

@@ -39,7 +39,11 @@ function ListingPage() {
   const { data: listing, isLoading } = useQuery({
     queryKey: ["listing", id],
     queryFn: async () => {
-      const { data: row, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
+      const { data: row, error } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
       if (error) throw error;
       return row ? rowToUnified(row) : null;
     },
@@ -92,7 +96,11 @@ function ListingPage() {
         <nav aria-label="Du är här" className="mb-4 text-sm text-muted-foreground">
           <ol className="flex flex-wrap items-center gap-1">
             <li>
-              <Link to="/sok" search={DEFAULTS} className="rounded hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Link
+                to="/sok"
+                search={DEFAULTS}
+                className="rounded hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 Sök
               </Link>
             </li>
@@ -196,7 +204,9 @@ function ListingPage() {
             <Section title="Hyresvillkor">
               <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_minmax(0,1fr)]">
                 <dt className="font-semibold">Kortaste hyra</dt>
-                <dd className="text-muted-foreground">{listing.minDays === 1 ? "1 dygn" : `${listing.minDays} dygn`}</dd>
+                <dd className="text-muted-foreground">
+                  {listing.minDays === 1 ? "1 dygn" : `${listing.minDays} dygn`}
+                </dd>
                 <dt className="font-semibold">Upphämtning</dt>
                 <dd className="text-muted-foreground">
                   {[
@@ -209,7 +219,9 @@ function ListingPage() {
                 </dd>
                 <dt className="font-semibold">Deposition</dt>
                 <dd className="text-muted-foreground">
-                  {listing.deposit > 0 ? `${kr(listing.deposit)}, tillbaka när saken lämnas tillbaka` : "Ingen"}
+                  {listing.deposit > 0
+                    ? `${kr(listing.deposit)}, tillbaka när saken lämnas tillbaka`
+                    : "Ingen"}
                 </dd>
                 <dt className="font-semibold">Avbokning</dt>
                 <dd className="text-muted-foreground">
@@ -219,7 +231,9 @@ function ListingPage() {
                 {listing.rentalRules && (
                   <>
                     <dt className="font-semibold">Regler</dt>
-                    <dd className="whitespace-pre-line text-muted-foreground">{listing.rentalRules}</dd>
+                    <dd className="whitespace-pre-line text-muted-foreground">
+                      {listing.rentalRules}
+                    </dd>
                   </>
                 )}
               </dl>
@@ -234,7 +248,8 @@ function ListingPage() {
               {sale
                 ? `Hyrkoll tar inga avgifter och förmedlar inga betalningar. Betalning och upphämtning kommer du överens om direkt med ${counterpart}.`
                 : "Skicka en förfrågan med de datum du vill hyra. När uthyraren godkänt är dagarna bokade, och ni bestämmer tid och plats under Meddelanden. Hyrkoll tar inga avgifter och förmedlar inga betalningar: hyran och eventuell deposition betalar ni direkt till varandra, t.ex. med Swish när saken hämtas. Fota gärna skicket vid utlämning och återlämning."}{" "}
-              Träffas gärna på en offentlig plats och betala inte i förskott till någon du inte känner.
+              Träffas gärna på en offentlig plats och betala inte i förskott till någon du inte
+              känner.
             </p>
           </div>
 
@@ -274,7 +289,8 @@ function ListingPage() {
             {listing.example ? (
               <p className="flex gap-2 rounded-xl bg-muted p-3 text-sm text-muted-foreground">
                 <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-                Det här är en exempelannons som visar hur sajten fungerar. Den går inte att svara på.
+                Det här är en exempelannons som visar hur sajten fungerar. Den går inte att svara
+                på.
               </p>
             ) : sale || mine ? (
               <ContactSeller listing={listing} />
@@ -284,7 +300,10 @@ function ListingPage() {
                 <details className="group mt-5 border-t border-border pt-4">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                     Har du en fråga först? Skicka ett meddelande
-                    <ChevronRight aria-hidden className="h-4 w-4 shrink-0 transition-transform group-open:rotate-90" />
+                    <ChevronRight
+                      aria-hidden
+                      className="h-4 w-4 shrink-0 transition-transform group-open:rotate-90"
+                    />
                   </summary>
                   <div className="mt-3">
                     <ContactSeller listing={listing} quiet />
@@ -323,7 +342,15 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
  * Ligger ovanför flikraden (som bara finns under md) och döljs när bokningskortet syns eller
  * redan har passerats.
  */
-function MobileBookingBar({ targetId, label, children }: { targetId: string; label: string; children: ReactNode }) {
+function MobileBookingBar({
+  targetId,
+  label,
+  children,
+}: {
+  targetId: string;
+  label: string;
+  children: ReactNode;
+}) {
   const [show, setShow] = useState(true);
 
   useEffect(() => {

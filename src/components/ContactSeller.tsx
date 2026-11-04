@@ -13,7 +13,13 @@ import type { UnifiedResult } from "@/lib/providers/types";
  * "Skicka meddelande" på annonssidan. E-postadresser och telefonnummer delas aldrig.
  * `quiet` ger en mörk knapp i stället för orange, när bokningsknappen redan är huvudvalet.
  */
-export function ContactSeller({ listing, quiet = false }: { listing: UnifiedResult; quiet?: boolean }) {
+export function ContactSeller({
+  listing,
+  quiet = false,
+}: {
+  listing: UnifiedResult;
+  quiet?: boolean;
+}) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const sale = listing.listingType === "sale";
@@ -28,7 +34,12 @@ export function ContactSeller({ listing, quiet = false }: { listing: UnifiedResu
 
   if (!user) {
     return (
-      <Button asChild variant={quiet ? "outline" : "default"} size={quiet ? "default" : "lg"} className="w-full">
+      <Button
+        asChild
+        variant={quiet ? "outline" : "default"}
+        size={quiet ? "default" : "lg"}
+        className="w-full"
+      >
         <Link to="/auth" search={{ redirect: `/annons/${listing.id}` }}>
           <MessageSquare aria-hidden /> Logga in för att skicka meddelande
         </Link>

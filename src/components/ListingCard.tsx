@@ -31,16 +31,22 @@ export function ListingCard({
       toast.info("Logga in för att spara favoriter.");
       return;
     }
-    const { error } = await supabase.from("favorites").insert({ user_id: user.id, listing_id: r.id });
+    const { error } = await supabase
+      .from("favorites")
+      .insert({ user_id: user.id, listing_id: r.id });
     if (error?.code === "23505") {
       const { error: removeError } = await supabase
         .from("favorites")
         .delete()
         .eq("user_id", user.id)
         .eq("listing_id", r.id);
-      toast[removeError ? "error" : "success"](removeError ? "Kunde inte ta bort favoriten" : "Borttagen från favoriter");
+      toast[removeError ? "error" : "success"](
+        removeError ? "Kunde inte ta bort favoriten" : "Borttagen från favoriter",
+      );
     } else {
-      toast[error ? "error" : "success"](error ? "Kunde inte spara favoriten" : "Sparad i favoriter");
+      toast[error ? "error" : "success"](
+        error ? "Kunde inte spara favoriten" : "Sparad i favoriter",
+      );
     }
     void queryClient.invalidateQueries({ queryKey: ["favorites"] });
   }
@@ -76,7 +82,11 @@ export function ListingCard({
 
       <div className={cn("flex min-w-0 flex-1 flex-col", list ? "py-1 pr-10" : "mt-3 px-0.5")}>
         <h3 className="line-clamp-2 font-sans text-[15px] font-semibold leading-snug tracking-normal">
-          <Link to="/annons/$id" params={{ id: r.id }} className="outline-none after:absolute after:inset-0 after:rounded-2xl">
+          <Link
+            to="/annons/$id"
+            params={{ id: r.id }}
+            className="outline-none after:absolute after:inset-0 after:rounded-2xl"
+          >
             {r.title}
           </Link>
         </h3>

@@ -1,7 +1,12 @@
 export type City = { name: string; slug: string; lat: number; lng: number };
 
 /** Hela sökområdet. Hyrkoll startar bara i Stockholms län. */
-export const REGION = { slug: "hela-stockholm", name: "Hela Stockholm", lat: 59.3293, lng: 18.0686 };
+export const REGION = {
+  slug: "hela-stockholm",
+  name: "Hela Stockholm",
+  lat: 59.3293,
+  lng: 18.0686,
+};
 
 /** Kommunerna i Stockholms län, med ungefärlig mittpunkt. Annonsens plats sätts till kommunens mittpunkt. */
 export const CITIES: City[] = [
@@ -63,19 +68,12 @@ export function cityBySlug(slug: string): City | null {
 }
 
 /** Distance in km between two coordinates (haversine). */
-export function distanceKm(
-  aLat: number,
-  aLng: number,
-  bLat: number,
-  bLng: number,
-): number {
+export function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
   const R = 6371;
   const dLat = ((bLat - aLat) * Math.PI) / 180;
   const dLng = ((bLng - aLng) * Math.PI) / 180;
   const h =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos((aLat * Math.PI) / 180) *
-      Math.cos((bLat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 10) / 10;
 }

@@ -58,7 +58,9 @@ export function useSearchResults(params: SearchParams, center: Center) {
           text: params.q,
           category: params.category === "all" ? null : params.category,
           city: center.wholeRegion ? null : center.label,
-          ...(center.wholeRegion ? {} : { lat: center.lat, lng: center.lng, radiusKm: params.radius }),
+          ...(center.wholeRegion
+            ? {}
+            : { lat: center.lat, lng: center.lng, radiusKm: params.radius }),
           startDate: params.from || null,
           endDate: params.to || null,
         }),

@@ -36,10 +36,20 @@ export function PhotoGallery({ images, title }: { images: string[]; title: strin
         />
         {count > 1 && (
           <>
-            <button type="button" onClick={() => go(-1)} className={cn(nav, "left-3")} aria-label="Föregående bild">
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              className={cn(nav, "left-3")}
+              aria-label="Föregående bild"
+            >
               <ChevronLeft aria-hidden className="h-5 w-5" />
             </button>
-            <button type="button" onClick={() => go(1)} className={cn(nav, "right-3")} aria-label="Nästa bild">
+            <button
+              type="button"
+              onClick={() => go(1)}
+              className={cn(nav, "right-3")}
+              aria-label="Nästa bild"
+            >
               <ChevronRight aria-hidden className="h-5 w-5" />
             </button>
             <span
@@ -65,7 +75,13 @@ export function PhotoGallery({ images, title }: { images: string[]; title: strin
                   i === index ? "ring-2 ring-foreground" : "opacity-60 hover:opacity-100",
                 )}
               >
-                <img src={src} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                <img
+                  src={src}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
               </button>
             </li>
           ))}

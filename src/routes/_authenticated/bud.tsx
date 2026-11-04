@@ -16,9 +16,15 @@ export const Route = createFileRoute("/_authenticated/bud")({
   head: () => ({
     meta: [
       { title: "Mina bud – Hyrkoll" },
-      { name: "description", content: "Se, acceptera, neka eller motbjud på prisförslag för dina uthyrningar och hyror." },
+      {
+        name: "description",
+        content: "Se, acceptera, neka eller motbjud på prisförslag för dina uthyrningar och hyror.",
+      },
       { property: "og:title", content: "Mina bud – Hyrkoll" },
-      { property: "og:description", content: "Aktiva och historiska bud för uthyrare och hyrestagare." },
+      {
+        property: "og:description",
+        content: "Aktiva och historiska bud för uthyrare och hyrestagare.",
+      },
     ],
   }),
   component: OffersPage,
@@ -67,7 +73,11 @@ function OffersPage() {
       toast.error("Åtgärden kunde inte genomföras.");
       return;
     }
-    toast.success(action === "accept" ? "Bud accepterat – bokningen är skapad och datumen blockerade." : "Uppdaterat.");
+    toast.success(
+      action === "accept"
+        ? "Bud accepterat – bokningen är skapad och datumen blockerade."
+        : "Uppdaterat.",
+    );
     refetch();
   }
 
@@ -81,8 +91,9 @@ function OffersPage() {
         className="mb-6"
         description={
           <span className="flex items-start gap-2">
-            <ShieldCheck className="mt-1 h-4 w-4 shrink-0" aria-hidden /> Budförhandlingar är privata mellan dig och motparten.
-            Dolt minimipris och automatisk acceptgräns visas aldrig för någon annan.
+            <ShieldCheck className="mt-1 h-4 w-4 shrink-0" aria-hidden /> Budförhandlingar är
+            privata mellan dig och motparten. Dolt minimipris och automatisk acceptgräns visas
+            aldrig för någon annan.
           </span>
         }
       />
@@ -112,18 +123,15 @@ function OffersPage() {
           </EmptyState>
         )}
         {open.map((o) => (
-          <OfferCard
-            key={o.id}
-            offer={o}
-            role={tab}
-            onAction={(a, amt) => respond(o.id, a, amt)}
-          />
+          <OfferCard key={o.id} offer={o} role={tab} onAction={(a, amt) => respond(o.id, a, amt)} />
         ))}
       </section>
 
       <section className="mt-8 space-y-3">
         <h2 className="font-display text-lg font-bold">Historik ({history.length})</h2>
-        {history.length === 0 && <p className="text-sm text-muted-foreground">Ingen budhistorik ännu.</p>}
+        {history.length === 0 && (
+          <p className="text-sm text-muted-foreground">Ingen budhistorik ännu.</p>
+        )}
         {history.map((o) => (
           <OfferCard key={o.id} offer={o} role={tab} />
         ))}

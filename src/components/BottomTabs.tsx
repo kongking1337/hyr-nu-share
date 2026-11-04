@@ -46,7 +46,10 @@ export function BottomTabs() {
                   <Icon className="h-[18px] w-[18px]" />
                 </span>
                 {label}
-                <Count n={count} className="absolute left-1/2 top-1 ml-1.5 h-4 min-w-4 px-1 text-[10px]" />
+                <Count
+                  n={count}
+                  className="absolute left-1/2 top-1 ml-1.5 h-4 min-w-4 px-1 text-[10px]"
+                />
               </Link>
             </li>
           );

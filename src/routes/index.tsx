@@ -1,7 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Baby, Camera, Flower2, HardHat, Package, PartyPopper, Plus, Tent, Truck, Wrench, type LucideIcon,
+  Baby,
+  Camera,
+  Flower2,
+  HardHat,
+  Package,
+  PartyPopper,
+  Plus,
+  Tent,
+  Truck,
+  Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { EmptyState } from "@/components/layout";
@@ -25,7 +35,10 @@ export const Route = createFileRoute("/")({
           "Hyr saker av privatpersoner och företag i Stockholms län, eller hyr ut det du sällan använder. Sök på vanlig svenska – verktyg, släpvagnar, barnsaker och mycket mer.",
       },
       { property: "og:title", content: "Hyrkoll – hyr och hyr ut saker i Stockholm" },
-      { property: "og:description", content: "Hyr saker av privatpersoner och företag i Stockholms län." },
+      {
+        property: "og:description",
+        content: "Hyr saker av privatpersoner och företag i Stockholms län.",
+      },
     ],
   }),
   component: Index,
@@ -58,7 +71,8 @@ function dateRange(when: When): { from: string; to: string } {
   const iso = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const start = new Date();
-  if (when === "weekend" && start.getDay() !== 0) start.setDate(start.getDate() + ((6 - start.getDay() + 7) % 7));
+  if (when === "weekend" && start.getDay() !== 0)
+    start.setDate(start.getDate() + ((6 - start.getDay() + 7) % 7));
   const end = new Date(start);
   if (when === "weekend") end.setDate(start.getDate() + (start.getDay() === 0 ? 0 : 1));
   if (when === "week") end.setDate(start.getDate() + 6);
@@ -79,7 +93,10 @@ function Index() {
         .select("*")
         .eq("status", "published")
         .eq("listing_type", "rent")
-        .in("city", CITIES.map((c) => c.name))
+        .in(
+          "city",
+          CITIES.map((c) => c.name),
+        )
         .order("published_at", { ascending: false })
         .limit(8);
       return (data ?? []).map(rowToUnified);
@@ -95,7 +112,10 @@ function Index() {
         .select("category_slug, images")
         .eq("status", "published")
         .eq("listing_type", "rent")
-        .in("city", CITIES.map((c) => c.name))
+        .in(
+          "city",
+          CITIES.map((c) => c.name),
+        )
         .order("published_at", { ascending: false })
         .limit(1000);
       const byCategory = new Map<string, { count: number; image: string | undefined }>();
@@ -225,13 +245,24 @@ function Index() {
                       <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                     </>
                   ) : (
-                    <Icon className="absolute right-4 top-4 h-10 w-10 text-primary" strokeWidth={1.5} />
+                    <Icon
+                      className="absolute right-4 top-4 h-10 w-10 text-primary"
+                      strokeWidth={1.5}
+                    />
                   )}
-                  <span className={`relative font-display text-lg font-bold leading-tight ${info?.image ? "text-white" : ""}`}>
+                  <span
+                    className={`relative font-display text-lg font-bold leading-tight ${info?.image ? "text-white" : ""}`}
+                  >
                     {name}
                   </span>
-                  <span className={`relative text-sm ${info?.image ? "text-white/80" : "text-muted-foreground"}`}>
-                    {categoriesPending ? " " : info ? `${info.count} att hyra` : "Bli först att hyra ut"}
+                  <span
+                    className={`relative text-sm ${info?.image ? "text-white/80" : "text-muted-foreground"}`}
+                  >
+                    {categoriesPending
+                      ? " "
+                      : info
+                        ? `${info.count} att hyra`
+                        : "Bli först att hyra ut"}
                   </span>
                 </Link>
               </li>
@@ -245,7 +276,11 @@ function Index() {
           <h2 id="senast" className="font-display text-2xl font-bold">
             Senast upplagt
           </h2>
-          <Link to="/sok" search={{ ...DEFAULTS, sort: "newest" }} className="text-sm font-semibold text-primary">
+          <Link
+            to="/sok"
+            search={{ ...DEFAULTS, sort: "newest" }}
+            className="text-sm font-semibold text-primary"
+          >
             Visa alla
           </Link>
         </div>
@@ -291,7 +326,9 @@ function Index() {
       <section className="mx-auto mt-16 max-w-6xl px-4 sm:px-6">
         <div className="grid gap-8 rounded-3xl bg-foreground px-6 py-10 text-background sm:px-10 md:grid-cols-[1fr_2fr]">
           <div>
-            <h2 className="font-display text-3xl font-bold leading-tight">Hyr ut det du sällan använder</h2>
+            <h2 className="font-display text-3xl font-bold leading-tight">
+              Hyr ut det du sällan använder
+            </h2>
             <Link
               to="/ny-annons"
               className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"

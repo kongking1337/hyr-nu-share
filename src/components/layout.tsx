@@ -25,7 +25,9 @@ export function Page({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("mx-auto w-full px-4 py-8 sm:px-6 sm:py-12", WIDTHS[width], className)}>{children}</div>
+    <div className={cn("mx-auto w-full px-4 py-8 sm:px-6 sm:py-12", WIDTHS[width], className)}>
+      {children}
+    </div>
   );
 }
 
@@ -105,7 +107,11 @@ export function LoadingRows({ rows = 3, className }: { rows?: number; className?
 /** Laddar: rutnät med annonskort. */
 export function LoadingCards({ count = 6, className }: { count?: number; className?: string }) {
   return (
-    <div className={cn("grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3", className)} aria-busy="true" aria-label="Laddar">
+    <div
+      className={cn("grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3", className)}
+      aria-busy="true"
+      aria-label="Laddar"
+    >
       {Array.from({ length: count }, (_, i) => (
         <div key={i}>
           <Skeleton className="aspect-[4/3] rounded-2xl" />

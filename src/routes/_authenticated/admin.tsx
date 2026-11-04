@@ -1,7 +1,19 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { Ban, Check, EyeOff, Flag, Inbox, MessagesSquare, RotateCcw, Search, ShieldCheck, UserCheck, Users } from "lucide-react";
+import {
+  Ban,
+  Check,
+  EyeOff,
+  Flag,
+  Inbox,
+  MessagesSquare,
+  RotateCcw,
+  Search,
+  ShieldCheck,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Count } from "@/components/Header";
 import { EmptyState, LoadingRows, Page, PageHeader } from "@/components/layout";
@@ -54,8 +66,8 @@ function useAdminActions() {
   const queryClient = useQueryClient();
   const refresh = () =>
     Promise.all(
-      ["admin-reports", "admin-listings", "admin-blocked", "admin-report-count", "admin-trust"].map((key) =>
-        queryClient.invalidateQueries({ queryKey: [key] }),
+      ["admin-reports", "admin-listings", "admin-blocked", "admin-report-count", "admin-trust"].map(
+        (key) => queryClient.invalidateQueries({ queryKey: [key] }),
       ),
     );
   const run = async (
@@ -164,7 +176,12 @@ const TONE: Record<Tone, string> = {
 /** Liten statusetikett. Rött bara för det som kräver uppmärksamhet (dold, spärrad, många anmälningar). */
 function StatusBadge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold", TONE[tone])}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        TONE[tone],
+      )}
+    >
       {children}
     </span>
   );
@@ -175,10 +192,12 @@ function ListingStatusBadge({ status }: { status: string }) {
   return <StatusBadge tone={tone}>{STATUS_LABEL[status] ?? status}</StatusBadge>;
 }
 
-const dateTime = (iso: string) => new Date(iso).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" });
+const dateTime = (iso: string) =>
+  new Date(iso).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" });
 
 /** Knapp för åtgärder som går ut över någon (spärra): tydligt röd men inte fylld. */
-const dangerOutline = "border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive";
+const dangerOutline =
+  "border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive";
 
 function ReportsTab() {
   const [open, setOpen] = useState(true);
@@ -208,7 +227,10 @@ function ReportsTab() {
       </div>
       {isLoading && <LoadingRows rows={3} />}
       {reports?.length === 0 && (
-        <EmptyState icon={open ? ShieldCheck : Inbox} title={open ? "Inga öppna anmälningar" : "Inga hanterade anmälningar ännu"}>
+        <EmptyState
+          icon={open ? ShieldCheck : Inbox}
+          title={open ? "Inga öppna anmälningar" : "Inga hanterade anmälningar ännu"}
+        >
           {open
             ? "Allt är genomgånget. Nya anmälningar dyker upp här och räknas i menyn."
             : "Anmälningar som du avfärdar eller åtgärdar hamnar här."}
@@ -254,7 +276,9 @@ function ReportCard({ report: r }: { report: Report }) {
       </div>
 
       <h3 className="mt-3 font-sans text-base font-semibold tracking-normal">{r.reason}</h3>
-      {r.details && <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{r.details}</p>}
+      {r.details && (
+        <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{r.details}</p>
+      )}
 
       {(r.target_type === "listing" || r.reported_user_name) && (
         <dl className="mt-4 grid gap-2 rounded-xl bg-muted p-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
@@ -310,7 +334,9 @@ function ReportCard({ report: r }: { report: Report }) {
                   <p className="mt-0.5 whitespace-pre-line">{m.body}</p>
                 </li>
               ))}
-              {messages?.length === 0 && <li className="text-muted-foreground">Inga meddelanden.</li>}
+              {messages?.length === 0 && (
+                <li className="text-muted-foreground">Inga meddelanden.</li>
+              )}
             </ul>
           )}
         </div>
@@ -327,7 +353,11 @@ function ReportCard({ report: r }: { report: Report }) {
                 aria-label="Skäl som visas för annonsören"
                 placeholder="Skäl som visas för annonsören"
               />
-              <Button variant="destructive" className="shrink-0" onClick={() => actions.hide(r.target_id, hideReason)}>
+              <Button
+                variant="destructive"
+                className="shrink-0"
+                onClick={() => actions.hide(r.target_id, hideReason)}
+              >
                 <EyeOff /> Dölj annonsen
               </Button>
             </div>
@@ -341,7 +371,9 @@ function ReportCard({ report: r }: { report: Report }) {
                 size="sm"
                 variant="outline"
                 className={dangerOutline}
-                onClick={() => actions.block(r.reported_user_id!, r.reported_user_name ?? "användaren")}
+                onClick={() =>
+                  actions.block(r.reported_user_id!, r.reported_user_name ?? "användaren")
+                }
               >
                 <Ban /> Spärra {r.reported_user_name}
               </Button>
@@ -350,7 +382,8 @@ function ReportCard({ report: r }: { report: Report }) {
         </div>
       ) : (
         <p className="mt-5 border-t border-border pt-4 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{r.resolution}</span> · {dateTime(r.resolved_at!)}
+          <span className="font-medium text-foreground">{r.resolution}</span> ·{" "}
+          {dateTime(r.resolved_at!)}
         </p>
       )}
     </article>
@@ -373,7 +406,10 @@ function ListingsTab() {
   return (
     <div className="space-y-4">
       <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Search
+          className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
         <Input
           type="search"
           value={search}
@@ -408,7 +444,12 @@ function ListingsTab() {
                 )}
               </div>
               {l.status === "removed" ? (
-                <Button size="sm" variant="outline" className="self-start lg:self-auto" onClick={() => actions.restore(l.id)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="self-start lg:self-auto"
+                  onClick={() => actions.restore(l.id)}
+                >
                   <RotateCcw /> Återställ
                 </Button>
               ) : (
@@ -480,8 +521,8 @@ function BlockedTab() {
         </EmptyState>
       )}
       <p className="max-w-2xl text-sm text-muted-foreground">
-        När spärren hävs kommer annonserna inte tillbaka automatiskt. Återställ dem under Annonser om
-        det behövs.
+        När spärren hävs kommer annonserna inte tillbaka automatiskt. Återställ dem under Annonser
+        om det behövs.
       </p>
     </div>
   );

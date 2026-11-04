@@ -18,7 +18,9 @@ export function KpiCard({
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 font-display text-2xl font-bold">{value}</p>
       {delta !== undefined && (
-        <p className={`mt-1 flex items-center gap-1 text-xs ${up ? "text-foreground" : "text-destructive"}`}>
+        <p
+          className={`mt-1 flex items-center gap-1 text-xs ${up ? "text-foreground" : "text-destructive"}`}
+        >
           {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
           {pctLabel(delta)} mot föregående period
         </p>
@@ -29,7 +31,5 @@ export function KpiCard({
 }
 
 export function DemoNote({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="rounded-xl bg-muted px-4 py-3 text-xs text-muted-foreground">{children}</p>
-  );
+  return <p className="rounded-xl bg-muted px-4 py-3 text-xs text-muted-foreground">{children}</p>;
 }

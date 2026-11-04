@@ -46,7 +46,10 @@ export function ResultsMap({
             key={r.id}
             type="button"
             onClick={() => setSelected(r.id)}
-            style={{ left: `${Math.min(94, Math.max(4, x))}%`, top: `${Math.min(90, Math.max(6, y))}%` }}
+            style={{
+              left: `${Math.min(94, Math.max(4, x))}%`,
+              top: `${Math.min(90, Math.max(6, y))}%`,
+            }}
             className={cn(
               "absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-border bg-card px-2.5 py-1 text-xs font-semibold shadow-sm transition-colors",
               selected === r.id && "border-primary bg-primary text-primary-foreground",
@@ -66,13 +69,23 @@ export function ResultsMap({
       {active && (
         <div className="absolute bottom-4 left-1/2 w-[min(420px,92%)] -translate-x-1/2 rounded-2xl border border-border bg-card p-3 shadow-xl">
           <div className="flex gap-3">
-            <img src={active.images[0]} alt={active.title} loading="lazy" className="h-16 w-20 rounded-xl object-cover" />
+            <img
+              src={active.images[0]}
+              alt={active.title}
+              loading="lazy"
+              className="h-16 w-20 rounded-xl object-cover"
+            />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{active.title}</p>
               <p className="text-xs text-muted-foreground">
-                {active.city} · {active.source.kind === "internal" ? `På ${active.source.name}` : `Från ${active.source.name}`}
+                {active.city} ·{" "}
+                {active.source.kind === "internal"
+                  ? `På ${active.source.name}`
+                  : `Från ${active.source.name}`}
               </p>
-              <p className="text-sm font-semibold text-primary">{kr(quote(active, days).total)} totalt</p>
+              <p className="text-sm font-semibold text-primary">
+                {kr(quote(active, days).total)} totalt
+              </p>
             </div>
             <button className="text-xs text-muted-foreground" onClick={() => setSelected(null)}>
               Stäng
@@ -81,7 +94,9 @@ export function ResultsMap({
         </div>
       )}
 
-      <p className="absolute bottom-2 right-3 text-[11px] text-muted-foreground">Demokarta – ingen karttjänst kopplad</p>
+      <p className="absolute bottom-2 right-3 text-[11px] text-muted-foreground">
+        Demokarta – ingen karttjänst kopplad
+      </p>
     </div>
   );
 }

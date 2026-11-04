@@ -85,7 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "Hyrkoll" },
       { property: "og:title", content: "Hyrkoll – hyr och hyr ut saker i Stockholm" },
-      { property: "og:description", content: "Hyr saker av privatpersoner och företag i Stockholms län." },
+      {
+        property: "og:description",
+        content: "Hyr saker av privatpersoner och företag i Stockholms län.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -123,7 +126,8 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   // Meddelandetråden fyller mobilskärmen; där behövs ingen sidfot under.
   const inThread = useRouterState({
-    select: (s) => s.location.pathname === "/meddelanden" && !!(s.location.search as { c?: string }).c,
+    select: (s) =>
+      s.location.pathname === "/meddelanden" && !!(s.location.search as { c?: string }).c,
   });
 
   return (
@@ -133,20 +137,28 @@ function RootComponent() {
       <main className="min-h-[70vh]">
         <Outlet />
       </main>
-      <footer className={`mt-20 border-t border-border pb-28 pt-10 md:pb-12 print:hidden ${inThread ? "max-md:hidden" : ""}`}>
+      <footer
+        className={`mt-20 border-t border-border pb-28 pt-10 md:pb-12 print:hidden ${inThread ? "max-md:hidden" : ""}`}
+      >
         <div className="mx-auto grid max-w-6xl gap-6 px-4 text-sm text-muted-foreground sm:px-6 md:grid-cols-[1fr_auto]">
           <div className="max-w-xl">
             <Wordmark className="text-xl text-foreground" />
             <p className="mt-2">
-              Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är under
-              utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll tar inga
-              avgifter och förmedlar inga betalningar.
+              Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är
+              under utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll
+              tar inga avgifter och förmedlar inga betalningar.
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-5 gap-y-2 md:flex-col" aria-label="Om Hyrkoll">
-            <Link to="/villkor" className="hover:text-foreground hover:underline">Användarvillkor</Link>
-            <Link to="/integritet" className="hover:text-foreground hover:underline">Integritetspolicy</Link>
-            <Link to="/kontakt" className="hover:text-foreground hover:underline">Kontakt</Link>
+            <Link to="/villkor" className="hover:text-foreground hover:underline">
+              Användarvillkor
+            </Link>
+            <Link to="/integritet" className="hover:text-foreground hover:underline">
+              Integritetspolicy
+            </Link>
+            <Link to="/kontakt" className="hover:text-foreground hover:underline">
+              Kontakt
+            </Link>
           </nav>
         </div>
       </footer>

@@ -98,7 +98,11 @@ function BookingsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [role, setRole] = useState<Role>("all");
 
-  const { data: bookings = [], isLoading, refetch } = useQuery({
+  const {
+    data: bookings = [],
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["my-bookings", user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -147,7 +151,9 @@ function BookingsPage() {
       toast.error(userMessage(error, "Det gick inte. Försök igen."));
       return;
     }
-    toast.success(action === "cancel" && b.status === "requested" ? "Förfrågan är återkallad." : DONE[action]);
+    toast.success(
+      action === "cancel" && b.status === "requested" ? "Förfrågan är återkallad." : DONE[action],
+    );
     const conversationId = (data as { conversation_id?: string } | null)?.conversation_id;
     // Mejla den andra (om e-post är uppsatt). Misslyckas det syns meddelandet ändå på sajten.
     if (conversationId) {
@@ -159,24 +165,50 @@ function BookingsPage() {
   }
 
   const today = todayISO();
-  const shown = bookings.filter((b) => role === "all" || (role === "owner" ? b.i_am_owner : !b.i_am_owner));
-  const toAnswer = shown.filter((b) => b.i_am_owner && b.status === "requested" && b.start_date >= today);
+  const shown = bookings.filter(
+    (b) => role === "all" || (role === "owner" ? b.i_am_owner : !b.i_am_owner),
+  );
+  const toAnswer = shown.filter(
+    (b) => b.i_am_owner && b.status === "requested" && b.start_date >= today,
+  );
   const confirmed = shown
     .filter((b) => b.status === "confirmed")
     .sort((a, b) => a.start_date.localeCompare(b.start_date));
   const ongoing = confirmed.filter((b) => !!b.picked_up_at);
   const upcoming = confirmed.filter((b) => !b.picked_up_at);
-  const waiting = shown.filter((b) => !b.i_am_owner && b.status === "requested" && b.start_date >= today);
+  const waiting = shown.filter(
+    (b) => !b.i_am_owner && b.status === "requested" && b.start_date >= today,
+  );
   const earlier = shown.filter(
     (b) => !toAnswer.includes(b) && !confirmed.includes(b) && !waiting.includes(b),
   );
 
   const sections = [
-    { id: "att-svara-pa", title: "Att svara på", hint: "Godkänn eller neka innan första dagen.", items: toAnswer },
+    {
+      id: "att-svara-pa",
+      title: "Att svara på",
+      hint: "Godkänn eller neka innan första dagen.",
+      items: toAnswer,
+    },
     { id: "pagaende", title: "Pågående", hint: "Saken är utlämnad.", items: ongoing },
-    { id: "kommande", title: "Kommande", hint: "Godkända bokningar som inte har börjat.", items: upcoming },
-    { id: "vantar-pa-svar", title: "Väntar på svar", hint: "Förfrågningar du har skickat.", items: waiting },
-    { id: "tidigare", title: "Tidigare", hint: "Avslutade, nekade, avbokade och utgångna.", items: earlier },
+    {
+      id: "kommande",
+      title: "Kommande",
+      hint: "Godkända bokningar som inte har börjat.",
+      items: upcoming,
+    },
+    {
+      id: "vantar-pa-svar",
+      title: "Väntar på svar",
+      hint: "Förfrågningar du har skickat.",
+      items: waiting,
+    },
+    {
+      id: "tidigare",
+      title: "Tidigare",
+      hint: "Avslutade, nekade, avbokade och utgångna.",
+      items: earlier,
+    },
   ].filter((s) => s.items.length > 0);
 
   const counts = {
@@ -213,17 +245,27 @@ function BookingsPage() {
             </Button>
           }
         >
-          När du skickar en förfrågan om att hyra något, eller någon vill hyra av dig, hamnar den här.
+          När du skickar en förfrågan om att hyra något, eller någon vill hyra av dig, hamnar den
+          här.
         </EmptyState>
       ) : (
         <>
           {counts.owner > 0 && counts.renter > 0 && (
             <Tabs value={role} onValueChange={(v) => setRole(v as Role)} className="mb-8">
-              <TabsList aria-label="Visa bokningar" className="h-auto flex-wrap justify-start gap-1 rounded-full p-1">
+              <TabsList
+                aria-label="Visa bokningar"
+                className="h-auto flex-wrap justify-start gap-1 rounded-full p-1"
+              >
                 {ROLES.map((r) => (
-                  <TabsTrigger key={r.key} value={r.key} className="gap-1.5 rounded-full px-4 py-1.5">
+                  <TabsTrigger
+                    key={r.key}
+                    value={r.key}
+                    className="gap-1.5 rounded-full px-4 py-1.5"
+                  >
                     {r.label}
-                    <span className="text-xs tabular-nums text-muted-foreground">{counts[r.key]}</span>
+                    <span className="text-xs tabular-nums text-muted-foreground">
+                      {counts[r.key]}
+                    </span>
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -288,18 +330,30 @@ const TONES: Record<Tone, { pill: string; dot: string }> = {
 };
 
 /** Lugna statusfärger: orange bara när du behöver göra något. */
-function statusOf(b: Booking, status: BookingStatus, expired: boolean): { label: string; tone: Tone } {
+function statusOf(
+  b: Booking,
+  status: BookingStatus,
+  expired: boolean,
+): { label: string; tone: Tone } {
   if (expired) return { label: "Utgången", tone: "done" };
   if (status === "requested") {
-    return b.i_am_owner ? { label: "Väntar på ditt svar", tone: "action" } : { label: BOOKING_STATUS.requested.label, tone: "active" };
+    return b.i_am_owner
+      ? { label: "Väntar på ditt svar", tone: "action" }
+      : { label: BOOKING_STATUS.requested.label, tone: "active" };
   }
-  if (status === "confirmed") return { label: b.picked_up_at ? "Pågår" : BOOKING_STATUS.confirmed.label, tone: "active" };
+  if (status === "confirmed")
+    return { label: b.picked_up_at ? "Pågår" : BOOKING_STATUS.confirmed.label, tone: "active" };
   return { label: BOOKING_STATUS[status].label, tone: "done" };
 }
 
 function StatusPill({ label, tone }: { label: string; tone: Tone }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", TONES[tone].pill)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        TONES[tone].pill,
+      )}
+    >
       <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", TONES[tone].dot)} />
       {label}
     </span>
@@ -366,7 +420,9 @@ function BookingCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill {...meta} />
-            <span className="text-xs text-muted-foreground">{b.i_am_owner ? "Du hyr ut" : "Du hyr"}</span>
+            <span className="text-xs text-muted-foreground">
+              {b.i_am_owner ? "Du hyr ut" : "Du hyr"}
+            </span>
           </div>
           <h3 className="mt-1.5 line-clamp-2 font-sans text-base font-semibold leading-snug tracking-normal sm:text-lg">
             <Link
@@ -470,7 +526,8 @@ function BookingCard({
         )}
         {myRating != null && (
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            Ditt omdöme: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden /> {myRating}
+            Ditt omdöme: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />{" "}
+            {myRating}
           </span>
         )}
         {confirmed && !b.picked_up_at && (
@@ -506,7 +563,10 @@ function BookingCard({
       {(confirmed || status === "completed") && (
         <details className="group mt-4" open={confirmed}>
           <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-sm text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-            <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" aria-hidden />
+            <ChevronRight
+              className="h-4 w-4 transition-transform group-open:rotate-90"
+              aria-hidden
+            />
             Bilder på skicket
             <span className="font-normal tabular-nums text-muted-foreground">
               ({(b.pickup_photos ?? []).length + (b.return_photos ?? []).length})

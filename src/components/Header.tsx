@@ -51,7 +51,10 @@ function HeaderSearch() {
         const intent = interpretQuery(q);
         pushRecentSearch(q);
         setQ("");
-        void navigate({ to: "/sok", search: cleanParams({ ...DEFAULTS, ...intent.patch, q }) as never });
+        void navigate({
+          to: "/sok",
+          search: cleanParams({ ...DEFAULTS, ...intent.patch, q }) as never,
+        });
       }}
       className="hidden w-full max-w-sm items-center gap-2 rounded-full border border-input bg-card px-4 focus-within:ring-2 focus-within:ring-ring md:flex"
     >
@@ -84,12 +87,16 @@ function AccountMenu() {
         <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
           {user ? initial : <User className="h-4 w-4" />}
         </span>
-        {total > 0 && <Count n={total} className="absolute -right-1.5 -top-1.5 ring-2 ring-background" />}
+        {total > 0 && (
+          <Count n={total} className="absolute -right-1.5 -top-1.5 ring-2 ring-background" />
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         {user ? (
           <>
-            <DropdownMenuLabel className="truncate font-normal text-muted-foreground">{user.email}</DropdownMenuLabel>
+            <DropdownMenuLabel className="truncate font-normal text-muted-foreground">
+              {user.email}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/bokningar" className="justify-between">

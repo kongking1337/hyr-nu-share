@@ -123,7 +123,9 @@ function FavoritesPage() {
                   <Button asChild variant="outline" size="sm">
                     <Link
                       to="/sok"
-                      search={validateSearchParams((s.filters ?? {}) as Record<string, unknown>) as never}
+                      search={
+                        validateSearchParams((s.filters ?? {}) as Record<string, unknown>) as never
+                      }
                       aria-label={`Visa träffar för ${s.label}`}
                     >
                       Visa träffar

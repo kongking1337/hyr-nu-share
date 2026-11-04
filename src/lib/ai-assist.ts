@@ -18,7 +18,11 @@ export const STATUS_LABEL: Record<DataStatus, string> = {
 
 export type Field<T = string> = { value: T | null; status: DataStatus; note?: string | undefined };
 
-export const field = <T,>(value: T | null, status: DataStatus, note?: string): Field<T> => ({ value, status, note });
+export const field = <T>(value: T | null, status: DataStatus, note?: string): Field<T> => ({
+  value,
+  status,
+  note,
+});
 
 export type FollowUp = { key: string; question: string; options: string[] };
 
@@ -55,8 +59,16 @@ export const DEMO_IDENTIFICATIONS: Identification[] = [
       "Sladdlös slagborrmaskin från Bosch på 18 volt. Passar för borrning i trä, metall och betong samt skruvdragning.",
     attributes: { marke: "Bosch", stromkalla: "Batteri", spanning: "18", borrhammare: "true" },
     followUps: [
-      { key: "batteri", question: "Ingår batteri och laddare?", options: ["Ja, båda ingår", "Endast batteri", "Nej"] },
-      { key: "skick", question: "Vilket skick är maskinen i?", options: ["Nyskick", "Bra", "Sliten"] },
+      {
+        key: "batteri",
+        question: "Ingår batteri och laddare?",
+        options: ["Ja, båda ingår", "Endast batteri", "Nej"],
+      },
+      {
+        key: "skick",
+        question: "Vilket skick är maskinen i?",
+        options: ["Nyskick", "Bra", "Sliten"],
+      },
       { key: "vaska", question: "Följer väska eller borrset med?", options: ["Ja", "Nej"] },
     ],
     suggestedPriceDay: 149,
@@ -79,8 +91,16 @@ export const DEMO_IDENTIFICATIONS: Identification[] = [
     attributes: { marke: "GoPro", typ: "Actionkamera" },
     followUps: [
       { key: "minneskort", question: "Ingår minneskort?", options: ["Ja", "Nej"] },
-      { key: "fasten", question: "Vilka fästen följer med?", options: ["Hjälm", "Cykel", "Sugkopp", "Inga"] },
-      { key: "skick", question: "Vilket skick är kameran i?", options: ["Nyskick", "Bra", "Sliten"] },
+      {
+        key: "fasten",
+        question: "Vilka fästen följer med?",
+        options: ["Hjälm", "Cykel", "Sugkopp", "Inga"],
+      },
+      {
+        key: "skick",
+        question: "Vilket skick är kameran i?",
+        options: ["Nyskick", "Bra", "Sliten"],
+      },
     ],
     suggestedPriceDay: 249,
     suggestedDeposit: 1500,
@@ -101,8 +121,16 @@ export const DEMO_IDENTIFICATIONS: Identification[] = [
       "Högtryckstvätt från Kärcher för altan, fasad, staket och bil. Enkel att köra igång, slang och munstycken ingår.",
     attributes: { marke: "Kärcher", stromkalla: "Nätansluten" },
     followUps: [
-      { key: "tillbehor", question: "Vilka tillbehör ingår?", options: ["Terrassmunstycke", "Skumspruta", "Endast standard"] },
-      { key: "skick", question: "Vilket skick är maskinen i?", options: ["Nyskick", "Bra", "Sliten"] },
+      {
+        key: "tillbehor",
+        question: "Vilka tillbehör ingår?",
+        options: ["Terrassmunstycke", "Skumspruta", "Endast standard"],
+      },
+      {
+        key: "skick",
+        question: "Vilket skick är maskinen i?",
+        options: ["Nyskick", "Bra", "Sliten"],
+      },
     ],
     suggestedPriceDay: 279,
     suggestedDeposit: 800,
@@ -117,8 +145,9 @@ export function identifyFromImages(images: string[], pick?: string): Identificat
   }
   const text = images.join(" ").toLowerCase();
   return (
-    DEMO_IDENTIFICATIONS.find((d) => text.includes(d.key) || text.includes(d.brand.toLowerCase())) ??
-    DEMO_IDENTIFICATIONS[0]!
+    DEMO_IDENTIFICATIONS.find(
+      (d) => text.includes(d.key) || text.includes(d.brand.toLowerCase()),
+    ) ?? DEMO_IDENTIFICATIONS[0]!
   );
 }
 
@@ -179,7 +208,8 @@ export function lookupVehicle(regnr: string): VehicleInfo | null {
 }
 
 /** Publik annons får aldrig visa hela VIN. */
-export const maskVin = (vin: string) => (vin.length < 6 ? "•••" : `${vin.slice(0, 3)}••••••••${vin.slice(-4)}`);
+export const maskVin = (vin: string) =>
+  vin.length < 6 ? "•••" : `${vin.slice(0, 3)}••••••••${vin.slice(-4)}`;
 
 export const VEHICLE_CATEGORIES = ["bil", "slapvagn", "mc", "husbil"];
 
@@ -216,12 +246,17 @@ export function buildDescription(input: {
 }): string {
   const lines: string[] = [];
   if (input.seed) lines.push(input.seed);
-  else if (input.productType) lines.push(`${input.productType}${input.brand ? ` från ${input.brand}` : ""} att hyra.`);
+  else if (input.productType)
+    lines.push(`${input.productType}${input.brand ? ` från ${input.brand}` : ""} att hyra.`);
   if (input.condition) lines.push(`Skick: ${input.condition.toLowerCase()}.`);
   const inc = (input.includes ?? []).filter(Boolean);
   if (inc.length) lines.push(`Detta ingår: ${inc.join(", ")}.`);
-  if (input.city) lines.push(`Hämtas i ${input.city}${input.delivery ? ", leverans kan ordnas mot avgift" : ""}.`);
-  if (input.deposit) lines.push(`Deposition ${input.deposit} kr återbetalas när grejen lämnas tillbaka hel.`);
+  if (input.city)
+    lines.push(
+      `Hämtas i ${input.city}${input.delivery ? ", leverans kan ordnas mot avgift" : ""}.`,
+    );
+  if (input.deposit)
+    lines.push(`Deposition ${input.deposit} kr återbetalas när grejen lämnas tillbaka hel.`);
   lines.push("Hör av dig om du undrar något inför bokningen.");
   return lines.join(" ");
 }

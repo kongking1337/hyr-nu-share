@@ -5,12 +5,7 @@
  * annonser och tydligt märkta demoannonser – aldrig en påstådd marknadsdatakälla.
  */
 export type OfferStatus =
-  | "active"
-  | "countered"
-  | "accepted"
-  | "declined"
-  | "expired"
-  | "withdrawn";
+  "active" | "countered" | "accepted" | "declined" | "expired" | "withdrawn";
 
 export type OfferRow = {
   id: string;
@@ -118,7 +113,7 @@ export function assessOffer(input: {
         ? "Låg demoefterfrågan i kategorin – ett accepterat bud kan vara bättre än en tom period."
         : "Normal demoefterfrågan i kategorin.";
 
-  const suggestedCounter = Math.round(((amount + Math.max(market, amount)) / 2) / 10) * 10;
+  const suggestedCounter = Math.round((amount + Math.max(market, amount)) / 2 / 10) * 10;
 
   if (dPct <= 8 || vsMarket >= 0) {
     return {
@@ -165,7 +160,8 @@ export function offerStats(offers: OfferRow[]): OfferStats {
   const accepted = rows.filter((o) => o.status === "accepted");
   const counters = rows.filter((o) => o.actor === "owner");
   const acceptedCounters = counters.filter((o) => o.status === "accepted");
-  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
+  const avg = (xs: number[]) =>
+    xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0;
 
   return {
     sample: rows.length,

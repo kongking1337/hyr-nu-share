@@ -111,7 +111,9 @@ export const internalProvider: RentalProvider = {
         .filter((w) => w.length > 3);
       if (words.length) {
         results = results.filter((r) => {
-          const hay = normalize(`${r.title} ${r.description} ${r.category} ${r.city} ${r.area ?? ""}`);
+          const hay = normalize(
+            `${r.title} ${r.description} ${r.category} ${r.city} ${r.area ?? ""}`,
+          );
           return words.some((w) => hay.includes(w.slice(0, 5)));
         });
       }

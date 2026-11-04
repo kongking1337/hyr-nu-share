@@ -40,7 +40,8 @@ function AccountPage() {
   const { data: profile } = useQuery({
     queryKey: ["account", user?.id],
     enabled: !!user,
-    queryFn: async () => (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data,
+    queryFn: async () =>
+      (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data,
   });
 
   useEffect(() => {
@@ -72,7 +73,10 @@ function AccountPage() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
-    if (error) { toast.error(authErrorMessage(error)); return; }
+    if (error) {
+      toast.error(authErrorMessage(error));
+      return;
+    }
     setPassword("");
     toast.success("Lösenordet är bytt.");
   }
@@ -85,7 +89,9 @@ function AccountPage() {
     const cutoff = addDays(todayISO(), -14);
     if ((bookings ?? []).some((b) => b.status === "confirmed" && b.end_date >= cutoff)) {
       setBusy(false);
-      toast.error("Du har bokningar som inte är avslutade. Avboka dem eller avsluta hyran under Bokningar först.");
+      toast.error(
+        "Du har bokningar som inte är avslutade. Avboka dem eller avsluta hyran under Bokningar först.",
+      );
       return;
     }
     // Bildfilerna tas bort via Storage innan kontot raderas.
@@ -121,7 +127,11 @@ function AccountPage() {
 
       <div className="space-y-6">
         <nav aria-label="Genvägar" className="grid gap-3 sm:grid-cols-2">
-          <Shortcut to="/mina-annonser" title="Mina annonser" text="Redigera, pausa och ta bort dina annonser." />
+          <Shortcut
+            to="/mina-annonser"
+            title="Mina annonser"
+            text="Redigera, pausa och ta bort dina annonser."
+          />
           {user && (
             <Link
               to="/profil/$id"
@@ -130,14 +140,23 @@ function AccountPage() {
             >
               <span>
                 <span className="block font-display text-lg font-bold">Din profil</span>
-                <span className="block text-sm text-muted-foreground">Så ser andra dig och dina omdömen.</span>
+                <span className="block text-sm text-muted-foreground">
+                  Så ser andra dig och dina omdömen.
+                </span>
               </span>
-              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+              <ChevronRight
+                className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                aria-hidden
+              />
             </Link>
           )}
         </nav>
 
-        <SettingsCard id="profil" title="Profil" description="Det här visas för andra på din profil och i dina annonser.">
+        <SettingsCard
+          id="profil"
+          title="Profil"
+          description="Det här visas för andra på din profil och i dina annonser."
+        >
           <div className="space-y-1.5">
             <Label htmlFor="full-name">Namn</Label>
             <Input
@@ -153,7 +172,12 @@ function AccountPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="city">Ort (visas på din profil)</Label>
-            <Input id="city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} />
+            <Input
+              id="city"
+              autoComplete="address-level2"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="bio">Om mig (visas på din profil)</Label>
@@ -180,7 +204,9 @@ function AccountPage() {
         <SettingsCard id="losenord" title="Byt lösenord">
           <form onSubmit={changePassword} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="new-password">Nytt lösenord (minst {MIN_PASSWORD_LENGTH} tecken)</Label>
+              <Label htmlFor="new-password">
+                Nytt lösenord (minst {MIN_PASSWORD_LENGTH} tecken)
+              </Label>
               <Input
                 id="new-password"
                 type="password"
@@ -203,12 +229,15 @@ function AccountPage() {
         className="mt-16 space-y-4 rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-5 sm:p-6"
       >
         <div>
-          <h2 id="radera-konto" className="flex items-center gap-2 font-display text-xl font-bold text-destructive">
+          <h2
+            id="radera-konto"
+            className="flex items-center gap-2 font-display text-xl font-bold text-destructive"
+          >
             <TriangleAlert className="h-5 w-5" aria-hidden /> Radera konto
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ditt konto, din profil, dina annonser och bilder, favoriter, sparade sökningar och konversationer raderas
-            för gott. Det går inte att ångra.
+            Ditt konto, din profil, dina annonser och bilder, favoriter, sparade sökningar och
+            konversationer raderas för gott. Det går inte att ångra.
           </p>
         </div>
         <div className="space-y-1.5">
@@ -266,7 +295,10 @@ function Shortcut({ to, title, text }: { to: "/mina-annonser"; title: string; te
         <span className="block font-display text-lg font-bold">{title}</span>
         <span className="block text-sm text-muted-foreground">{text}</span>
       </span>
-      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+      <ChevronRight
+        className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+        aria-hidden
+      />
     </Link>
   );
 }
@@ -334,7 +366,11 @@ function PhoneSection({ verified }: { verified: boolean }) {
     e.preventDefault();
     if (!sentTo || !code.trim()) return;
     setBusy(true);
-    const { error } = await supabase.auth.verifyOtp({ phone: sentTo, token: code.trim(), type: "phone_change" });
+    const { error } = await supabase.auth.verifyOtp({
+      phone: sentTo,
+      token: code.trim(),
+      type: "phone_change",
+    });
     setBusy(false);
     if (error) {
       toast.error(authErrorMessage(error));

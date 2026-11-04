@@ -1,1304 +1,1268 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
+    PostgrestVersion: "14.5";
+  };
   public: {
     Tables: {
       bookings: {
         Row: {
-          base_price: number
-          agreement: Json | null
-          created_at: string
-          days: number
-          delivery: boolean
-          delivery_fee: number
-          deposit: number
-          end_date: string
-          id: string
-          insurance_fee: number
-          listing_id: string
-          message: string | null
-          owner_agreed_at: string | null
-          owner_id: string | null
-          picked_up_at: string | null
-          pickup_photos: string[]
-          renter_id: string
-          renter_agreed_at: string | null
-          return_photos: string[]
-          returned_at: string | null
-          service_fee: number
-          start_date: string
-          status: Database["public"]["Enums"]["booking_status"]
-          total_price: number
-        }
+          base_price: number;
+          agreement: Json | null;
+          created_at: string;
+          days: number;
+          delivery: boolean;
+          delivery_fee: number;
+          deposit: number;
+          end_date: string;
+          id: string;
+          insurance_fee: number;
+          listing_id: string;
+          message: string | null;
+          owner_agreed_at: string | null;
+          owner_id: string | null;
+          picked_up_at: string | null;
+          pickup_photos: string[];
+          renter_id: string;
+          renter_agreed_at: string | null;
+          return_photos: string[];
+          returned_at: string | null;
+          service_fee: number;
+          start_date: string;
+          status: Database["public"]["Enums"]["booking_status"];
+          total_price: number;
+        };
         Insert: {
-          base_price?: number
-          agreement?: Json | null
-          created_at?: string
-          days?: number
-          delivery?: boolean
-          delivery_fee?: number
-          deposit?: number
-          end_date: string
-          id?: string
-          insurance_fee?: number
-          listing_id: string
-          message?: string | null
-          owner_agreed_at?: string | null
-          owner_id?: string | null
-          picked_up_at?: string | null
-          pickup_photos?: string[]
-          renter_id: string
-          renter_agreed_at?: string | null
-          return_photos?: string[]
-          returned_at?: string | null
-          service_fee?: number
-          start_date: string
-          status?: Database["public"]["Enums"]["booking_status"]
-          total_price?: number
-        }
+          base_price?: number;
+          agreement?: Json | null;
+          created_at?: string;
+          days?: number;
+          delivery?: boolean;
+          delivery_fee?: number;
+          deposit?: number;
+          end_date: string;
+          id?: string;
+          insurance_fee?: number;
+          listing_id: string;
+          message?: string | null;
+          owner_agreed_at?: string | null;
+          owner_id?: string | null;
+          picked_up_at?: string | null;
+          pickup_photos?: string[];
+          renter_id: string;
+          renter_agreed_at?: string | null;
+          return_photos?: string[];
+          returned_at?: string | null;
+          service_fee?: number;
+          start_date: string;
+          status?: Database["public"]["Enums"]["booking_status"];
+          total_price?: number;
+        };
         Update: {
-          base_price?: number
-          agreement?: Json | null
-          created_at?: string
-          days?: number
-          delivery?: boolean
-          delivery_fee?: number
-          deposit?: number
-          end_date?: string
-          id?: string
-          insurance_fee?: number
-          listing_id?: string
-          message?: string | null
-          owner_agreed_at?: string | null
-          owner_id?: string | null
-          picked_up_at?: string | null
-          pickup_photos?: string[]
-          renter_id?: string
-          renter_agreed_at?: string | null
-          return_photos?: string[]
-          returned_at?: string | null
-          service_fee?: number
-          start_date?: string
-          status?: Database["public"]["Enums"]["booking_status"]
-          total_price?: number
-        }
+          base_price?: number;
+          agreement?: Json | null;
+          created_at?: string;
+          days?: number;
+          delivery?: boolean;
+          delivery_fee?: number;
+          deposit?: number;
+          end_date?: string;
+          id?: string;
+          insurance_fee?: number;
+          listing_id?: string;
+          message?: string | null;
+          owner_agreed_at?: string | null;
+          owner_id?: string | null;
+          picked_up_at?: string | null;
+          pickup_photos?: string[];
+          renter_id?: string;
+          renter_agreed_at?: string | null;
+          return_photos?: string[];
+          returned_at?: string | null;
+          service_fee?: number;
+          start_date?: string;
+          status?: Database["public"]["Enums"]["booking_status"];
+          total_price?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "bookings_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
+            foreignKeyName: "bookings_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       categories: {
         Row: {
-          icon: string
-          name: string
-          slug: string
-          sort: number
-          synonyms: string[]
-        }
+          icon: string;
+          name: string;
+          slug: string;
+          sort: number;
+          synonyms: string[];
+        };
         Insert: {
-          icon?: string
-          name: string
-          slug: string
-          sort?: number
-          synonyms?: string[]
-        }
+          icon?: string;
+          name: string;
+          slug: string;
+          sort?: number;
+          synonyms?: string[];
+        };
         Update: {
-          icon?: string
-          name?: string
-          slug?: string
-          sort?: number
-          synonyms?: string[]
-        }
-        Relationships: []
-      }
+          icon?: string;
+          name?: string;
+          slug?: string;
+          sort?: number;
+          synonyms?: string[];
+        };
+        Relationships: [];
+      };
       companies: {
         Row: {
-          city: string | null
-          created_at: string
-          description: string | null
-          id: string
-          logo_url: string | null
-          name: string
-          org_number: string | null
-          owner_id: string | null
-          verified: boolean
-        }
+          city: string | null;
+          created_at: string;
+          description: string | null;
+          id: string;
+          logo_url: string | null;
+          name: string;
+          org_number: string | null;
+          owner_id: string | null;
+          verified: boolean;
+        };
         Insert: {
-          city?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          logo_url?: string | null
-          name: string
-          org_number?: string | null
-          owner_id?: string | null
-          verified?: boolean
-        }
+          city?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name: string;
+          org_number?: string | null;
+          owner_id?: string | null;
+          verified?: boolean;
+        };
         Update: {
-          city?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          logo_url?: string | null
-          name?: string
-          org_number?: string | null
-          owner_id?: string | null
-          verified?: boolean
-        }
-        Relationships: []
-      }
+          city?: string | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name?: string;
+          org_number?: string | null;
+          owner_id?: string | null;
+          verified?: boolean;
+        };
+        Relationships: [];
+      };
       company_admins: {
         Row: {
-          company_id: string
-          id: string
-          role: string
-          user_id: string
-        }
+          company_id: string;
+          id: string;
+          role: string;
+          user_id: string;
+        };
         Insert: {
-          company_id: string
-          id?: string
-          role?: string
-          user_id: string
-        }
+          company_id: string;
+          id?: string;
+          role?: string;
+          user_id: string;
+        };
         Update: {
-          company_id?: string
-          id?: string
-          role?: string
-          user_id?: string
-        }
+          company_id?: string;
+          id?: string;
+          role?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "company_admins_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
+            foreignKeyName: "company_admins_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       conversations: {
         Row: {
-          created_at: string
-          id: string
-          last_message_at: string
-          listing_id: string | null
-          owner_id: string
-          owner_last_read_at: string
-          owner_notified_at: string | null
-          renter_id: string
-          renter_last_read_at: string
-          renter_notified_at: string | null
-        }
+          created_at: string;
+          id: string;
+          last_message_at: string;
+          listing_id: string | null;
+          owner_id: string;
+          owner_last_read_at: string;
+          owner_notified_at: string | null;
+          renter_id: string;
+          renter_last_read_at: string;
+          renter_notified_at: string | null;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          last_message_at?: string
-          listing_id?: string | null
-          owner_id: string
-          owner_last_read_at?: string
-          owner_notified_at?: string | null
-          renter_id: string
-          renter_last_read_at?: string
-          renter_notified_at?: string | null
-        }
+          created_at?: string;
+          id?: string;
+          last_message_at?: string;
+          listing_id?: string | null;
+          owner_id: string;
+          owner_last_read_at?: string;
+          owner_notified_at?: string | null;
+          renter_id: string;
+          renter_last_read_at?: string;
+          renter_notified_at?: string | null;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          last_message_at?: string
-          listing_id?: string | null
-          owner_id?: string
-          owner_last_read_at?: string
-          owner_notified_at?: string | null
-          renter_id?: string
-          renter_last_read_at?: string
-          renter_notified_at?: string | null
-        }
+          created_at?: string;
+          id?: string;
+          last_message_at?: string;
+          listing_id?: string | null;
+          owner_id?: string;
+          owner_last_read_at?: string;
+          owner_notified_at?: string | null;
+          renter_id?: string;
+          renter_last_read_at?: string;
+          renter_notified_at?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "conversations_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
+            foreignKeyName: "conversations_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       external_sources: {
         Row: {
-          kind: string
-          last_sync: string
-          name: string
-          note: string | null
-          requires_agreement: boolean
-          slug: string
-          status: string
-        }
+          kind: string;
+          last_sync: string;
+          name: string;
+          note: string | null;
+          requires_agreement: boolean;
+          slug: string;
+          status: string;
+        };
         Insert: {
-          kind?: string
-          last_sync?: string
-          name: string
-          note?: string | null
-          requires_agreement?: boolean
-          slug: string
-          status?: string
-        }
+          kind?: string;
+          last_sync?: string;
+          name: string;
+          note?: string | null;
+          requires_agreement?: boolean;
+          slug: string;
+          status?: string;
+        };
         Update: {
-          kind?: string
-          last_sync?: string
-          name?: string
-          note?: string | null
-          requires_agreement?: boolean
-          slug?: string
-          status?: string
-        }
-        Relationships: []
-      }
+          kind?: string;
+          last_sync?: string;
+          name?: string;
+          note?: string | null;
+          requires_agreement?: boolean;
+          slug?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
       favorites: {
         Row: {
-          created_at: string
-          id: string
-          listing_id: string
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          listing_id: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          listing_id: string
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          listing_id: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          listing_id?: string
-          user_id?: string
-        }
+          created_at?: string;
+          id?: string;
+          listing_id?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "favorites_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
+            foreignKeyName: "favorites_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       listing_blocked_dates: {
         Row: {
-          created_at: string
-          end_date: string
-          id: string
-          listing_id: string
-          start_date: string
-        }
+          created_at: string;
+          end_date: string;
+          id: string;
+          listing_id: string;
+          start_date: string;
+        };
         Insert: {
-          created_at?: string
-          end_date: string
-          id?: string
-          listing_id: string
-          start_date: string
-        }
+          created_at?: string;
+          end_date: string;
+          id?: string;
+          listing_id: string;
+          start_date: string;
+        };
         Update: {
-          created_at?: string
-          end_date?: string
-          id?: string
-          listing_id?: string
-          start_date?: string
-        }
+          created_at?: string;
+          end_date?: string;
+          id?: string;
+          listing_id?: string;
+          start_date?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "listing_blocked_dates_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
+            foreignKeyName: "listing_blocked_dates_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       listing_offer_settings: {
         Row: {
-          auto_accept_total: number | null
-          created_at: string
-          listing_id: string
-          min_offer_per_day: number | null
-          min_offer_total: number | null
-          updated_at: string
-        }
+          auto_accept_total: number | null;
+          created_at: string;
+          listing_id: string;
+          min_offer_per_day: number | null;
+          min_offer_total: number | null;
+          updated_at: string;
+        };
         Insert: {
-          auto_accept_total?: number | null
-          created_at?: string
-          listing_id: string
-          min_offer_per_day?: number | null
-          min_offer_total?: number | null
-          updated_at?: string
-        }
+          auto_accept_total?: number | null;
+          created_at?: string;
+          listing_id: string;
+          min_offer_per_day?: number | null;
+          min_offer_total?: number | null;
+          updated_at?: string;
+        };
         Update: {
-          auto_accept_total?: number | null
-          created_at?: string
-          listing_id?: string
-          min_offer_per_day?: number | null
-          min_offer_total?: number | null
-          updated_at?: string
-        }
+          auto_accept_total?: number | null;
+          created_at?: string;
+          listing_id?: string;
+          min_offer_per_day?: number | null;
+          min_offer_total?: number | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "listing_offer_settings_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: true
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
+            foreignKeyName: "listing_offer_settings_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: true;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       listings: {
         Row: {
-          allow_offers: boolean
-          area: string | null
-          attributes: Json
-          booking_count: number
-          cancellation_policy: string
-          category_slug: string
-          city: string
-          clicks_count: number
-          company_id: string | null
-          created_at: string
-          delivery_available: boolean
-          delivery_fee: number
-          deposit: number
-          description: string
-          dynamic_pricing: Json
-          favorite_count: number
-          id: string
-          images: string[]
-          included: string
-          instant_book: boolean
-          insurance_fee: number
-          lat: number
-          listing_type: string
-          lng: number
-          min_days: number
-          moderation_reason: string | null
-          offer_validity_hours: number
-          owner_id: string | null
-          owner_name: string
-          owner_type: Database["public"]["Enums"]["account_type"]
-          pickup_available: boolean
-          price: number | null
-          price_day: number | null
-          price_hour: number | null
-          price_month: number | null
-          price_week: number | null
-          published_at: string
-          quality_score: number | null
-          rental_rules: string
-          rating: number
-          request_count: number
-          review_count: number
-          service_fee_pct: number
-          share_count: number
-          status: string
-          title: string
-          vehicle: Json | null
-          views_count: number
-        }
+          allow_offers: boolean;
+          area: string | null;
+          attributes: Json;
+          booking_count: number;
+          cancellation_policy: string;
+          category_slug: string;
+          city: string;
+          clicks_count: number;
+          company_id: string | null;
+          created_at: string;
+          delivery_available: boolean;
+          delivery_fee: number;
+          deposit: number;
+          description: string;
+          dynamic_pricing: Json;
+          favorite_count: number;
+          id: string;
+          images: string[];
+          included: string;
+          instant_book: boolean;
+          insurance_fee: number;
+          lat: number;
+          listing_type: string;
+          lng: number;
+          min_days: number;
+          moderation_reason: string | null;
+          offer_validity_hours: number;
+          owner_id: string | null;
+          owner_name: string;
+          owner_type: Database["public"]["Enums"]["account_type"];
+          pickup_available: boolean;
+          price: number | null;
+          price_day: number | null;
+          price_hour: number | null;
+          price_month: number | null;
+          price_week: number | null;
+          published_at: string;
+          quality_score: number | null;
+          rental_rules: string;
+          rating: number;
+          request_count: number;
+          review_count: number;
+          service_fee_pct: number;
+          share_count: number;
+          status: string;
+          title: string;
+          vehicle: Json | null;
+          views_count: number;
+        };
         Insert: {
-          allow_offers?: boolean
-          area?: string | null
-          attributes?: Json
-          booking_count?: number
-          cancellation_policy?: string
-          category_slug: string
-          city: string
-          clicks_count?: number
-          company_id?: string | null
-          created_at?: string
-          delivery_available?: boolean
-          delivery_fee?: number
-          deposit?: number
-          description?: string
-          dynamic_pricing?: Json
-          favorite_count?: number
-          id?: string
-          images?: string[]
-          included?: string
-          instant_book?: boolean
-          insurance_fee?: number
-          lat?: number
-          listing_type?: string
-          lng?: number
-          min_days?: number
-          moderation_reason?: string | null
-          offer_validity_hours?: number
-          owner_id?: string | null
-          owner_name?: string
-          owner_type?: Database["public"]["Enums"]["account_type"]
-          pickup_available?: boolean
-          price?: number | null
-          price_day?: number | null
-          price_hour?: number | null
-          price_month?: number | null
-          price_week?: number | null
-          published_at?: string
-          quality_score?: number | null
-          rental_rules?: string
-          rating?: number
-          request_count?: number
-          review_count?: number
-          service_fee_pct?: number
-          share_count?: number
-          status?: string
-          title: string
-          vehicle?: Json | null
-          views_count?: number
-        }
+          allow_offers?: boolean;
+          area?: string | null;
+          attributes?: Json;
+          booking_count?: number;
+          cancellation_policy?: string;
+          category_slug: string;
+          city: string;
+          clicks_count?: number;
+          company_id?: string | null;
+          created_at?: string;
+          delivery_available?: boolean;
+          delivery_fee?: number;
+          deposit?: number;
+          description?: string;
+          dynamic_pricing?: Json;
+          favorite_count?: number;
+          id?: string;
+          images?: string[];
+          included?: string;
+          instant_book?: boolean;
+          insurance_fee?: number;
+          lat?: number;
+          listing_type?: string;
+          lng?: number;
+          min_days?: number;
+          moderation_reason?: string | null;
+          offer_validity_hours?: number;
+          owner_id?: string | null;
+          owner_name?: string;
+          owner_type?: Database["public"]["Enums"]["account_type"];
+          pickup_available?: boolean;
+          price?: number | null;
+          price_day?: number | null;
+          price_hour?: number | null;
+          price_month?: number | null;
+          price_week?: number | null;
+          published_at?: string;
+          quality_score?: number | null;
+          rental_rules?: string;
+          rating?: number;
+          request_count?: number;
+          review_count?: number;
+          service_fee_pct?: number;
+          share_count?: number;
+          status?: string;
+          title: string;
+          vehicle?: Json | null;
+          views_count?: number;
+        };
         Update: {
-          allow_offers?: boolean
-          area?: string | null
-          attributes?: Json
-          booking_count?: number
-          cancellation_policy?: string
-          category_slug?: string
-          city?: string
-          clicks_count?: number
-          company_id?: string | null
-          created_at?: string
-          delivery_available?: boolean
-          delivery_fee?: number
-          deposit?: number
-          description?: string
-          dynamic_pricing?: Json
-          favorite_count?: number
-          id?: string
-          images?: string[]
-          included?: string
-          instant_book?: boolean
-          insurance_fee?: number
-          lat?: number
-          listing_type?: string
-          lng?: number
-          min_days?: number
-          moderation_reason?: string | null
-          offer_validity_hours?: number
-          owner_id?: string | null
-          owner_name?: string
-          owner_type?: Database["public"]["Enums"]["account_type"]
-          pickup_available?: boolean
-          price?: number | null
-          price_day?: number | null
-          price_hour?: number | null
-          price_month?: number | null
-          price_week?: number | null
-          published_at?: string
-          quality_score?: number | null
-          rental_rules?: string
-          rating?: number
-          request_count?: number
-          review_count?: number
-          service_fee_pct?: number
-          share_count?: number
-          status?: string
-          title?: string
-          vehicle?: Json | null
-          views_count?: number
-        }
+          allow_offers?: boolean;
+          area?: string | null;
+          attributes?: Json;
+          booking_count?: number;
+          cancellation_policy?: string;
+          category_slug?: string;
+          city?: string;
+          clicks_count?: number;
+          company_id?: string | null;
+          created_at?: string;
+          delivery_available?: boolean;
+          delivery_fee?: number;
+          deposit?: number;
+          description?: string;
+          dynamic_pricing?: Json;
+          favorite_count?: number;
+          id?: string;
+          images?: string[];
+          included?: string;
+          instant_book?: boolean;
+          insurance_fee?: number;
+          lat?: number;
+          listing_type?: string;
+          lng?: number;
+          min_days?: number;
+          moderation_reason?: string | null;
+          offer_validity_hours?: number;
+          owner_id?: string | null;
+          owner_name?: string;
+          owner_type?: Database["public"]["Enums"]["account_type"];
+          pickup_available?: boolean;
+          price?: number | null;
+          price_day?: number | null;
+          price_hour?: number | null;
+          price_month?: number | null;
+          price_week?: number | null;
+          published_at?: string;
+          quality_score?: number | null;
+          rental_rules?: string;
+          rating?: number;
+          request_count?: number;
+          review_count?: number;
+          service_fee_pct?: number;
+          share_count?: number;
+          status?: string;
+          title?: string;
+          vehicle?: Json | null;
+          views_count?: number;
+        };
         Relationships: [
           {
-            foreignKeyName: "listings_category_slug_fkey"
-            columns: ["category_slug"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["slug"]
+            foreignKeyName: "listings_category_slug_fkey";
+            columns: ["category_slug"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["slug"];
           },
           {
-            foreignKeyName: "listings_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
+            foreignKeyName: "listings_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       messages: {
         Row: {
-          body: string
-          booking_id: string | null
-          conversation_id: string
-          created_at: string
-          id: string
-          image_url: string | null
-          kind: string
-          offer_id: string | null
-          sender_id: string | null
-        }
+          body: string;
+          booking_id: string | null;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          image_url: string | null;
+          kind: string;
+          offer_id: string | null;
+          sender_id: string | null;
+        };
         Insert: {
-          body?: string
-          booking_id?: string | null
-          conversation_id: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          kind?: string
-          offer_id?: string | null
-          sender_id?: string | null
-        }
+          body?: string;
+          booking_id?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          image_url?: string | null;
+          kind?: string;
+          offer_id?: string | null;
+          sender_id?: string | null;
+        };
         Update: {
-          body?: string
-          booking_id?: string | null
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          kind?: string
-          offer_id?: string | null
-          sender_id?: string | null
-        }
+          body?: string;
+          booking_id?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          image_url?: string | null;
+          kind?: string;
+          offer_id?: string | null;
+          sender_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
+            foreignKeyName: "messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "messages_offer_id_fkey"
-            columns: ["offer_id"]
-            isOneToOne: false
-            referencedRelation: "offers"
-            referencedColumns: ["id"]
+            foreignKeyName: "messages_offer_id_fkey";
+            columns: ["offer_id"];
+            isOneToOne: false;
+            referencedRelation: "offers";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       offers: {
         Row: {
-          actor: string
-          amount: number
-          booking_id: string | null
-          conversation_id: string | null
-          created_at: string
-          days: number
-          end_date: string
-          expires_at: string | null
-          id: string
-          list_total: number
-          listing_id: string
-          message: string | null
-          owner_id: string | null
-          parent_id: string | null
-          renter_id: string
-          start_date: string
-          status: Database["public"]["Enums"]["offer_status"]
-          updated_at: string
-        }
+          actor: string;
+          amount: number;
+          booking_id: string | null;
+          conversation_id: string | null;
+          created_at: string;
+          days: number;
+          end_date: string;
+          expires_at: string | null;
+          id: string;
+          list_total: number;
+          listing_id: string;
+          message: string | null;
+          owner_id: string | null;
+          parent_id: string | null;
+          renter_id: string;
+          start_date: string;
+          status: Database["public"]["Enums"]["offer_status"];
+          updated_at: string;
+        };
         Insert: {
-          actor?: string
-          amount?: number
-          booking_id?: string | null
-          conversation_id?: string | null
-          created_at?: string
-          days?: number
-          end_date: string
-          expires_at?: string | null
-          id?: string
-          list_total?: number
-          listing_id: string
-          message?: string | null
-          owner_id?: string | null
-          parent_id?: string | null
-          renter_id: string
-          start_date: string
-          status?: Database["public"]["Enums"]["offer_status"]
-          updated_at?: string
-        }
+          actor?: string;
+          amount?: number;
+          booking_id?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          days?: number;
+          end_date: string;
+          expires_at?: string | null;
+          id?: string;
+          list_total?: number;
+          listing_id: string;
+          message?: string | null;
+          owner_id?: string | null;
+          parent_id?: string | null;
+          renter_id: string;
+          start_date: string;
+          status?: Database["public"]["Enums"]["offer_status"];
+          updated_at?: string;
+        };
         Update: {
-          actor?: string
-          amount?: number
-          booking_id?: string | null
-          conversation_id?: string | null
-          created_at?: string
-          days?: number
-          end_date?: string
-          expires_at?: string | null
-          id?: string
-          list_total?: number
-          listing_id?: string
-          message?: string | null
-          owner_id?: string | null
-          parent_id?: string | null
-          renter_id?: string
-          start_date?: string
-          status?: Database["public"]["Enums"]["offer_status"]
-          updated_at?: string
-        }
+          actor?: string;
+          amount?: number;
+          booking_id?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          days?: number;
+          end_date?: string;
+          expires_at?: string | null;
+          id?: string;
+          list_total?: number;
+          listing_id?: string;
+          message?: string | null;
+          owner_id?: string | null;
+          parent_id?: string | null;
+          renter_id?: string;
+          start_date?: string;
+          status?: Database["public"]["Enums"]["offer_status"];
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "offers_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
+            foreignKeyName: "offers_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "offers_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
+            foreignKeyName: "offers_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "offers_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
+            foreignKeyName: "offers_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "offers_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "offers"
-            referencedColumns: ["id"]
+            foreignKeyName: "offers_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "offers";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       profiles: {
         Row: {
-          account_type: Database["public"]["Enums"]["account_type"]
-          avatar_url: string | null
-          bio: string | null
-          blocked_at: string | null
-          city: string | null
-          created_at: string
-          email_verified: boolean
-          full_name: string
-          id: string
-          id_verified: boolean
-          phone: string | null
-          phone_verified: boolean
-          rating: number
-          review_count: number
-        }
+          account_type: Database["public"]["Enums"]["account_type"];
+          avatar_url: string | null;
+          bio: string | null;
+          blocked_at: string | null;
+          city: string | null;
+          created_at: string;
+          email_verified: boolean;
+          full_name: string;
+          id: string;
+          id_verified: boolean;
+          phone: string | null;
+          phone_verified: boolean;
+          rating: number;
+          review_count: number;
+        };
         Insert: {
-          account_type?: Database["public"]["Enums"]["account_type"]
-          avatar_url?: string | null
-          bio?: string | null
-          blocked_at?: string | null
-          city?: string | null
-          created_at?: string
-          email_verified?: boolean
-          full_name?: string
-          id: string
-          id_verified?: boolean
-          phone?: string | null
-          phone_verified?: boolean
-          rating?: number
-          review_count?: number
-        }
+          account_type?: Database["public"]["Enums"]["account_type"];
+          avatar_url?: string | null;
+          bio?: string | null;
+          blocked_at?: string | null;
+          city?: string | null;
+          created_at?: string;
+          email_verified?: boolean;
+          full_name?: string;
+          id: string;
+          id_verified?: boolean;
+          phone?: string | null;
+          phone_verified?: boolean;
+          rating?: number;
+          review_count?: number;
+        };
         Update: {
-          account_type?: Database["public"]["Enums"]["account_type"]
-          avatar_url?: string | null
-          bio?: string | null
-          blocked_at?: string | null
-          city?: string | null
-          created_at?: string
-          email_verified?: boolean
-          full_name?: string
-          id?: string
-          id_verified?: boolean
-          phone?: string | null
-          phone_verified?: boolean
-          rating?: number
-          review_count?: number
-        }
-        Relationships: []
-      }
+          account_type?: Database["public"]["Enums"]["account_type"];
+          avatar_url?: string | null;
+          bio?: string | null;
+          blocked_at?: string | null;
+          city?: string | null;
+          created_at?: string;
+          email_verified?: boolean;
+          full_name?: string;
+          id?: string;
+          id_verified?: boolean;
+          phone?: string | null;
+          phone_verified?: boolean;
+          rating?: number;
+          review_count?: number;
+        };
+        Relationships: [];
+      };
       reports: {
         Row: {
-          created_at: string
-          details: string | null
-          id: string
-          notified_at: string | null
-          reason: string
-          reporter_id: string | null
-          resolution: string | null
-          resolved_at: string | null
-          resolved_by: string | null
-          status: string
-          target_id: string
-          target_type: string
-        }
+          created_at: string;
+          details: string | null;
+          id: string;
+          notified_at: string | null;
+          reason: string;
+          reporter_id: string | null;
+          resolution: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          status: string;
+          target_id: string;
+          target_type: string;
+        };
         Insert: {
-          created_at?: string
-          details?: string | null
-          id?: string
-          notified_at?: string | null
-          reason: string
-          reporter_id?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string
-          target_id: string
-          target_type: string
-        }
+          created_at?: string;
+          details?: string | null;
+          id?: string;
+          notified_at?: string | null;
+          reason: string;
+          reporter_id?: string | null;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          status?: string;
+          target_id: string;
+          target_type: string;
+        };
         Update: {
-          created_at?: string
-          details?: string | null
-          id?: string
-          notified_at?: string | null
-          reason?: string
-          reporter_id?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string
-          target_id?: string
-          target_type?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          details?: string | null;
+          id?: string;
+          notified_at?: string | null;
+          reason?: string;
+          reporter_id?: string | null;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          status?: string;
+          target_id?: string;
+          target_type?: string;
+        };
+        Relationships: [];
+      };
       reviews: {
         Row: {
-          author_id: string | null
-          author_name: string
-          body: string
-          booking_id: string | null
-          created_at: string
-          id: string
-          listing_id: string | null
-          published_at: string | null
-          rating: number
-          subject_id: string | null
-          subject_role: string | null
-          verified: boolean
-        }
+          author_id: string | null;
+          author_name: string;
+          body: string;
+          booking_id: string | null;
+          created_at: string;
+          id: string;
+          listing_id: string | null;
+          published_at: string | null;
+          rating: number;
+          subject_id: string | null;
+          subject_role: string | null;
+          verified: boolean;
+        };
         Insert: {
-          author_id?: string | null
-          author_name?: string
-          body?: string
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          listing_id?: string | null
-          published_at?: string | null
-          rating?: number
-          subject_id?: string | null
-          subject_role?: string | null
-          verified?: boolean
-        }
+          author_id?: string | null;
+          author_name?: string;
+          body?: string;
+          booking_id?: string | null;
+          created_at?: string;
+          id?: string;
+          listing_id?: string | null;
+          published_at?: string | null;
+          rating?: number;
+          subject_id?: string | null;
+          subject_role?: string | null;
+          verified?: boolean;
+        };
         Update: {
-          author_id?: string | null
-          author_name?: string
-          body?: string
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          listing_id?: string | null
-          published_at?: string | null
-          rating?: number
-          subject_id?: string | null
-          subject_role?: string | null
-          verified?: boolean
-        }
+          author_id?: string | null;
+          author_name?: string;
+          body?: string;
+          booking_id?: string | null;
+          created_at?: string;
+          id?: string;
+          listing_id?: string | null;
+          published_at?: string | null;
+          rating?: number;
+          subject_id?: string | null;
+          subject_role?: string | null;
+          verified?: boolean;
+        };
         Relationships: [
           {
-            foreignKeyName: "reviews_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
+            foreignKeyName: "reviews_booking_id_fkey";
+            columns: ["booking_id"];
+            isOneToOne: false;
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "reviews_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
+            foreignKeyName: "reviews_listing_id_fkey";
+            columns: ["listing_id"];
+            isOneToOne: false;
+            referencedRelation: "listings";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       saved_searches: {
         Row: {
-          created_at: string
-          filters: Json
-          id: string
-          label: string
-          notify: boolean
-          query: string
-          user_id: string
-        }
+          created_at: string;
+          filters: Json;
+          id: string;
+          label: string;
+          notify: boolean;
+          query: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          filters?: Json
-          id?: string
-          label: string
-          notify?: boolean
-          query?: string
-          user_id: string
-        }
+          created_at?: string;
+          filters?: Json;
+          id?: string;
+          label: string;
+          notify?: boolean;
+          query?: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          filters?: Json
-          id?: string
-          label?: string
-          notify?: boolean
-          query?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          filters?: Json;
+          id?: string;
+          label?: string;
+          notify?: boolean;
+          query?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       user_blocks: {
         Row: {
-          blocked_id: string
-          blocker_id: string
-          created_at: string
-        }
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string;
+        };
         Insert: {
-          blocked_id: string
-          blocker_id: string
-          created_at?: string
-        }
+          blocked_id: string;
+          blocker_id: string;
+          created_at?: string;
+        };
         Update: {
-          blocked_id?: string
-          blocker_id?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          id: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          id?: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-    }
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
-      accept_agreement: { Args: { _booking_id: string }; Returns: Json }
-      admin_delete_review: { Args: { _review_id: string }; Returns: undefined }
+      accept_agreement: { Args: { _booking_id: string }; Returns: Json };
+      admin_delete_review: { Args: { _review_id: string }; Returns: undefined };
       admin_trust_scores: {
-        Args: never
+        Args: never;
         Returns: {
-          blocked: boolean
-          blocked_by: number
-          completed_rentals: number
-          listings: number
-          member_days: number
-          name: string
-          rating: number | null
-          removed_listings: number
-          reports_open: number
-          reports_upheld: number
-          review_count: number
-          score: number
-          user_id: string
-        }[]
-      }
-      booking_agreement: { Args: { _booking_id: string }; Returns: Json }
+          blocked: boolean;
+          blocked_by: number;
+          completed_rentals: number;
+          listings: number;
+          member_days: number;
+          name: string;
+          rating: number | null;
+          removed_listings: number;
+          reports_open: number;
+          reports_upheld: number;
+          review_count: number;
+          score: number;
+          user_id: string;
+        }[];
+      };
+      booking_agreement: { Args: { _booking_id: string }; Returns: Json };
       leave_review: {
-        Args: { _body?: string; _booking_id: string; _rating: number }
-        Returns: undefined
-      }
+        Args: { _body?: string; _booking_id: string; _rating: number };
+        Returns: undefined;
+      };
       my_blocked_users: {
-        Args: never
-        Returns: { created_at: string; id: string; name: string }[]
-      }
+        Args: never;
+        Returns: { created_at: string; id: string; name: string }[];
+      };
       public_profile: {
-        Args: { _user_id: string }
+        Args: { _user_id: string };
         Returns: {
-          account_type: string
-          bio: string | null
-          city: string | null
-          id: string
-          listing_count: number
-          member_since: string
-          name: string
-          phone_verified: boolean
-          rating: number | null
-          rentals_as_owner: number
-          rentals_as_renter: number
-          response_hours: number | null
-          review_count: number
-        }[]
-      }
+          account_type: string;
+          bio: string | null;
+          city: string | null;
+          id: string;
+          listing_count: number;
+          member_since: string;
+          name: string;
+          phone_verified: boolean;
+          rating: number | null;
+          rentals_as_owner: number;
+          rentals_as_renter: number;
+          response_hours: number | null;
+          review_count: number;
+        }[];
+      };
       public_reviews: {
-        Args: { _user_id: string }
+        Args: { _user_id: string };
         Returns: {
-          author_name: string
-          body: string
-          id: string
-          listing_title: string
-          published_at: string
-          rating: number
-          subject_role: string | null
-        }[]
-      }
+          author_name: string;
+          body: string;
+          id: string;
+          listing_title: string;
+          published_at: string;
+          rating: number;
+          subject_role: string | null;
+        }[];
+      };
       admin_blocked_users: {
-        Args: never
-        Returns: { blocked_at: string; id: string; name: string }[]
-      }
-      admin_dismiss_report: { Args: { _report_id: string }; Returns: undefined }
+        Args: never;
+        Returns: { blocked_at: string; id: string; name: string }[];
+      };
+      admin_dismiss_report: { Args: { _report_id: string }; Returns: undefined };
       admin_listings: {
-        Args: { _search?: string }
+        Args: { _search?: string };
         Returns: {
-          city: string
-          created_at: string
-          id: string
-          listing_type: string
-          moderation_reason: string | null
-          owner_blocked: boolean
-          owner_id: string | null
-          owner_name: string
-          status: string
-          title: string
-        }[]
-      }
-      admin_open_report_count: { Args: never; Returns: number }
+          city: string;
+          created_at: string;
+          id: string;
+          listing_type: string;
+          moderation_reason: string | null;
+          owner_blocked: boolean;
+          owner_id: string | null;
+          owner_name: string;
+          status: string;
+          title: string;
+        }[];
+      };
+      admin_open_report_count: { Args: never; Returns: number };
       admin_reported_conversation: {
-        Args: { _conversation_id: string }
-        Returns: { body: string; created_at: string; sender_name: string }[]
-      }
+        Args: { _conversation_id: string };
+        Returns: { body: string; created_at: string; sender_name: string }[];
+      };
       admin_reports: {
-        Args: { _open?: boolean }
+        Args: { _open?: boolean };
         Returns: {
-          created_at: string
-          details: string | null
-          id: string
-          listing_status: string | null
-          listing_title: string | null
-          reason: string
-          reported_user_blocked: boolean
-          reported_user_id: string | null
-          reported_user_name: string | null
-          reporter_name: string
-          reports_on_target: number
-          resolution: string | null
-          resolved_at: string | null
-          target_id: string
-          target_type: string
-        }[]
-      }
+          created_at: string;
+          details: string | null;
+          id: string;
+          listing_status: string | null;
+          listing_title: string | null;
+          reason: string;
+          reported_user_blocked: boolean;
+          reported_user_id: string | null;
+          reported_user_name: string | null;
+          reporter_name: string;
+          reports_on_target: number;
+          resolution: string | null;
+          resolved_at: string | null;
+          target_id: string;
+          target_type: string;
+        }[];
+      };
       admin_set_listing_hidden: {
-        Args: { _hidden: boolean; _listing_id: string; _reason?: string }
-        Returns: undefined
-      }
+        Args: { _hidden: boolean; _listing_id: string; _reason?: string };
+        Returns: undefined;
+      };
       admin_set_user_blocked: {
-        Args: { _blocked: boolean; _user_id: string }
-        Returns: undefined
-      }
+        Args: { _blocked: boolean; _user_id: string };
+        Returns: undefined;
+      };
       claim_report_notification: {
-        Args: { _report_id: string; _reporter: string }
-        Returns: { open_reports: number; reason: string; target_type: string }[]
-      }
+        Args: { _report_id: string; _reporter: string };
+        Returns: { open_reports: number; reason: string; target_type: string }[];
+      };
       claim_message_notification: {
-        Args: { _conversation_id: string; _sender: string }
+        Args: { _conversation_id: string; _sender: string };
         Returns: {
-          email: string
-          listing_title: string
-        }[]
-      }
+          email: string;
+          listing_title: string;
+        }[];
+      };
       booked_dates: {
-        Args: { _listing_id: string }
+        Args: { _listing_id: string };
         Returns: {
-          end_date: string
-          start_date: string
-        }[]
-      }
-      delete_my_account: { Args: never; Returns: undefined }
-      expire_stale_offers: { Args: never; Returns: undefined }
+          end_date: string;
+          start_date: string;
+        }[];
+      };
+      delete_my_account: { Args: never; Returns: undefined };
+      expire_stale_offers: { Args: never; Returns: undefined };
       mark_conversation_read: {
-        Args: { _conversation_id: string }
-        Returns: undefined
-      }
+        Args: { _conversation_id: string };
+        Returns: undefined;
+      };
       my_conversations: {
-        Args: never
+        Args: never;
         Returns: {
-          counterpart_name: string
-          i_am_seller: boolean
-          id: string
-          last_message: string
-          last_message_at: string
-          listing_id: string
-          listing_image: string
-          listing_title: string
-          unread: boolean
-        }[]
-      }
+          counterpart_name: string;
+          i_am_seller: boolean;
+          id: string;
+          last_message: string;
+          last_message_at: string;
+          listing_id: string;
+          listing_image: string;
+          listing_title: string;
+          unread: boolean;
+        }[];
+      };
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+          _role: Database["public"]["Enums"]["app_role"];
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
       place_offer: {
         Args: {
-          _amount: number
-          _days: number
-          _end: string
-          _list_total: number
-          _listing_id: string
-          _message?: string
-          _start: string
-        }
-        Returns: Json
-      }
+          _amount: number;
+          _days: number;
+          _end: string;
+          _list_total: number;
+          _listing_id: string;
+          _message?: string;
+          _start: string;
+        };
+        Returns: Json;
+      };
       my_bookings: {
-        Args: never
+        Args: never;
         Returns: {
-          base_price: number
-          cancellation_policy: string
-          conversation_id: string | null
-          counterpart_name: string
-          created_at: string
-          days: number
-          delivery: boolean
-          delivery_fee: number
-          deposit: number
-          end_date: string
-          i_am_owner: boolean
-          id: string
-          listing_city: string | null
-          listing_id: string
-          listing_image: string | null
-          listing_title: string
-          message: string | null
-          picked_up_at: string | null
-          pickup_photos: string[]
-          return_photos: string[]
-          returned_at: string | null
-          start_date: string
-          status: string
-          total_price: number
-        }[]
-      }
+          base_price: number;
+          cancellation_policy: string;
+          conversation_id: string | null;
+          counterpart_name: string;
+          created_at: string;
+          days: number;
+          delivery: boolean;
+          delivery_fee: number;
+          deposit: number;
+          end_date: string;
+          i_am_owner: boolean;
+          id: string;
+          listing_city: string | null;
+          listing_id: string;
+          listing_image: string | null;
+          listing_title: string;
+          message: string | null;
+          picked_up_at: string | null;
+          pickup_photos: string[];
+          return_photos: string[];
+          returned_at: string | null;
+          start_date: string;
+          status: string;
+          total_price: number;
+        }[];
+      };
       request_booking: {
         Args: {
-          _delivery?: boolean
-          _end: string
-          _expected_total?: number
-          _listing_id: string
-          _message?: string
-          _start: string
-        }
-        Returns: Json
-      }
+          _delivery?: boolean;
+          _end: string;
+          _expected_total?: number;
+          _listing_id: string;
+          _message?: string;
+          _start: string;
+        };
+        Returns: Json;
+      };
       respond_booking: {
-        Args: { _action: string; _booking_id: string }
-        Returns: Json
-      }
+        Args: { _action: string; _booking_id: string };
+        Returns: Json;
+      };
       set_booking_photos: {
-        Args: { _booking_id: string; _paths: string[]; _stage: string }
-        Returns: undefined
-      }
+        Args: { _booking_id: string; _paths: string[]; _stage: string };
+        Returns: undefined;
+      };
       unavailable_listings: {
-        Args: { _end: string; _start: string }
-        Returns: string[]
-      }
+        Args: { _end: string; _start: string };
+        Returns: string[];
+      };
       start_conversation: {
-        Args: { _body: string; _listing_id: string }
-        Returns: string
-      }
-      unread_conversation_count: { Args: never; Returns: number }
+        Args: { _body: string; _listing_id: string };
+        Returns: string;
+      };
+      unread_conversation_count: { Args: never; Returns: number };
       respond_offer: {
         Args: {
-          _action: string
-          _amount?: number
-          _message?: string
-          _offer_id: string
-        }
-        Returns: Json
-      }
-    }
+          _action: string;
+          _amount?: number;
+          _message?: string;
+          _offer_id: string;
+        };
+        Returns: Json;
+      };
+    };
     Enums: {
-      account_type: "private" | "company"
-      app_role: "admin" | "moderator" | "user"
-      booking_status:
-        | "requested"
-        | "confirmed"
-        | "declined"
-        | "cancelled"
-        | "completed"
-      offer_status:
-        | "active"
-        | "countered"
-        | "accepted"
-        | "declined"
-        | "expired"
-        | "withdrawn"
-    }
+      account_type: "private" | "company";
+      app_role: "admin" | "moderator" | "user";
+      booking_status: "requested" | "confirmed" | "declined" | "cancelled" | "completed";
+      offer_status: "active" | "countered" | "accepted" | "declined" | "expired" | "withdrawn";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
     Enums: {
       account_type: ["private", "company"],
       app_role: ["admin", "moderator", "user"],
-      booking_status: [
-        "requested",
-        "confirmed",
-        "declined",
-        "cancelled",
-        "completed",
-      ],
-      offer_status: [
-        "active",
-        "countered",
-        "accepted",
-        "declined",
-        "expired",
-        "withdrawn",
-      ],
+      booking_status: ["requested", "confirmed", "declined", "cancelled", "completed"],
+      offer_status: ["active", "countered", "accepted", "declined", "expired", "withdrawn"],
     },
   },
-} as const
+} as const;

@@ -2,8 +2,21 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Grid2x2, LayoutList, Plus, SearchX, SlidersHorizontal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { EmptyState, LoadingCards, LoadingRows, Page, PageHeader } from "@/components/layout";
 import { SearchBar } from "@/components/search/SearchBar";
 import { FilterPanel } from "@/components/search/FilterPanel";
@@ -67,14 +80,23 @@ export function SearchResultsPage({
   // Filter utöver sökordet, som "Rensa filter" tar bort (sökordet ligger kvar).
   const filterCount = chips.filter((c) => c.key !== "q").length;
 
-  function submitSearch(next: { q: string; location: string; radius: number; category?: string; sub?: string }) {
+  function submitSearch(next: {
+    q: string;
+    location: string;
+    radius: number;
+    category?: string;
+    sub?: string;
+  }) {
     const intent = interpretQuery(next.q);
     setNotes(intent.notes);
     pushRecentSearch(next.q);
     patch({
       ...intent.patch,
       q: next.q,
-      location: next.location !== params.location ? next.location : (intent.patch.location ?? next.location),
+      location:
+        next.location !== params.location
+          ? next.location
+          : (intent.patch.location ?? next.location),
       radius: next.radius,
       ...(next.category ? { category: next.category, sub: next.sub ?? "all" } : {}),
     });
@@ -94,7 +116,13 @@ export function SearchResultsPage({
         <h1 className="sr-only">Sök saker att hyra</h1>
       )}
 
-      <SearchBar q={params.q} location={params.location} radius={params.radius} size="md" onSubmit={submitSearch} />
+      <SearchBar
+        q={params.q}
+        location={params.location}
+        radius={params.radius}
+        size="md"
+        onSubmit={submitSearch}
+      />
 
       {notes.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -133,8 +161,16 @@ export function SearchResultsPage({
         <section aria-labelledby="antal-traffar" className="min-w-0">
           {/* Mobil: antal och vy-växlare på första raden, filter och sortering på andra. */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-            <p id="antal-traffar" aria-live="polite" className="mr-auto font-display text-lg font-bold">
-              {internalLoading ? "Söker …" : resultCount === 1 ? "1 träff" : `${resultCount} träffar`}
+            <p
+              id="antal-traffar"
+              aria-live="polite"
+              className="mr-auto font-display text-lg font-bold"
+            >
+              {internalLoading
+                ? "Söker …"
+                : resultCount === 1
+                  ? "1 träff"
+                  : `${resultCount} träffar`}
             </p>
 
             <div className="order-last flex w-full items-center gap-2 sm:order-none sm:w-auto">
@@ -144,7 +180,10 @@ export function SearchResultsPage({
                     <SlidersHorizontal aria-hidden /> Filter{chipCount ? ` (${chipCount})` : ""}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="flex h-[90dvh] flex-col gap-0 rounded-t-3xl p-0">
+                <SheetContent
+                  side="bottom"
+                  className="flex h-[90dvh] flex-col gap-0 rounded-t-3xl p-0"
+                >
                   <SheetHeader className="border-b border-border px-5 py-4 text-left">
                     <SheetTitle className="font-display text-lg font-bold">Filter</SheetTitle>
                     <SheetDescription className="sr-only">
@@ -171,8 +210,14 @@ export function SearchResultsPage({
                 </SheetContent>
               </Sheet>
 
-              <Select value={params.sort} onValueChange={(v) => patch({ sort: v as SearchParams["sort"] })}>
-                <SelectTrigger className="h-10 min-w-0 flex-1 rounded-full px-4 sm:w-[170px] sm:flex-none" aria-label="Sortera">
+              <Select
+                value={params.sort}
+                onValueChange={(v) => patch({ sort: v as SearchParams["sort"] })}
+              >
+                <SelectTrigger
+                  className="h-10 min-w-0 flex-1 rounded-full px-4 sm:w-[170px] sm:flex-none"
+                  aria-label="Sortera"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -185,11 +230,17 @@ export function SearchResultsPage({
               </Select>
             </div>
 
-            <div role="group" aria-label="Visning" className="flex shrink-0 rounded-full border border-input bg-card p-0.5 sm:order-last">
-              {([
-                ["grid", Grid2x2, "Rutnät"],
-                ["list", LayoutList, "Lista"],
-              ] as const).map(([v, Icon, label]) => (
+            <div
+              role="group"
+              aria-label="Visning"
+              className="flex shrink-0 rounded-full border border-input bg-card p-0.5 sm:order-last"
+            >
+              {(
+                [
+                  ["grid", Grid2x2, "Rutnät"],
+                  ["list", LayoutList, "Lista"],
+                ] as const
+              ).map(([v, Icon, label]) => (
                 <button
                   key={v}
                   type="button"
@@ -209,11 +260,17 @@ export function SearchResultsPage({
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <ActiveFilterChips params={params} onPatch={patch} onClearAll={reset} hide={pinned} />
-            <SaveSearchButton label={params.q || "Min sökning"} filters={params as unknown as Record<string, unknown>} />
+            <SaveSearchButton
+              label={params.q || "Min sökning"}
+              filters={params as unknown as Record<string, unknown>}
+            />
           </div>
 
           {sources.some((s) => s.status === "error") && (
-            <p role="alert" className="mt-4 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <p
+              role="alert"
+              className="mt-4 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
               Sökningen kunde inte genomföras just nu. Ladda om sidan och försök igen.
             </p>
           )}
@@ -231,7 +288,9 @@ export function SearchResultsPage({
                     result={g.primary}
                     layout={list ? "list" : "grid"}
                     distanceKm={
-                      center.wholeRegion ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
+                      center.wholeRegion
+                        ? null
+                        : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
                     }
                   />
                 </li>
@@ -279,7 +338,10 @@ export function SearchResultsPage({
                     </Button>
                   )}
                   {wideArea && filterCount > 1 && (
-                    <Button variant="outline" onClick={() => patch({ location: DEFAULTS.location })}>
+                    <Button
+                      variant="outline"
+                      onClick={() => patch({ location: DEFAULTS.location })}
+                    >
                       Sök i hela Stockholm
                     </Button>
                   )}

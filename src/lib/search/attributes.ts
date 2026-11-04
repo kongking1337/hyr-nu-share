@@ -32,7 +32,11 @@ export const SUBCATEGORIES: Record<string, SubCategory[]> = {
     { slug: "biltransport", name: "Biltransport", words: ["biltransport", "bilsläp"] },
   ],
   verktyg: [
-    { slug: "borrmaskin", name: "Borrmaskin & borrhammare", words: ["borr", "borrmaskin", "borrhammare", "hammarborr"] },
+    {
+      slug: "borrmaskin",
+      name: "Borrmaskin & borrhammare",
+      words: ["borr", "borrmaskin", "borrhammare", "hammarborr"],
+    },
     { slug: "hogtryckstvatt", name: "Högtryckstvätt", words: ["hogtryckstvatt", "karcher"] },
     { slug: "sag", name: "Sågar", words: ["sag", "tigersag", "kapsag", "bordssag"] },
     { slug: "slipmaskin", name: "Slip & puts", words: ["slip", "slipmaskin", "puts"] },
@@ -57,7 +61,11 @@ export const SUBCATEGORIES: Record<string, SubCategory[]> = {
     { slug: "kajak", name: "Kajak & SUP", words: ["kajak", "sup", "paddleboard"] },
     { slug: "cykel", name: "Cykel", words: ["cykel", "elcykel"] },
     { slug: "vinter", name: "Vintersport", words: ["skidor", "snowboard", "pulka"] },
-    { slug: "spel", name: "Spel & konsol", words: ["ps5", "playstation", "xbox", "nintendo", "konsol", "projektor"] },
+    {
+      slug: "spel",
+      name: "Spel & konsol",
+      words: ["ps5", "playstation", "xbox", "nintendo", "konsol", "projektor"],
+    },
   ],
   bygg: [
     { slug: "stallning", name: "Ställning", words: ["stallning", "byggstallning"] },
@@ -73,17 +81,47 @@ export const SUBCATEGORIES: Record<string, SubCategory[]> = {
 
 export const CATEGORY_ATTRIBUTES: Record<string, AttrDef[]> = {
   bil: [
-    { key: "marke", label: "Märke", type: "select", options: ["Volvo", "Volkswagen", "Tesla", "Toyota", "Ford"] },
-    { key: "modell", label: "Modell", type: "select", options: ["V70", "Transporter", "Model 3", "Hilux"] },
+    {
+      key: "marke",
+      label: "Märke",
+      type: "select",
+      options: ["Volvo", "Volkswagen", "Tesla", "Toyota", "Ford"],
+    },
+    {
+      key: "modell",
+      label: "Modell",
+      type: "select",
+      options: ["V70", "Transporter", "Model 3", "Hilux"],
+    },
     { key: "arsmodell", label: "Årsmodell", type: "range", min: 2000, max: 2026, step: 1 },
-    { key: "drivmedel", label: "Drivmedel", type: "select", options: ["Bensin", "Diesel", "El", "Hybrid"] },
+    {
+      key: "drivmedel",
+      label: "Drivmedel",
+      type: "select",
+      options: ["Bensin", "Diesel", "El", "Hybrid"],
+    },
     { key: "vaxellada", label: "Växellåda", type: "select", options: ["Manuell", "Automat"] },
     { key: "platser", label: "Antal platser", type: "range", min: 2, max: 9, step: 1 },
   ],
   kamera: [
-    { key: "marke", label: "Märke", type: "select", options: ["Canon", "Sony", "Nikon", "Fujifilm", "DJI", "GoPro"] },
-    { key: "modell", label: "Modell", type: "select", options: ["R6", "A7 III", "Z6", "X-T4", "Mavic"] },
-    { key: "typ", label: "Typ", type: "select", options: ["Systemkamera", "Objektiv", "Drönare", "Actionkamera"] },
+    {
+      key: "marke",
+      label: "Märke",
+      type: "select",
+      options: ["Canon", "Sony", "Nikon", "Fujifilm", "DJI", "GoPro"],
+    },
+    {
+      key: "modell",
+      label: "Modell",
+      type: "select",
+      options: ["R6", "A7 III", "Z6", "X-T4", "Mavic"],
+    },
+    {
+      key: "typ",
+      label: "Typ",
+      type: "select",
+      options: ["Systemkamera", "Objektiv", "Drönare", "Actionkamera"],
+    },
     { key: "fattning", label: "Fattning", type: "select", options: ["RF", "EF", "E", "Z", "X"] },
     { key: "upplosning", label: "Upplösning (MP)", type: "range", min: 12, max: 61, step: 1 },
   ],
@@ -94,7 +132,12 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttrDef[]> = {
     { key: "tackt", label: "Täckt/kåpa", type: "bool" },
   ],
   verktyg: [
-    { key: "marke", label: "Märke", type: "select", options: ["Makita", "Bosch", "DeWalt", "Kärcher", "Milwaukee", "Hilti"] },
+    {
+      key: "marke",
+      label: "Märke",
+      type: "select",
+      options: ["Makita", "Bosch", "DeWalt", "Kärcher", "Milwaukee", "Hilti"],
+    },
     { key: "stromkalla", label: "Strömkälla", type: "select", options: ["Batteri", "Nätansluten"] },
     { key: "spanning", label: "Spänning (V)", type: "select", options: ["12", "18", "36", "230"] },
     { key: "borrhammare", label: "Borrhammare", type: "bool" },
@@ -102,7 +145,22 @@ export const CATEGORY_ATTRIBUTES: Record<string, AttrDef[]> = {
   ],
 };
 
-const BRANDS = ["Makita", "Bosch", "DeWalt", "Kärcher", "Milwaukee", "Hilti", "Canon", "Sony", "Nikon", "Fujifilm", "DJI", "GoPro", "Volvo", "Tesla"];
+const BRANDS = [
+  "Makita",
+  "Bosch",
+  "DeWalt",
+  "Kärcher",
+  "Milwaukee",
+  "Hilti",
+  "Canon",
+  "Sony",
+  "Nikon",
+  "Fujifilm",
+  "DJI",
+  "GoPro",
+  "Volvo",
+  "Tesla",
+];
 
 export type AttrValues = Record<string, string | number | boolean>;
 

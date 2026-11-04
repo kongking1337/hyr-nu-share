@@ -61,11 +61,7 @@ export function bestBasePrice(
   return { base: Math.round(plainDays), label: `${days} dygn` };
 }
 
-export function quote(
-  r: UnifiedResult,
-  days: number,
-  opts: { delivery?: boolean } = {},
-): Quote {
+export function quote(r: UnifiedResult, days: number, opts: { delivery?: boolean } = {}): Quote {
   const { base, label } = bestBasePrice(r, days);
   // Hyrkoll tar ingen serviceavgift och förmedlar ingen försäkring, så de ingår inte i priset.
   const serviceFee = 0;
@@ -85,5 +81,4 @@ export function quote(
   };
 }
 
-export const kr = (n: number) =>
-  `${new Intl.NumberFormat("sv-SE").format(Math.round(n))} kr`;
+export const kr = (n: number) => `${new Intl.NumberFormat("sv-SE").format(Math.round(n))} kr`;

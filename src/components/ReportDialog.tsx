@@ -94,7 +94,8 @@ export function ReportDialog({
   };
   const content = (
     <>
-      <Flag aria-hidden /> <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{label}</span>
+      <Flag aria-hidden />{" "}
+      <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{label}</span>
     </>
   );
 

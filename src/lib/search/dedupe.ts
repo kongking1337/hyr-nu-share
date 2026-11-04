@@ -12,7 +12,19 @@ export type ResultGroup = {
   sources: number;
 };
 
-const STOP = new Set(["med", "och", "for", "till", "i", "pa", "den", "en", "ett", "hyra", "dygnshyra"]);
+const STOP = new Set([
+  "med",
+  "och",
+  "for",
+  "till",
+  "i",
+  "pa",
+  "den",
+  "en",
+  "ett",
+  "hyra",
+  "dygnshyra",
+]);
 
 function tokens(r: UnifiedResult): Set<string> {
   return new Set(
@@ -45,8 +57,8 @@ const THRESHOLD = 0.62;
 export function dedupe(results: UnifiedResult[]): ResultGroup[] {
   const groups: ResultGroup[] = [];
   for (const r of results) {
-    const hit = groups.find(
-      (g) => g.offers.some((o) => o.source.slug !== r.source.slug && confidence(o, r) >= THRESHOLD),
+    const hit = groups.find((g) =>
+      g.offers.some((o) => o.source.slug !== r.source.slug && confidence(o, r) >= THRESHOLD),
     );
     if (hit) {
       hit.offers.push(r);

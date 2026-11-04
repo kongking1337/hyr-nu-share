@@ -23,7 +23,10 @@ export const Route = createFileRoute("/_authenticated/meddelanden")({
   head: () => ({
     meta: [
       { title: "Meddelanden – Hyrkoll" },
-      { name: "description", content: "Dina konversationer med uthyrare och de som vill hyra dina saker." },
+      {
+        name: "description",
+        content: "Dina konversationer med uthyrare och de som vill hyra dina saker.",
+      },
       { property: "og:title", content: "Meddelanden – Hyrkoll" },
       { property: "og:description", content: "Dina konversationer på Hyrkoll." },
     ],
@@ -96,7 +99,11 @@ function MessagesPage() {
       return data;
     },
   });
-  const counterpartId = parties ? (parties.owner_id === user?.id ? parties.renter_id : parties.owner_id) : null;
+  const counterpartId = parties
+    ? parties.owner_id === user?.id
+      ? parties.renter_id
+      : parties.owner_id
+    : null;
   const { data: iBlocked } = useIsBlocked(counterpartId);
 
   const { data: messages, refetch } = useQuery({
@@ -155,7 +162,8 @@ function MessagesPage() {
         description={
           <span className="flex items-start gap-2 text-sm">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            Betala aldrig i förskott till någon du inte känner, och träffas gärna på en offentlig plats.
+            Betala aldrig i förskott till någon du inte känner, och träffas gärna på en offentlig
+            plats.
           </span>
         }
       />
@@ -172,7 +180,8 @@ function MessagesPage() {
             </Button>
           }
         >
-          När du skriver till någon från en annons, eller någon skriver till dig, hamnar konversationen här.
+          När du skriver till någon från en annons, eller någon skriver till dig, hamnar
+          konversationen här.
         </EmptyState>
       ) : (
         <div
@@ -184,12 +193,17 @@ function MessagesPage() {
           {/* Konversationerna */}
           <nav
             aria-label="Konversationer"
-            className={cn("min-h-0 overflow-y-auto md:border-r md:border-border", active && "hidden md:block")}
+            className={cn(
+              "min-h-0 overflow-y-auto md:border-r md:border-border",
+              active && "hidden md:block",
+            )}
           >
             {isLoading ? (
               <LoadingRows rows={4} className="p-3" />
             ) : conversations?.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-muted-foreground">Inga andra konversationer än.</p>
+              <p className="px-5 py-6 text-sm text-muted-foreground">
+                Inga andra konversationer än.
+              </p>
             ) : (
               <ul className="divide-y divide-border md:divide-y-0 md:p-2">
                 {conversations?.map((c) => {
@@ -217,19 +231,25 @@ function MessagesPage() {
                         )}
                         <span className="min-w-0 flex-1">
                           <span className="flex items-baseline justify-between gap-2">
-                            <span className={cn("truncate", c.unread ? "font-bold" : "font-semibold")}>
+                            <span
+                              className={cn("truncate", c.unread ? "font-bold" : "font-semibold")}
+                            >
                               {c.counterpart_name}
                             </span>
                             <span
                               className={cn(
                                 "shrink-0 text-xs tabular-nums",
-                                c.unread ? "font-semibold text-foreground" : "text-muted-foreground",
+                                c.unread
+                                  ? "font-semibold text-foreground"
+                                  : "text-muted-foreground",
                               )}
                             >
                               {formatTime(c.last_message_at)}
                             </span>
                           </span>
-                          <span className="block truncate text-xs text-muted-foreground">{c.listing_title}</span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {c.listing_title}
+                          </span>
                           <span className="mt-0.5 flex items-center gap-2">
                             <span
                               className={cn(
@@ -240,7 +260,10 @@ function MessagesPage() {
                               {c.last_message}
                             </span>
                             {c.unread && (
-                              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary" aria-label="Oläst" />
+                              <span
+                                className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary"
+                                aria-label="Oläst"
+                              />
                             )}
                           </span>
                         </span>
@@ -297,7 +320,9 @@ function MessagesPage() {
                         {current.listing_title}
                       </Link>
                     ) : (
-                      <p className="truncate font-semibold">{current?.listing_title ?? "Konversation"}</p>
+                      <p className="truncate font-semibold">
+                        {current?.listing_title ?? "Konversation"}
+                      </p>
                     )}
                     {current && (
                       <p className="truncate text-xs text-muted-foreground">
@@ -318,9 +343,18 @@ function MessagesPage() {
                   </div>
                   <div className="flex shrink-0 items-center">
                     {counterpartId && current && (
-                      <BlockUserButton userId={counterpartId} name={current.counterpart_name} compact />
+                      <BlockUserButton
+                        userId={counterpartId}
+                        name={current.counterpart_name}
+                        compact
+                      />
                     )}
-                    <ReportDialog targetType="conversation" targetId={active} label="Anmäl" compact />
+                    <ReportDialog
+                      targetType="conversation"
+                      targetId={active}
+                      label="Anmäl"
+                      compact
+                    />
                   </div>
                 </header>
 
@@ -341,7 +375,8 @@ function MessagesPage() {
                         const mine = m.sender_id === user?.id;
                         const prev = messages[i - 1];
                         const newDay = !prev || dayKey(prev.created_at) !== dayKey(m.created_at);
-                        const sameSender = !newDay && prev?.sender_id === m.sender_id && prev?.kind === "text";
+                        const sameSender =
+                          !newDay && prev?.sender_id === m.sender_id && prev?.kind === "text";
                         return (
                           <li key={m.id} className={cn(!sameSender && !newDay && "pt-2")}>
                             {newDay && (
@@ -353,7 +388,8 @@ function MessagesPage() {
                               <div className="mx-auto max-w-md rounded-2xl border border-border bg-background px-4 py-3 text-center text-sm">
                                 <p className="mb-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground">
                                   <CalendarDays className="h-3.5 w-3.5" aria-hidden />
-                                  {m.kind === "booking" ? "Bokning" : "Systemmeddelande"} · {formatClock(m.created_at)}
+                                  {m.kind === "booking" ? "Bokning" : "Systemmeddelande"} ·{" "}
+                                  {formatClock(m.created_at)}
                                 </p>
                                 <p className="whitespace-pre-line">{m.body}</p>
                                 {m.kind === "booking" && (
@@ -366,8 +402,14 @@ function MessagesPage() {
                                 )}
                               </div>
                             ) : (
-                              <div className={cn("flex flex-col", mine ? "items-end" : "items-start")}>
-                                <p className="sr-only">{mine ? "Du skrev:" : `${current?.counterpart_name ?? "Den andra"} skrev:`}</p>
+                              <div
+                                className={cn("flex flex-col", mine ? "items-end" : "items-start")}
+                              >
+                                <p className="sr-only">
+                                  {mine
+                                    ? "Du skrev:"
+                                    : `${current?.counterpart_name ?? "Den andra"} skrev:`}
+                                </p>
                                 <div
                                   className={cn(
                                     "max-w-[85%] whitespace-pre-line break-words rounded-2xl px-3.5 py-2 text-sm sm:max-w-[70%]",
@@ -392,8 +434,8 @@ function MessagesPage() {
 
                 {iBlocked && (
                   <p className="shrink-0 border-t border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
-                    Du har blockerat {current?.counterpart_name ?? "den här personen"}. Ta bort blockeringen för
-                    att skriva igen.
+                    Du har blockerat {current?.counterpart_name ?? "den här personen"}. Ta bort
+                    blockeringen för att skriva igen.
                   </p>
                 )}
 
@@ -432,7 +474,10 @@ function MessagesPage() {
                         <Send className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p id="composer-hint" className="mt-1 hidden px-2 text-[11px] text-muted-foreground md:block">
+                    <p
+                      id="composer-hint"
+                      className="mt-1 hidden px-2 text-[11px] text-muted-foreground md:block"
+                    >
                       Enter skickar, Skift+Enter ger ny rad.
                     </p>
                   </form>

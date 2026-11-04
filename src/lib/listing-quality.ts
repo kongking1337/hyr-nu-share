@@ -20,7 +20,13 @@ export type QualityInput = {
   attributes?: Record<string, unknown>;
 };
 
-export type QualityPart = { key: string; label: string; score: number; max: number; tip?: string | undefined };
+export type QualityPart = {
+  key: string;
+  label: string;
+  score: number;
+  max: number;
+  tip?: string | undefined;
+};
 
 export type Quality = { total: number; parts: QualityPart[]; tips: string[] };
 
@@ -71,7 +77,9 @@ export function scoreListing(l: QualityInput): Quality {
         : undefined,
   });
 
-  const priceParts = [num(l.price_day) > 0, num(l.price_week) > 0, num(l.price_hour) > 0].filter(Boolean).length;
+  const priceParts = [num(l.price_day) > 0, num(l.price_week) > 0, num(l.price_hour) > 0].filter(
+    Boolean,
+  ).length;
   parts.push({
     key: "pris",
     label: "Pris",
@@ -97,7 +105,10 @@ export function scoreListing(l: QualityInput): Quality {
     label: "Information",
     max: 15,
     score: Math.round((infoChecks / 5) * 15),
-    tip: infoChecks < 5 ? "Fyll i område, deposition och specifikationer så syns annonsen i fler filter." : undefined,
+    tip:
+      infoChecks < 5
+        ? "Fyll i område, deposition och specifikationer så syns annonsen i fler filter."
+        : undefined,
   });
 
   const total = Math.round(parts.reduce((a, p) => a + p.score, 0));

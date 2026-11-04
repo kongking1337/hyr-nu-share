@@ -93,11 +93,19 @@ export function BlockUserButton({
     done();
   }
 
-  const text = (t: string) => <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t}</span>;
+  const text = (t: string) => (
+    <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t}</span>
+  );
 
   if (blocked) {
     return (
-      <Button size="sm" variant="ghost" disabled={busy} onClick={unblock} title={compact ? "Ta bort blockering" : undefined}>
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={busy}
+        onClick={unblock}
+        title={compact ? "Ta bort blockering" : undefined}
+      >
         <Ban aria-hidden /> {text("Ta bort blockering")}
       </Button>
     );
@@ -127,11 +135,12 @@ export function BlockUserButton({
               </p>
               <p>
                 Godkända bokningar ligger kvar, och så länge en hyra pågår kan ni fortfarande skriva
-                till varandra så att saken kan lämnas tillbaka. Avboka under Bokningar om det behövs.
+                till varandra så att saken kan lämnas tillbaka. Avboka under Bokningar om det
+                behövs.
               </p>
               <p>
-                {name} får inget besked om blockeringen, men märker att meddelanden och förfrågningar
-                inte går fram. Du kan ta bort blockeringen när du vill.
+                {name} får inget besked om blockeringen, men märker att meddelanden och
+                förfrågningar inte går fram. Du kan ta bort blockeringen när du vill.
               </p>
             </div>
           </AlertDialogDescription>

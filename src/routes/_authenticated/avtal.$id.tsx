@@ -63,20 +63,31 @@ type Agreement = {
  */
 const STANDARD_TERMS: Record<number, string[]> = {
   1: [
-  "Hyresgästen ansvarar för saken under hyrestiden och lämnar tillbaka den i samma skick och i tid.",
-  "Uthyraren intygar att saken fungerar och är säker att använda, och visar hur den används.",
-  "Skador och fel meddelas direkt. Ersättning för skador som hyresgästen orsakat kommer parterna överens om, och depositionen kan användas till det.",
-  "Hyra och deposition betalas direkt mellan parterna. Depositionen betalas tillbaka när saken lämnats tillbaka utan skador.",
-  "Hyrkoll är inte part i avtalet och förmedlar inga betalningar.",
-  "Bilderna på skicket vid utlämning och återlämning (under Bokningar) gäller som dokumentation.",
+    "Hyresgästen ansvarar för saken under hyrestiden och lämnar tillbaka den i samma skick och i tid.",
+    "Uthyraren intygar att saken fungerar och är säker att använda, och visar hur den används.",
+    "Skador och fel meddelas direkt. Ersättning för skador som hyresgästen orsakat kommer parterna överens om, och depositionen kan användas till det.",
+    "Hyra och deposition betalas direkt mellan parterna. Depositionen betalas tillbaka när saken lämnats tillbaka utan skador.",
+    "Hyrkoll är inte part i avtalet och förmedlar inga betalningar.",
+    "Bilderna på skicket vid utlämning och återlämning (under Bokningar) gäller som dokumentation.",
   ],
 };
 
 const fullDate = (iso: string) =>
-  fromISODate(iso).toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  fromISODate(iso).toLocaleDateString("sv-SE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
 const dateTime = (iso: string) =>
-  new Date(iso).toLocaleString("sv-SE", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleString("sv-SE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 function AgreementPage() {
   const { id } = Route.useParams();
@@ -96,7 +107,11 @@ function AgreementPage() {
   if (isLoading) {
     return (
       <Page width="text">
-        <div className="space-y-6 rounded-2xl border border-border p-6 sm:p-10" aria-busy="true" aria-label="Laddar">
+        <div
+          className="space-y-6 rounded-2xl border border-border p-6 sm:p-10"
+          aria-busy="true"
+          aria-label="Laddar"
+        >
           <Skeleton className="h-9 w-48" />
           <Skeleton className="h-4 w-2/3" />
           {Array.from({ length: 4 }, (_, i) => (
@@ -180,9 +195,15 @@ function AgreementPage() {
         <header className="border-b border-border pb-6">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Hyrkoll
-            {bothAgreed ? " · Godkänt av båda" : a.status === "confirmed" ? " · Väntar på godkännande" : ""}
+            {bothAgreed
+              ? " · Godkänt av båda"
+              : a.status === "confirmed"
+                ? " · Väntar på godkännande"
+                : ""}
           </p>
-          <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-4xl">Hyresavtal</h1>
+          <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-4xl">
+            Hyresavtal
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Avtalet är mellan er två. Hyrkoll är inte part i avtalet.
           </p>
@@ -201,7 +222,9 @@ function AgreementPage() {
         <div className="divide-y divide-border">
           <Section n={num()} title="Det som hyrs ut">
             <p className="font-semibold">{t?.title ?? "Annonsen finns inte längre"}</p>
-            {t?.description && <p className="whitespace-pre-line text-muted-foreground">{t.description}</p>}
+            {t?.description && (
+              <p className="whitespace-pre-line text-muted-foreground">{t.description}</p>
+            )}
             {t?.included && (
               <p className="whitespace-pre-line">
                 <span className="font-semibold">Det här ingår: </span>
@@ -240,15 +263,21 @@ function AgreementPage() {
           </Section>
 
           <Section n={num()} title="Utlämning och återlämning">
-            <p>{a.delivery ? "Uthyraren levererar saken." : handover || "Enligt överenskommelse."}</p>
+            <p>
+              {a.delivery ? "Uthyraren levererar saken." : handover || "Enligt överenskommelse."}
+            </p>
             {t?.city && (
               <p className="text-muted-foreground">
                 Plats: {t.area ? `${t.area}, ` : ""}
                 {t.city}
               </p>
             )}
-            {a.picked_up_at && <p className="text-muted-foreground">Utlämnad {dateTime(a.picked_up_at)}.</p>}
-            {a.returned_at && <p className="text-muted-foreground">Återlämnad {dateTime(a.returned_at)}.</p>}
+            {a.picked_up_at && (
+              <p className="text-muted-foreground">Utlämnad {dateTime(a.picked_up_at)}.</p>
+            )}
+            {a.returned_at && (
+              <p className="text-muted-foreground">Återlämnad {dateTime(a.returned_at)}.</p>
+            )}
           </Section>
 
           {t?.rental_rules && (
@@ -272,7 +301,10 @@ function AgreementPage() {
           </Section>
         </div>
 
-        <section aria-labelledby="underskrifter" className="mt-2 border-t border-border pt-6 print:break-inside-avoid">
+        <section
+          aria-labelledby="underskrifter"
+          className="mt-2 border-t border-border pt-6 print:break-inside-avoid"
+        >
           <h2 id="underskrifter" className="sr-only">
             Godkännanden
           </h2>
@@ -291,7 +323,10 @@ function AgreementPage() {
                 onCheckedChange={(v) => setAccepted(v === true)}
                 className="mt-0.5"
               />
-              <Label htmlFor="accept-agreement" className="cursor-pointer text-sm font-normal leading-snug">
+              <Label
+                htmlFor="accept-agreement"
+                className="cursor-pointer text-sm font-normal leading-snug"
+              >
                 Jag har läst och godkänner avtalet
               </Label>
             </div>
@@ -328,12 +363,25 @@ function PriceRow({ label, value, strong }: { label: string; value: string; stro
   );
 }
 
-function Signature({ role, name, agreedAt }: { role: string; name: string; agreedAt: string | null }) {
+function Signature({
+  role,
+  name,
+  agreedAt,
+}: {
+  role: string;
+  name: string;
+  agreedAt: string | null;
+}) {
   return (
     <div className="space-y-1 rounded-xl border border-border px-4 py-3 text-sm">
       <p className="text-xs text-muted-foreground">{role}</p>
       <p className="font-semibold">{name}</p>
-      <p className={cn("flex items-center gap-1.5", agreedAt ? "text-foreground" : "text-muted-foreground")}>
+      <p
+        className={cn(
+          "flex items-center gap-1.5",
+          agreedAt ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
         {agreedAt ? (
           <CircleCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden />
         ) : (

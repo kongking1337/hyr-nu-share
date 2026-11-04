@@ -9,13 +9,18 @@ import type { SearchParams } from "./params";
  * Första versionen filtrerar på kategori, plats, pris och uthyrare.
  * Övriga fält i SearchParams (datum, leverans, bokningssätt …) finns kvar för gamla länkar men används inte.
  */
-export function filterResults(results: UnifiedResult[], p: SearchParams, center: Center): UnifiedResult[] {
+export function filterResults(
+  results: UnifiedResult[],
+  p: SearchParams,
+  center: Center,
+): UnifiedResult[] {
   const attrs = parseAttrFilter(p.attrs);
   return results.filter((r) => {
     if (!inRegion(r.city)) return false;
     if (p.category !== "all" && r.category !== p.category) return false;
     if (p.sub !== "all" && subCategoryOf(r) !== p.sub) return false;
-    if (!center.wholeRegion && distanceKm(center.lat, center.lng, r.lat, r.lng) > p.radius) return false;
+    if (!center.wholeRegion && distanceKm(center.lat, center.lng, r.lat, r.lng) > p.radius)
+      return false;
 
     const price = listPrice(r);
     if (p.priceMin && price < p.priceMin) return false;
@@ -27,7 +32,11 @@ export function filterResults(results: UnifiedResult[], p: SearchParams, center:
   });
 }
 
-export function sortResults(results: UnifiedResult[], p: SearchParams, center: Center): UnifiedResult[] {
+export function sortResults(
+  results: UnifiedResult[],
+  p: SearchParams,
+  center: Center,
+): UnifiedResult[] {
   const dist = (r: UnifiedResult) =>
     center.wholeRegion ? 0 : distanceKm(center.lat, center.lng, r.lat, r.lng);
   const newest = (a: UnifiedResult, b: UnifiedResult) =>

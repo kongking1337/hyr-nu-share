@@ -1,6 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Clock, MapPin, MessageSquareQuote, Package, Repeat, Trash2, UserX } from "lucide-react";
+import {
+  BadgeCheck,
+  Clock,
+  MapPin,
+  MessageSquareQuote,
+  Package,
+  Repeat,
+  Trash2,
+  UserX,
+} from "lucide-react";
 import { toast } from "sonner";
 import { BlockUserButton } from "@/components/BlockUserButton";
 import { ListingCard } from "@/components/ListingCard";
@@ -17,10 +26,7 @@ import { DEFAULTS } from "@/lib/search/params";
 
 export const Route = createFileRoute("/profil/$id")({
   head: () => ({
-    meta: [
-      { title: "Profil – Hyrkoll" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Profil – Hyrkoll" }, { name: "robots", content: "noindex" }],
   }),
   component: ProfilePage,
 });
@@ -93,7 +99,11 @@ function ProfilePage() {
   if (isLoading) {
     return (
       <Page width="wide">
-        <div className="flex items-start gap-4 sm:gap-7" aria-busy="true" aria-label="Laddar profilen">
+        <div
+          className="flex items-start gap-4 sm:gap-7"
+          aria-busy="true"
+          aria-label="Laddar profilen"
+        >
           <Skeleton className="h-16 w-16 shrink-0 rounded-full sm:h-24 sm:w-24" />
           <div className="flex-1 space-y-3">
             <Skeleton className="h-9 w-56" />
@@ -221,7 +231,9 @@ function ProfilePage() {
         {profile.bio && (
           <div className="mt-8 max-w-[70ch] sm:pl-[7.75rem]">
             <h2 className="font-display text-lg font-bold">Om mig</h2>
-            <p className="mt-2 whitespace-pre-line leading-relaxed text-muted-foreground">{profile.bio}</p>
+            <p className="mt-2 whitespace-pre-line leading-relaxed text-muted-foreground">
+              {profile.bio}
+            </p>
           </div>
         )}
       </section>
@@ -316,7 +328,9 @@ function ProfilePage() {
                   )}
                 </div>
                 {r.body && <p className="mt-3 whitespace-pre-line leading-relaxed">{r.body}</p>}
-                <p className="mt-auto pt-3 text-xs text-muted-foreground">Hyrde {r.listing_title}</p>
+                <p className="mt-auto pt-3 text-xs text-muted-foreground">
+                  Hyrde {r.listing_title}
+                </p>
               </li>
             ))}
           </ul>
@@ -326,11 +340,21 @@ function ProfilePage() {
   );
 }
 
-function SectionTitle({ id, count, children }: { id: string; count?: number | undefined; children: string }) {
+function SectionTitle({
+  id,
+  count,
+  children,
+}: {
+  id: string;
+  count?: number | undefined;
+  children: string;
+}) {
   return (
     <h2 id={id} className="font-display text-2xl font-bold">
       {children}
-      {count != null && <span className="ml-2 text-base font-normal text-muted-foreground">{count}</span>}
+      {count != null && (
+        <span className="ml-2 text-base font-normal text-muted-foreground">{count}</span>
+      )}
     </h2>
   );
 }

@@ -2,7 +2,13 @@ import { Globe, ShieldCheck } from "lucide-react";
 import type { UnifiedResult } from "@/lib/providers/types";
 import { cn } from "@/lib/utils";
 
-export function SourceBadge({ source, className }: { source: UnifiedResult["source"]; className?: string }) {
+export function SourceBadge({
+  source,
+  className,
+}: {
+  source: UnifiedResult["source"];
+  className?: string;
+}) {
   const internal = source.kind === "internal";
   return (
     <span

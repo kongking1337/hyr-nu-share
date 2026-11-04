@@ -113,7 +113,12 @@ function StagePhotos({
                 rel="noreferrer"
                 className="block aspect-square overflow-hidden rounded-xl bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <img src={photoUrl(p)} alt="Den andras bild" loading="lazy" className="h-full w-full object-cover" />
+                <img
+                  src={photoUrl(p)}
+                  alt="Den andras bild"
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
               </a>
             ))}
           </div>
@@ -128,7 +133,12 @@ function StagePhotos({
           if (next.length >= current.length) save(next);
         }}
         onUploaded={() => undefined}
-        onRemove={(path) => save(current.filter((p) => p !== path), [path])}
+        onRemove={(path) =>
+          save(
+            current.filter((p) => p !== path),
+            [path],
+          )
+        }
         onBusyChange={() => undefined}
         cover={false}
       />

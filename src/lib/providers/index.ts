@@ -15,7 +15,11 @@ export async function searchAll(
   sources: SourceFilter = "all",
 ): Promise<{ results: UnifiedResult[]; failed: string[] }> {
   const selected = providers.filter((p) =>
-    sources === "all" ? true : sources === "internal" ? p.kind === "internal" : p.kind === "external",
+    sources === "all"
+      ? true
+      : sources === "internal"
+        ? p.kind === "internal"
+        : p.kind === "external",
   );
   const settled = await Promise.allSettled(selected.map((p) => p.search(q)));
   const results: UnifiedResult[] = [];

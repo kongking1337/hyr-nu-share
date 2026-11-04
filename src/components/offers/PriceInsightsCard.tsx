@@ -49,7 +49,12 @@ export function PriceInsightsCard({
             <p className="font-display text-lg font-bold">{s.price} kr/dygn</p>
             <p className="mt-1 text-[11px] text-muted-foreground">{s.note}</p>
             {onApply && (
-              <Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => onApply(s.price)}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-2 w-full"
+                onClick={() => onApply(s.price)}
+              >
                 Använd
               </Button>
             )}

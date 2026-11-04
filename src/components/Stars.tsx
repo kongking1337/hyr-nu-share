@@ -23,7 +23,12 @@ export function Stars({
       {[1, 2, 3, 4, 5].map((n) => {
         const filled = n <= Math.round(value);
         const star = (
-          <Star className={cn(icon, filled ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40")} />
+          <Star
+            className={cn(
+              icon,
+              filled ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40",
+            )}
+          />
         );
         return onChange ? (
           <button

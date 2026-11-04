@@ -194,9 +194,9 @@ function AuthPage() {
           <div role="status" className="mt-6 flex gap-3 rounded-2xl bg-muted p-4 text-sm">
             <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
             <p>
-              Om det finns ett konto för <span className="font-semibold">{email.trim()}</span> har vi
-              skickat en länk för att välja ett nytt lösenord. Kolla inkorgen och skräpposten. Länken
-              gäller i en timme.
+              Om det finns ett konto för <span className="font-semibold">{email.trim()}</span> har
+              vi skickat en länk för att välja ett nytt lösenord. Kolla inkorgen och skräpposten.
+              Länken gäller i en timme.
             </p>
           </div>
         ) : (
@@ -290,7 +290,9 @@ function AuthPage() {
                     aria-pressed={accountType === t}
                     className={cn(
                       "h-9 rounded-full text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      accountType === t ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      accountType === t
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                     onClick={() => setAccountType(t)}
                   >
@@ -330,13 +332,24 @@ function AuthPage() {
                 onCheckedChange={(v) => setAccepted(v === true)}
                 className="mt-0.5 h-5 w-5 rounded-[5px]"
               />
-              <Label htmlFor="accept-terms" className="cursor-pointer text-sm font-normal leading-snug">
+              <Label
+                htmlFor="accept-terms"
+                className="cursor-pointer text-sm font-normal leading-snug"
+              >
                 Jag är minst 18 år och godkänner{" "}
-                <Link to="/villkor" className="font-medium underline underline-offset-2 hover:text-primary" target="_blank">
+                <Link
+                  to="/villkor"
+                  className="font-medium underline underline-offset-2 hover:text-primary"
+                  target="_blank"
+                >
                   användarvillkoren
                 </Link>
                 . Läs hur vi hanterar personuppgifter i{" "}
-                <Link to="/integritet" className="font-medium underline underline-offset-2 hover:text-primary" target="_blank">
+                <Link
+                  to="/integritet"
+                  className="font-medium underline underline-offset-2 hover:text-primary"
+                  target="_blank"
+                >
                   integritetspolicyn
                 </Link>
                 .
@@ -389,12 +402,19 @@ function AuthShell({
         >
           <Wordmark />
         </Link>
-        <h1 className="mt-6 font-display text-3xl font-bold leading-tight tracking-tight">{title}</h1>
-        {description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>}
+        <h1 className="mt-6 font-display text-3xl font-bold leading-tight tracking-tight">
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        )}
         {children}
       </div>
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        <Link to="/" className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Link
+          to="/"
+          className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           Till startsidan
         </Link>
       </p>
