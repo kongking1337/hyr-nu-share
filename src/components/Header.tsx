@@ -155,7 +155,7 @@ function AccountMenu() {
 
 export function Header() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const showSearch = pathname !== "/" && pathname !== "/sok";
+  const showSearch = pathname !== "/" && pathname !== "/sok" && !pathname.startsWith("/hyra/");
 
   return (
     <header className="print:hidden sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">

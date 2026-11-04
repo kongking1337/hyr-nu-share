@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useRouterState,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
@@ -120,6 +121,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Meddelandetråden fyller mobilskärmen; där behövs ingen sidfot under.
+  const inThread = useRouterState({
+    select: (s) => s.location.pathname === "/meddelanden" && !!(s.location.search as { c?: string }).c,
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -128,7 +133,7 @@ function RootComponent() {
       <main className="min-h-[70vh]">
         <Outlet />
       </main>
-      <footer className="mt-20 border-t border-border pb-28 pt-10 md:pb-12 print:hidden">
+      <footer className={`mt-20 border-t border-border pb-28 pt-10 md:pb-12 print:hidden ${inThread ? "max-md:hidden" : ""}`}>
         <div className="mx-auto grid max-w-6xl gap-6 px-4 text-sm text-muted-foreground sm:px-6 md:grid-cols-[1fr_auto]">
           <div className="max-w-xl">
             <Wordmark className="text-xl text-foreground" />

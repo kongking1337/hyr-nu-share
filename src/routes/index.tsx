@@ -4,6 +4,7 @@ import {
   Baby, Camera, Flower2, HardHat, Package, PartyPopper, Plus, Tent, Truck, Wrench, type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { EmptyState } from "@/components/layout";
 import { ListingRow } from "@/components/ListingRow";
 import { supabase } from "@/integrations/supabase/client";
 import { rowToUnified } from "@/lib/providers/internal";
@@ -269,16 +270,21 @@ function Index() {
             ))}
           </ul>
         ) : (
-          <div className="mt-4 rounded-2xl border border-dashed border-border px-6 py-12 text-center">
-            <p className="font-semibold">Inga annonser än</p>
-            <p className="mt-1 text-sm text-muted-foreground">Lägg upp det första du vill hyra ut.</p>
-            <Link
-              to="/ny-annons"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
-            >
-              <Plus className="h-4 w-4" /> Lägg upp annons
-            </Link>
-          </div>
+          <EmptyState
+            icon={Package}
+            title="Inga annonser än"
+            className="mt-4"
+            action={
+              <Link
+                to="/ny-annons"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+              >
+                <Plus className="h-4 w-4" /> Lägg upp annons
+              </Link>
+            }
+          >
+            Lägg upp det första du vill hyra ut.
+          </EmptyState>
         )}
       </section>
 

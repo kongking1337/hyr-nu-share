@@ -98,8 +98,8 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
   }
 
   return (
-    <div className="space-y-3">
-      <h2 className="font-display text-lg font-semibold">Välj datum</h2>
+    <div className="space-y-4">
+      <h2 className="font-display text-lg font-bold">Välj datum</h2>
       <Calendar
         mode="range"
         locale={sv}
@@ -114,9 +114,9 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
         ]}
         modifiers={{ taken: takenRanges(taken) }}
         modifiersClassNames={{ taken: "line-through opacity-50" }}
-        className="mx-auto rounded-2xl border border-border p-2"
+        className="mx-auto rounded-2xl border border-border bg-transparent p-2"
       />
-      <p className="text-xs text-muted-foreground">
+      <p className="-mt-1 text-xs text-muted-foreground">
         Överstrukna dagar är upptagna.
         {listing.minDays > 1 && ` Minst ${listing.minDays} dygn.`}
       </p>
@@ -131,13 +131,13 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
               aria-checked={delivery === d}
               onClick={() => setDelivery(d)}
               className={cn(
-                "rounded-2xl border border-border px-3 py-2 text-left text-sm",
-                delivery === d && "border-primary bg-primary/10",
+                "rounded-xl border border-input bg-card px-3 py-2.5 text-left text-sm font-medium transition-colors hover:border-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                delivery === d && "border-foreground ring-1 ring-foreground hover:border-foreground",
               )}
             >
               {d ? "Leverans" : "Hämtar själv"}
               {d && (
-                <span className="block text-xs text-muted-foreground">
+                <span className="block text-xs font-normal text-muted-foreground">
                   {listing.deliveryFee > 0 ? `+${kr(listing.deliveryFee)}` : "Ingår"}
                 </span>
               )}
@@ -147,16 +147,17 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
       )}
 
       {start && (
-        <div className="space-y-1 rounded-2xl bg-muted/60 p-3 text-sm">
+        <div className="space-y-1.5 rounded-xl bg-muted p-4 text-sm" aria-live="polite">
           <p className="font-medium">
             {formatDates(start, end!)} · {days} dygn
           </p>
           {problem ? (
-            <p className="text-destructive">{problem}</p>
+            <p className="font-medium text-destructive">{problem}</p>
           ) : (
             <>
               <Row label="Hyra" value={kr(rent)} />
               {delivery && <Row label="Leverans" value={deliveryFee > 0 ? kr(deliveryFee) : "Ingår"} />}
+              <div className="my-1 border-t border-border" />
               <Row label="Totalt" value={kr(rent + deliveryFee)} strong />
               {listing.deposit > 0 && (
                 <p className="pt-1 text-xs text-muted-foreground">
@@ -171,7 +172,7 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
       {user ? (
         <>
           <div className="space-y-1.5">
-            <Label htmlFor="booking-message" className="text-sm">
+            <Label htmlFor="booking-message" className="text-sm font-medium">
               Hälsning till uthyraren (valfritt)
             </Label>
             <Textarea
@@ -183,21 +184,17 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
               onChange={(e) => setMessage(e.target.value)}
             />
           </div>
-          <Button
-            className="w-full rounded-full"
-            onClick={send}
-            disabled={busy || !start || !!problem}
-          >
-            <CalendarCheck className="mr-1 h-4 w-4" /> Skicka förfrågan
+          <Button size="lg" className="w-full" onClick={send} disabled={busy || !start || !!problem}>
+            <CalendarCheck aria-hidden /> {busy ? "Skickar …" : start ? "Skicka förfrågan" : "Välj datum först"}
           </Button>
           <p className="text-xs text-muted-foreground">
             Inget är bokat förrän uthyraren godkänt. Hyran betalar ni direkt till varandra.
           </p>
         </>
       ) : (
-        <Button asChild className="w-full rounded-full">
+        <Button asChild size="lg" className="w-full">
           <Link to="/auth" search={{ redirect: `/annons/${listing.id}` }}>
-            <CalendarCheck className="mr-1 h-4 w-4" /> Logga in för att boka
+            <CalendarCheck aria-hidden /> Logga in för att boka
           </Link>
         </Button>
       )}
@@ -207,7 +204,7 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
-    <p className={cn("flex justify-between", strong && "font-semibold")}>
+    <p className={cn("flex justify-between gap-4", strong && "text-base font-semibold")}>
       <span>{label}</span>
       <span>{value}</span>
     </p>

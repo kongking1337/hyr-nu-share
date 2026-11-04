@@ -110,7 +110,7 @@ export function OfferPanel({
   }
 
   return (
-    <div className="rounded-3xl border border-border p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <p className="flex items-center gap-2 text-sm font-semibold">
         <Gavel className="h-4 w-4 text-primary" /> Bud välkomna – priset kan förhandlas
       </p>
@@ -122,7 +122,7 @@ export function OfferPanel({
       </p>
 
       {!open ? (
-        <Button variant="outline" className="mt-3 w-full rounded-full" onClick={() => setOpen(true)} disabled={disabled}>
+        <Button variant="outline" className="mt-3 w-full" onClick={() => setOpen(true)} disabled={disabled}>
           Lägg ett bud
         </Button>
       ) : (
@@ -132,7 +132,7 @@ export function OfferPanel({
             <Input aria-label="Ditt bud totalt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(Math.round(listTotal * 0.9))} />
           </div>
           {value > 0 && (
-            <div className="rounded-2xl bg-muted/60 px-3 py-2 text-sm">
+            <div className="rounded-xl bg-muted px-3 py-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Ordinarie</span><span>{kr(listTotal)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Ditt bud</span><span className="font-semibold">{kr(value)}</span></div>
               <div className="flex justify-between">
@@ -146,8 +146,8 @@ export function OfferPanel({
               Budet är mycket lägre än annonserat pris och accepteras sällan. Uthyrarens eventuella minimigräns är privat.
             </p>
           )}
-          <Textarea placeholder="Meddelande till uthyraren (valfritt)" value={message} onChange={(e) => setMessage(e.target.value)} />
-          <Button className="w-full rounded-full" onClick={submit} disabled={busy || disabled}>
+          <Textarea aria-label="Meddelande till uthyraren" placeholder="Meddelande till uthyraren (valfritt)" value={message} onChange={(e) => setMessage(e.target.value)} />
+          <Button className="w-full" onClick={submit} disabled={busy || disabled}>
             Skicka bud
           </Button>
         </div>

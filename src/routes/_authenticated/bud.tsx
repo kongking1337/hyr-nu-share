@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Gavel, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState, Page, PageHeader } from "@/components/layout";
 import { OfferCard, type OfferAction, type OfferView } from "@/components/offers/OfferCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -74,23 +75,28 @@ function OffersPage() {
   const history = shown.filter((o) => o.status !== "active");
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="flex items-center gap-2 font-display text-3xl font-semibold">
-        <Gavel className="h-7 w-7 text-primary" /> Mina bud
-      </h1>
-      <p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
-        <ShieldCheck className="mt-0.5 h-4 w-4" /> Budförhandlingar är privata mellan dig och motparten. Dolt minimipris och
-        automatisk acceptgräns visas aldrig för någon annan.
-      </p>
+    <Page>
+      <PageHeader
+        title="Mina bud"
+        className="mb-6"
+        description={
+          <span className="flex items-start gap-2">
+            <ShieldCheck className="mt-1 h-4 w-4 shrink-0" aria-hidden /> Budförhandlingar är privata mellan dig och motparten.
+            Dolt minimipris och automatisk acceptgräns visas aldrig för någon annan.
+          </span>
+        }
+      />
 
-      <div className="mt-6 flex gap-2">
+      <div role="group" aria-label="Visa bud" className="flex flex-wrap gap-2">
         {(["owner", "renter"] as const).map((t) => (
           <button
             key={t}
+            type="button"
+            aria-pressed={tab === t}
             onClick={() => setTab(t)}
             className={cn(
-              "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-              tab === t ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70",
+              "rounded-full px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              tab === t ? "bg-foreground text-background" : "bg-muted hover:bg-muted/70",
             )}
           >
             {t === "owner" ? "Bud på mina annonser" : "Mina egna bud"}
@@ -99,8 +105,12 @@ function OffersPage() {
       </div>
 
       <section className="mt-6 space-y-3">
-        <h2 className="font-display text-lg font-semibold">Aktiva ({open.length})</h2>
-        {open.length === 0 && <p className="text-sm text-muted-foreground">Inga aktiva bud just nu.</p>}
+        <h2 className="font-display text-lg font-bold">Aktiva ({open.length})</h2>
+        {open.length === 0 && (
+          <EmptyState icon={Gavel} title="Inga aktiva bud just nu">
+            Bud som väntar på svar visas här.
+          </EmptyState>
+        )}
         {open.map((o) => (
           <OfferCard
             key={o.id}
@@ -112,15 +122,15 @@ function OffersPage() {
       </section>
 
       <section className="mt-8 space-y-3">
-        <h2 className="font-display text-lg font-semibold">Historik ({history.length})</h2>
+        <h2 className="font-display text-lg font-bold">Historik ({history.length})</h2>
         {history.length === 0 && <p className="text-sm text-muted-foreground">Ingen budhistorik ännu.</p>}
         {history.map((o) => (
           <OfferCard key={o.id} offer={o} role={tab} />
         ))}
       </section>
 
-      <section className="mt-8 rounded-3xl border border-border p-5">
-        <h2 className="font-display text-lg font-semibold">Budstatistik (aggregerad)</h2>
+      <section className="mt-8 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display text-lg font-bold">Budstatistik (aggregerad)</h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Stat label="Snitt accepterat pris" value={kr(stats.avgAccepted)} />
           <Stat label="Snitt utgångsbud" value={kr(stats.avgStart)} />
@@ -131,15 +141,15 @@ function OffersPage() {
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">{DATA_WEIGHT_NOTE}</p>
       </section>
-    </div>
+    </Page>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-muted/60 px-3 py-2">
+    <div className="rounded-xl bg-muted px-3 py-2">
       <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="font-display text-lg font-semibold">{value}</p>
+      <p className="font-display text-lg font-bold">{value}</p>
     </div>
   );
 }

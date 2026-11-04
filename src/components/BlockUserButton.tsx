@@ -35,15 +35,20 @@ export function useIsBlocked(userId: string | null | undefined) {
   });
 }
 
-/** "Blockera" / "Ta bort blockering". Bara den som blockerar ser blockeringen i en lista. */
+/**
+ * "Blockera" / "Ta bort blockering". Bara den som blockerar ser blockeringen i en lista.
+ * `compact` visar bara ikonen på små skärmar (texten finns kvar för skärmläsare).
+ */
 export function BlockUserButton({
   userId,
   name,
   onChange,
+  compact = false,
 }: {
   userId: string;
   name: string;
   onChange?: () => void;
+  compact?: boolean;
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -88,10 +93,12 @@ export function BlockUserButton({
     done();
   }
 
+  const text = (t: string) => <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{t}</span>;
+
   if (blocked) {
     return (
-      <Button size="sm" variant="ghost" className="rounded-full" disabled={busy} onClick={unblock}>
-        <Ban className="mr-1 h-4 w-4" /> Ta bort blockering
+      <Button size="sm" variant="ghost" disabled={busy} onClick={unblock} title={compact ? "Ta bort blockering" : undefined}>
+        <Ban aria-hidden /> {text("Ta bort blockering")}
       </Button>
     );
   }
@@ -99,8 +106,14 @@ export function BlockUserButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="rounded-full text-muted-foreground" disabled={busy}>
-          <Ban className="mr-1 h-4 w-4" /> Blockera
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-muted-foreground hover:text-foreground"
+          disabled={busy}
+          title={compact ? `Blockera ${name}` : undefined}
+        >
+          <Ban aria-hidden /> {text("Blockera")}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -125,7 +138,7 @@ export function BlockUserButton({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Avbryt</AlertDialogCancel>
-          <AlertDialogAction onClick={block}>Blockera</AlertDialogAction>
+          <AlertDialogAction onClick={block}>Blockera {name}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

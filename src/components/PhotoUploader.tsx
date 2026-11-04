@@ -1,7 +1,6 @@
 import { ImagePlus, Loader2, Star, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { MAX_PHOTOS, PhotoError, photoUrl, uploadPhoto } from "@/lib/photos";
 import { cn } from "@/lib/utils";
 
@@ -61,61 +60,77 @@ export function PhotoUploader({
   const makeCover = (index: number) =>
     onChange([value[index]!, ...value.filter((_, i) => i !== index)]);
 
+  const control =
+    "grid h-8 w-8 place-items-center rounded-full bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {value.map((src, i) => (
-          <div
-            key={src}
-            className="group relative aspect-square overflow-hidden rounded-2xl bg-muted"
-          >
-            <img src={photoUrl(src)} alt={`Bild ${i + 1}`} className="h-full w-full object-cover" />
-            {!cover ? null : i === 0 ? (
-              <span className="absolute left-1.5 top-1.5 rounded-full bg-background/90 px-2 py-0.5 text-[10px] font-semibold">
-                Omslagsbild
-              </span>
-            ) : (
+      {value.length === 0 ? (
+        <button
+          type="button"
+          onClick={() => input.current?.click()}
+          disabled={!!progress}
+          className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-input bg-card px-4 py-8 text-center transition-colors hover:border-primary hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+        >
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-accent text-primary">
+            {progress ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+          </span>
+          <span className="font-semibold">
+            {progress ? `Laddar upp ${progress.done} av ${progress.total} …` : "Välj bilder"}
+          </span>
+          <span className="text-xs text-muted-foreground">Från mobilen eller datorn</span>
+        </button>
+      ) : (
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {value.map((src, i) => (
+            <li key={src} className="group relative aspect-square overflow-hidden rounded-xl bg-muted">
+              <img src={photoUrl(src)} alt={`Bild ${i + 1}`} className="h-full w-full object-cover" />
+              {!cover ? null : i === 0 ? (
+                <span className="absolute bottom-1.5 left-1.5 rounded-full bg-background/90 px-2 py-0.5 text-[11px] font-semibold backdrop-blur">
+                  Omslagsbild
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!!progress}
+                  onClick={() => makeCover(i)}
+                  className={cn(control, "absolute left-1.5 top-1.5")}
+                  aria-label={`Gör bild ${i + 1} till omslagsbild`}
+                  title="Gör till omslagsbild"
+                >
+                  <Star className="h-3.5 w-3.5" />
+                </button>
+              )}
               <button
                 type="button"
                 disabled={!!progress}
-                onClick={() => makeCover(i)}
-                className="absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-background/90"
-                aria-label={`Gör bild ${i + 1} till omslagsbild`}
-                title="Gör till omslagsbild"
+                onClick={() => remove(i)}
+                className={cn(control, "absolute right-1.5 top-1.5")}
+                aria-label={`Ta bort bild ${i + 1}`}
+                title="Ta bort"
               >
-                <Star className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
-            )}
-            <button
-              type="button"
-              disabled={!!progress}
-              onClick={() => remove(i)}
-              className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-background/90"
-              aria-label={`Ta bort bild ${i + 1}`}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-        {room > 0 && (
-          <button
-            type="button"
-            onClick={() => input.current?.click()}
-            disabled={!!progress}
-            className={cn(
-              "flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground",
-              progress && "opacity-60",
-            )}
-          >
-            {progress ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <ImagePlus className="h-5 w-5" />
-            )}
-            {progress ? `${progress.done} av ${progress.total}` : "Lägg till"}
-          </button>
-        )}
-      </div>
+            </li>
+          ))}
+          {room > 0 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => input.current?.click()}
+                disabled={!!progress}
+                className={cn(
+                  "flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-input text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  progress && "opacity-60",
+                )}
+              >
+                {progress ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+                {progress ? `${progress.done} av ${progress.total}` : "Lägg till"}
+              </button>
+            </li>
+          )}
+        </ul>
+      )}
       <input
         ref={input}
         type="file"
@@ -132,16 +147,6 @@ export function PhotoUploader({
         Upp till {MAX_PHOTOS} bilder.{cover && " Den första blir omslagsbild."} Bilderna förminskas och
         platsinformation tas bort innan de laddas upp.
       </p>
-      {value.length === 0 && (
-        <Button
-          type="button"
-          variant="outline"
-          className="rounded-full"
-          onClick={() => input.current?.click()}
-        >
-          <ImagePlus className="mr-1 h-4 w-4" /> Välj bilder
-        </Button>
-      )}
     </div>
   );
 }

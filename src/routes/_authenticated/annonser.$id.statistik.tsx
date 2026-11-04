@@ -5,6 +5,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { kr } from "@/lib/pricing";
+import { LoadingRows, Page, PageHeader } from "@/components/layout";
 import { KpiCard, DemoNote } from "@/components/dashboard/KpiCard";
 import { Bars, FunnelChart, Sparkline } from "@/components/dashboard/Charts";
 import { RANGES, funnel, searchRank, seriesFor, totals, type RangeKey } from "@/lib/listing-analytics";
@@ -58,7 +59,12 @@ function ListingStats() {
   const points = useMemo(() => (listing ? seriesFor(listing, days) : []), [listing, days]);
   const t = useMemo(() => totals(points), [points]);
 
-  if (!listing) return <div className="mx-auto max-w-5xl px-4 py-10 text-sm text-muted-foreground">Hämtar annons …</div>;
+  if (!listing)
+    return (
+      <Page>
+        <LoadingRows rows={4} />
+      </Page>
+    );
 
   const bidStats = offerStats(DEMO_ALL_OFFERS as unknown as OfferRow[]);
 
@@ -77,22 +83,23 @@ function ListingStats() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <Link to="/mina-annonser" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+    <Page>
+      <Link to="/mina-annonser" className="inline-flex items-center gap-1 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <ArrowLeft className="h-4 w-4" /> Mina annonser
       </Link>
-      <h1 className="mt-2 font-display text-3xl font-semibold">{listing.title}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {kr(listing.price_day)}/dygn · {listing.city} · ungefärlig placering i sökresultat: #{searchRank(listing)}
-      </p>
+      <PageHeader
+        className="mb-0 mt-2"
+        title={listing.title}
+        description={`${kr(listing.price_day)}/dygn · ${listing.city} · ungefärlig placering i sökresultat: #${searchRank(listing)}`}
+      />
 
       <div className="mt-5 flex flex-wrap gap-2">
         {RANGES.map((r) => (
           <Button
             key={r.key}
             size="sm"
-            variant={range === r.key ? "default" : "outline"}
-            className="rounded-full"
+            variant={range === r.key ? "secondary" : "outline"}
+            aria-pressed={range === r.key}
             onClick={() => setRange(r.key)}
           >
             {r.label}
@@ -122,24 +129,24 @@ function ListingStats() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-3xl border border-border p-5">
-          <h2 className="font-display text-lg font-semibold">Visningar över tid</h2>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-display text-lg font-bold">Visningar över tid</h2>
           <Sparkline points={points} metric="views" />
         </div>
-        <div className="rounded-3xl border border-border p-5">
-          <h2 className="font-display text-lg font-semibold">Intäkter per dag</h2>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-display text-lg font-bold">Intäkter per dag</h2>
           <Bars points={points} metric="revenue" />
         </div>
       </div>
 
-      <div className="mt-4 rounded-3xl border border-border p-5">
-        <h2 className="font-display text-lg font-semibold">Från visning till bokning</h2>
+      <div className="mt-4 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display text-lg font-bold">Från visning till bokning</h2>
         <div className="mt-3"><FunnelChart steps={funnel(t)} /></div>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-3xl border border-border p-5">
-          <h2 className="font-display text-lg font-semibold">Jämför med liknande annonser</h2>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-display text-lg font-bold">Jämför med liknande annonser</h2>
           {!advice && <p className="mt-2 text-sm text-muted-foreground">För få liknande annonser för en jämförelse just nu.</p>}
           {advice && (
             <>
@@ -155,7 +162,7 @@ function ListingStats() {
                 </span>{" "}
                 mot medianen bland {advice.sample} liknande annonser.
               </p>
-              <p className="mt-2 flex items-center gap-1 font-display text-lg font-semibold">
+              <p className="mt-2 flex items-center gap-1 font-display text-lg font-bold">
                 <Sparkles className="h-4 w-4 text-primary" /> Rekommenderat pris {kr(advice.recommended.min)}–{kr(advice.recommended.max)}
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
@@ -173,9 +180,9 @@ function ListingStats() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-border p-5">
-          <h2 className="font-display text-lg font-semibold">Annonskvalitet</h2>
-          <p className="mt-1 font-display text-3xl font-semibold">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-display text-lg font-bold">Annonskvalitet</h2>
+          <p className="mt-1 font-display text-3xl font-bold">
             {q.total}<span className="text-base text-muted-foreground">/100 · {qualityLabel(q.total)}</span>
           </p>
           <div className="mt-3 space-y-2">
@@ -207,8 +214,8 @@ function ListingStats() {
         </div>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-border p-5">
-        <h2 className="font-display text-lg font-semibold">Budstatistik (aggregerad och anonymiserad)</h2>
+      <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display text-lg font-bold">Budstatistik (aggregerad och anonymiserad)</h2>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Fact label="Snitt accepterat pris" value={kr(bidStats.avgAccepted)} />
           <Fact label="Snitt utgångsbud" value={kr(bidStats.avgStart)} />
@@ -219,12 +226,12 @@ function ListingStats() {
         </div>
         <p className="mt-3 text-xs text-muted-foreground">{DATA_WEIGHT_NOTE}</p>
       </div>
-    </div>
+    </Page>
   );
 }
 
 const Fact = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-2xl bg-muted/60 px-3 py-2">
+  <div className="rounded-xl bg-muted px-3 py-2">
     <p className="text-xs text-muted-foreground">{label}</p>
     <p className="font-medium">{value}</p>
   </div>

@@ -9,8 +9,11 @@ import { userMessage } from "@/lib/db-errors";
 import { MAX_MESSAGE_LENGTH, startConversation } from "@/lib/messages";
 import type { UnifiedResult } from "@/lib/providers/types";
 
-/** "Skicka meddelande" på annonssidan. E-postadresser och telefonnummer delas aldrig. */
-export function ContactSeller({ listing }: { listing: UnifiedResult }) {
+/**
+ * "Skicka meddelande" på annonssidan. E-postadresser och telefonnummer delas aldrig.
+ * `quiet` ger en mörk knapp i stället för orange, när bokningsknappen redan är huvudvalet.
+ */
+export function ContactSeller({ listing, quiet = false }: { listing: UnifiedResult; quiet?: boolean }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const sale = listing.listingType === "sale";
@@ -25,9 +28,9 @@ export function ContactSeller({ listing }: { listing: UnifiedResult }) {
 
   if (!user) {
     return (
-      <Button asChild className="w-full rounded-full">
+      <Button asChild variant={quiet ? "outline" : "default"} size={quiet ? "default" : "lg"} className="w-full">
         <Link to="/auth" search={{ redirect: `/annons/${listing.id}` }}>
-          <MessageSquare className="mr-1 h-4 w-4" /> Logga in för att skicka meddelande
+          <MessageSquare aria-hidden /> Logga in för att skicka meddelande
         </Link>
       </Button>
     );
@@ -35,12 +38,14 @@ export function ContactSeller({ listing }: { listing: UnifiedResult }) {
 
   if (user.id === listing.ownerId) {
     return (
-      <p className="rounded-2xl bg-muted/60 p-3 text-sm text-muted-foreground">
-        Det här är din annons.{" "}
-        <Link to="/ny-annons" search={{ id: listing.id }} className="text-primary hover:underline">
-          Redigera
-        </Link>
-      </p>
+      <div className="space-y-3 rounded-xl bg-muted p-4 text-sm">
+        <p className="text-muted-foreground">Det här är din annons.</p>
+        <Button asChild variant="secondary" className="w-full">
+          <Link to="/ny-annons" search={{ id: listing.id }}>
+            Redigera annonsen
+          </Link>
+        </Button>
+      </div>
     );
   }
 
@@ -61,7 +66,7 @@ export function ContactSeller({ listing }: { listing: UnifiedResult }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <Textarea
         rows={4}
         value={text}
@@ -69,8 +74,14 @@ export function ContactSeller({ listing }: { listing: UnifiedResult }) {
         onChange={(e) => setText(e.target.value)}
         aria-label={sale ? "Meddelande till säljaren" : "Meddelande till uthyraren"}
       />
-      <Button className="w-full rounded-full" onClick={send} disabled={busy}>
-        <MessageSquare className="mr-1 h-4 w-4" /> Skicka meddelande
+      <Button
+        variant={quiet ? "secondary" : "default"}
+        size={quiet ? "default" : "lg"}
+        className="w-full"
+        onClick={send}
+        disabled={busy}
+      >
+        <MessageSquare aria-hidden /> {busy ? "Skickar …" : "Skicka meddelande"}
       </Button>
       <p className="text-xs text-muted-foreground">
         Svaret kommer under Meddelanden. Din e-postadress och ditt telefonnummer visas inte.

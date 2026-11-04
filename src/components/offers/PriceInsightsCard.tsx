@@ -22,8 +22,8 @@ export function PriceInsightsCard({
   ];
 
   return (
-    <div className="rounded-3xl border border-border p-5">
-      <h3 className="flex items-center gap-2 font-display text-base font-semibold">
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <h3 className="flex items-center gap-2 font-display text-base font-bold">
         <Sparkles className="h-4 w-4 text-primary" /> AI-rekommenderat uthyrningspris
       </h3>
 
@@ -31,10 +31,10 @@ export function PriceInsightsCard({
         {marks.map((m) => (
           <div
             key={m.label}
-            className={`rounded-2xl px-3 py-2 ${m.strong ? "bg-primary/12 text-primary" : "bg-muted/60"}`}
+            className={`rounded-xl px-3 py-2 ${m.strong ? "bg-accent text-accent-foreground" : "bg-muted"}`}
           >
             <p className="text-[11px] opacity-80">{m.label}</p>
-            <p className="font-display text-lg font-semibold">{m.value} kr</p>
+            <p className="font-display text-lg font-bold">{m.value} kr</p>
             <p className="text-[10px] opacity-70">per dygn</p>
           </div>
         ))}
@@ -44,12 +44,12 @@ export function PriceInsightsCard({
 
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         {l.strategies.map((s) => (
-          <div key={s.key} className="rounded-2xl border border-border p-3">
+          <div key={s.key} className="rounded-xl border border-border p-3">
             <p className="text-xs font-semibold">{s.label}</p>
-            <p className="font-display text-lg font-semibold">{s.price} kr/dygn</p>
+            <p className="font-display text-lg font-bold">{s.price} kr/dygn</p>
             <p className="mt-1 text-[11px] text-muted-foreground">{s.note}</p>
             {onApply && (
-              <Button size="sm" variant="outline" className="mt-2 w-full rounded-full" onClick={() => onApply(s.price)}>
+              <Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => onApply(s.price)}>
                 Använd
               </Button>
             )}

@@ -19,7 +19,7 @@ export function Sparkline({
   const area = `${path} L 100 100 L 0 100 Z`;
 
   return (
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ height }} className="w-full">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ height }} className="w-full" aria-hidden>
       <path d={area} className="fill-primary/15" />
       <path d={path} className="stroke-primary" strokeWidth={1.4} fill="none" vectorEffect="non-scaling-stroke" />
     </svg>

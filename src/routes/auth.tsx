@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { ArrowLeft, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Captcha, captchaEnabled } from "@/components/Captcha";
+import { Wordmark } from "@/components/Header";
+import { Page } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
+import { cn } from "@/lib/utils";
 
 /** Bara sökvägar inom sajten, så att länken inte kan skicka vidare någon annanstans. */
 function safeRedirect(value: unknown): string | undefined {
@@ -168,30 +172,35 @@ function AuthPage() {
 
   if (user) {
     return (
-      <div className="mx-auto max-w-md space-y-4 px-4 py-14">
-        <h1 className="font-display text-3xl font-semibold">Du är inloggad</h1>
-        <p className="text-sm text-muted-foreground">Inloggad som {user.email}.</p>
-        <Button className="rounded-full" onClick={goBack}>
+      <AuthShell title="Du är inloggad" description={`Inloggad som ${user.email}.`}>
+        <Button size="lg" className="mt-6 w-full" onClick={goBack}>
           Fortsätt
         </Button>
-      </div>
+      </AuthShell>
     );
   }
 
   if (mode === "forgot") {
     return (
-      <div className="mx-auto max-w-md px-4 py-14">
-        <h1 className="font-display text-3xl font-semibold">Glömt lösenordet?</h1>
+      <AuthShell
+        title="Glömt lösenordet?"
+        description={
+          resetSent
+            ? undefined
+            : "Skriv din e-postadress så skickar vi en länk där du kan välja ett nytt lösenord."
+        }
+      >
         {resetSent ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Om det finns ett konto för {email.trim()} har vi skickat en länk för att välja ett nytt
-            lösenord. Kolla inkorgen och skräpposten. Länken gäller i en timme.
-          </p>
-        ) : (
-          <form onSubmit={sendReset} className="mt-6 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Skriv din e-postadress så skickar vi en länk där du kan välja ett nytt lösenord.
+          <div role="status" className="mt-6 flex gap-3 rounded-2xl bg-muted p-4 text-sm">
+            <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
+            <p>
+              Om det finns ett konto för <span className="font-semibold">{email.trim()}</span> har vi
+              skickat en länk för att välja ett nytt lösenord. Kolla inkorgen och skräpposten. Länken
+              gäller i en timme.
             </p>
+          </div>
+        ) : (
+          <form onSubmit={sendReset} className="mt-6 space-y-4">
             <Field
               id="reset-email"
               label="E-post"
@@ -201,44 +210,42 @@ function AuthPage() {
               autoComplete="email"
             />
             {captcha}
-            <Button type="submit" className="w-full rounded-full" disabled={busy}>
+            <Button type="submit" size="lg" className="w-full" disabled={busy}>
               Skicka länk
             </Button>
           </form>
         )}
         <button
           type="button"
-          className="mt-6 text-sm text-primary hover:underline"
+          className="mt-6 inline-flex items-center gap-1.5 rounded-sm text-sm font-semibold hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={() => {
             setMode("signin");
             setResetSent(false);
           }}
         >
-          ← Tillbaka till inloggning
+          <ArrowLeft className="h-4 w-4" aria-hidden /> Tillbaka till inloggning
         </button>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-14">
-      <h1 className="font-display text-3xl font-semibold">Välkommen till Hyrkoll</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Skapa konto som privatperson eller företag för att hyra, hyra ut och skicka meddelanden.
-      </p>
-
-      <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")} className="mt-7">
-        <TabsList className="w-full">
-          <TabsTrigger value="signin" className="flex-1">
+    <AuthShell
+      title="Välkommen till Hyrkoll"
+      description="Skapa konto som privatperson eller företag för att hyra, hyra ut och skicka meddelanden."
+    >
+      <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")} className="mt-6">
+        <TabsList className="h-11 w-full rounded-full p-1">
+          <TabsTrigger value="signin" className="h-full flex-1 rounded-full font-semibold">
             Logga in
           </TabsTrigger>
-          <TabsTrigger value="signup" className="flex-1">
+          <TabsTrigger value="signup" className="h-full flex-1 rounded-full font-semibold">
             Skapa konto
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="signin">
-          <form onSubmit={signIn} className="space-y-3 pt-4">
+        <TabsContent value="signin" className="mt-0">
+          <form onSubmit={signIn} className="space-y-4 pt-6">
             <Field
               id="signin-email"
               label="E-post"
@@ -254,43 +261,51 @@ function AuthPage() {
               onChange={setPassword}
               type="password"
               autoComplete="current-password"
+              aside={
+                <button
+                  type="button"
+                  className="rounded-sm text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => setMode("forgot")}
+                >
+                  Glömt lösenordet?
+                </button>
+              }
             />
             {captcha}
-            <Button type="submit" className="w-full rounded-full" disabled={busy}>
+            <Button type="submit" size="lg" className="w-full" disabled={busy}>
               Logga in
             </Button>
-            <button
-              type="button"
-              className="text-sm text-primary hover:underline"
-              onClick={() => setMode("forgot")}
-            >
-              Glömt lösenordet?
-            </button>
           </form>
         </TabsContent>
 
-        <TabsContent value="signup">
-          <form onSubmit={signUp} className="space-y-3 pt-4">
+        <TabsContent value="signup" className="mt-0">
+          <form onSubmit={signUp} className="space-y-4 pt-6">
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium">Jag är</legend>
+              <div className="grid grid-cols-2 gap-1 rounded-full border border-input p-1">
+                {(["private", "company"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={accountType === t}
+                    className={cn(
+                      "h-9 rounded-full text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      accountType === t ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                    onClick={() => setAccountType(t)}
+                  >
+                    {t === "private" ? "Privatperson" : "Företag"}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <Field
               id="signup-name"
-              label="Namn"
+              label={accountType === "company" ? "Företagets namn" : "Namn"}
               value={name}
               onChange={setName}
-              autoComplete="name"
+              autoComplete={accountType === "company" ? "organization" : "name"}
             />
-            <div className="grid grid-cols-2 gap-2">
-              {(["private", "company"] as const).map((t) => (
-                <Button
-                  key={t}
-                  type="button"
-                  variant={accountType === t ? "default" : "outline"}
-                  className="rounded-full"
-                  onClick={() => setAccountType(t)}
-                >
-                  {t === "private" ? "Privatperson" : "Företag"}
-                </Button>
-              ))}
-            </div>
             <Field
               id="signup-email"
               label="E-post"
@@ -301,36 +316,37 @@ function AuthPage() {
             />
             <Field
               id="signup-password"
-              label={`Lösenord (minst ${MIN_PASSWORD_LENGTH} tecken)`}
+              label="Lösenord"
+              hint={`Minst ${MIN_PASSWORD_LENGTH} tecken.`}
               value={password}
               onChange={setPassword}
               type="password"
               autoComplete="new-password"
             />
-            <div className="flex items-start gap-2.5">
+            <div className="flex items-start gap-3 rounded-2xl bg-muted p-4">
               <Checkbox
                 id="accept-terms"
                 checked={accepted}
                 onCheckedChange={(v) => setAccepted(v === true)}
-                className="mt-0.5"
+                className="mt-0.5 h-5 w-5 rounded-[5px]"
               />
               <Label htmlFor="accept-terms" className="cursor-pointer text-sm font-normal leading-snug">
                 Jag är minst 18 år och godkänner{" "}
-                <Link to="/villkor" className="text-primary underline" target="_blank">
+                <Link to="/villkor" className="font-medium underline underline-offset-2 hover:text-primary" target="_blank">
                   användarvillkoren
                 </Link>
                 . Läs hur vi hanterar personuppgifter i{" "}
-                <Link to="/integritet" className="text-primary underline" target="_blank">
+                <Link to="/integritet" className="font-medium underline underline-offset-2 hover:text-primary" target="_blank">
                   integritetspolicyn
                 </Link>
                 .
               </Label>
             </div>
             {captcha}
-            <Button type="submit" className="w-full rounded-full" disabled={busy}>
+            <Button type="submit" size="lg" className="w-full" disabled={busy}>
               Skapa konto
             </Button>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               I dina annonser visas bara förnamn och första bokstaven i efternamnet. Din
               e-postadress visas aldrig.
             </p>
@@ -340,22 +356,49 @@ function AuthPage() {
 
       {googleEnabled && (
         <>
-          <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
             <span className="h-px flex-1 bg-border" /> eller{" "}
             <span className="h-px flex-1 bg-border" />
           </div>
-          <Button variant="outline" className="w-full rounded-full" onClick={google}>
+          <Button variant="outline" size="lg" className="w-full" onClick={google}>
             Fortsätt med Google
           </Button>
         </>
       )}
+    </AuthShell>
+  );
+}
 
-      <p className="mt-8 text-center text-xs text-muted-foreground">
-        <Link to="/" className="hover:underline">
-          ← Till startsidan
+/** Centrerat kort med ordmärket, rubrik och länk tillbaka till startsidan. */
+function AuthShell({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string | undefined;
+  children: ReactNode;
+}) {
+  return (
+    <Page width="narrow">
+      <div className="sm:rounded-2xl sm:border sm:border-border sm:bg-card sm:p-8">
+        <Link
+          to="/"
+          aria-label="Hyrkoll, till startsidan"
+          className="inline-block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Wordmark />
+        </Link>
+        <h1 className="mt-6 font-display text-3xl font-bold leading-tight tracking-tight">{title}</h1>
+        {description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>}
+        {children}
+      </div>
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        <Link to="/" className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          Till startsidan
         </Link>
       </p>
-    </div>
+    </Page>
   );
 }
 
@@ -366,6 +409,8 @@ function Field({
   onChange,
   type = "text",
   autoComplete,
+  hint,
+  aside,
 }: {
   id: string;
   label: string;
@@ -373,18 +418,31 @@ function Field({
   onChange: (v: string) => void;
   type?: string;
   autoComplete?: string;
+  /** Kort hjälptext under fältet, kopplad med aria-describedby. */
+  hint?: string;
+  /** Till exempel en länk till höger om etiketten. */
+  aside?: ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-baseline justify-between gap-3">
+        <Label htmlFor={id}>{label}</Label>
+        {aside}
+      </div>
       <Input
         id={id}
         type={type}
         value={value}
         required
         autoComplete={autoComplete}
+        aria-describedby={hint ? `${id}-hint` : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
+      {hint && (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }

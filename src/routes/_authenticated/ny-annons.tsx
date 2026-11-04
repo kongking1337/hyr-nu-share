@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { EmptyState, LoadingRows, Page, PageHeader } from "@/components/layout";
 import { PHOTO_BUCKET, removeUnusedPhotos } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
@@ -77,7 +79,7 @@ function ListingForm() {
   const attrDefs = CATEGORY_ATTRIBUTES[form.category_slug] ?? [];
 
   /* Redigeringsläge: hämta befintlig annons */
-  const { data: existing } = useQuery({
+  const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["edit-listing", editId],
     enabled: !!editId,
     queryFn: async () => (await supabase.from("listings").select("*").eq("id", editId!).maybeSingle()).data,
@@ -193,219 +195,324 @@ function ListingForm() {
 
   if (notOwner) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-10 text-muted-foreground">
-        Du kan bara redigera dina egna annonser.
-      </div>
+      <Page width="text">
+        <EmptyState
+          icon={Lock}
+          title="Du kan bara redigera dina egna annonser"
+          action={
+            <Button asChild>
+              <Link to="/mina-annonser">Till mina annonser</Link>
+            </Button>
+          }
+        />
+      </Page>
     );
   }
 
+  const disabled = busy || uploading;
+
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
-      <h1 className="font-display text-3xl font-semibold">{editId ? "Redigera annons" : "Lägg upp annons"}</h1>
+    <Page width="text">
+      <PageHeader
+        title={editId ? "Redigera annons" : "Lägg upp annons"}
+        description={
+          editId
+            ? "Ändringarna syns i annonsen så fort du sparar."
+            : "Bilder, beskrivning, pris och plats på en sida. Det tar ett par minuter."
+        }
+      />
 
-      <F label="Bilder">
-        {user && <PhotoUploader
-          userId={user.id}
-          value={photos}
-          onChange={setPhotos}
-          onUploaded={(path) => uploadedNow.current.add(path)}
-          onRemove={(path) => {
-            if (uploadedNow.current.has(path)) {
-              void supabase.storage.from(PHOTO_BUCKET).remove([path]);
-            } else {
-              removedSaved.current.push(path);
-            }
-          }}
-          onBusyChange={setUploading}
-        />}
-      </F>
-
-      <F label="Rubrik">
-        <Input
-          value={form.title}
-          maxLength={100}
-          placeholder="T.ex. Släpvagn 750 kg"
-          onChange={(e) => set("title", e.target.value)}
-        />
-      </F>
-
-      <F label="Beskrivning">
-        <Textarea
-          rows={6}
-          value={form.description}
-          maxLength={5000}
-          placeholder="Skick, vad som ingår, mått, när det kan hämtas och lämnas tillbaka …"
-          onChange={(e) => set("description", e.target.value)}
-        />
-      </F>
-
-      <F label="Kategori">
-        <Select value={form.category_slug} onValueChange={(v) => { set("category_slug", v); setAttrs({}); }}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {ACTIVE_CATEGORIES.map((c) => (
-              <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </F>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <F label="Pris per dygn (kr)">
-          <Input inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
-        </F>
-        <F label="Pris per vecka (valfritt)">
-          <Input inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
-        </F>
-        <F label="Deposition (valfritt)">
-          <Input inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
-        </F>
-      </div>
-
-      <section className="space-y-4 rounded-3xl border border-border p-5">
-        <h2 className="font-display text-base font-semibold">Hyresvillkor</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <F label="Kortaste hyra (dygn)">
-            <Input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={30}
-              value={form.min_days}
-              onChange={(e) => set("min_days", e.target.value)}
-            />
-          </F>
-          <F label="Avbokning">
-            <Select value={policy} onValueChange={(v) => setPolicy(asPolicy(v))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(Object.keys(CANCELLATION_POLICIES) as CancellationPolicy[]).map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {CANCELLATION_POLICIES[p].label} – {CANCELLATION_POLICIES[p].text}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </F>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2.5">
-            <Checkbox id="pickup" checked={pickup} onCheckedChange={(v) => setPickup(v === true)} />
-            <Label htmlFor="pickup" className="cursor-pointer font-normal">Upphämtning hos mig</Label>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Checkbox id="delivery" checked={delivery} onCheckedChange={(v) => setDelivery(v === true)} />
-            <Label htmlFor="delivery" className="cursor-pointer font-normal">Jag kan leverera</Label>
-          </div>
-        </div>
-        {delivery && (
-          <F label="Leveransavgift (kr, 0 = ingår)">
-            <Input
-              inputMode="numeric"
-              value={form.delivery_fee}
-              placeholder="0"
-              onChange={(e) => set("delivery_fee", e.target.value)}
-            />
-          </F>
-        )}
-        <F label="Det här ingår (valfritt)">
-          <Textarea
-            rows={2}
-            maxLength={1000}
-            value={form.included}
-            placeholder="T.ex. 2 batterier, laddare och väska"
-            onChange={(e) => set("included", e.target.value)}
-          />
-        </F>
-        <F label="Regler (valfritt)">
-          <Textarea
-            rows={2}
-            maxLength={1000}
-            value={form.rental_rules}
-            placeholder="T.ex. Lämnas tillbaka rengjord. Visa legitimation vid upphämtning."
-            onChange={(e) => set("rental_rules", e.target.value)}
-          />
-        </F>
-      </section>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <F label="Kommun">
-          <Select value={form.city} onValueChange={(v) => set("city", v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {CITIES.map((c) => <SelectItem key={c.slug} value={c.name}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </F>
-        <F label="Område (valfritt)">
-          <Input value={form.area} maxLength={60} placeholder="T.ex. Södermalm" onChange={(e) => set("area", e.target.value)} />
-        </F>
-      </div>
-
-      {attrDefs.length > 0 && (
-        <details className="rounded-3xl border border-border p-5">
-          <summary className="cursor-pointer font-display text-base font-semibold">Fler detaljer (valfritt)</summary>
-          <div className="mt-4 space-y-3">
-            {attrDefs.map((d) => (
-              <div key={d.key} className="space-y-1.5">
-                <Label className="text-sm">{d.label}</Label>
-                {d.type === "select" ? (
-                  <Select value={attrs[d.key] ?? ""} onValueChange={(v) => setAttrs((a) => ({ ...a, [d.key]: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Välj" /></SelectTrigger>
-                    <SelectContent>
-                      {(d.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                ) : d.type === "bool" ? (
-                  <div className="flex items-center justify-between rounded-2xl bg-muted/60 px-4 py-2.5">
-                    <span className="text-sm text-muted-foreground">Ja/nej</span>
-                    <Switch
-                      checked={attrs[d.key] === "true"}
-                      onCheckedChange={(c) => setAttrs((a) => ({ ...a, [d.key]: String(c) }))}
-                    />
-                  </div>
-                ) : (
-                  <Input
-                    inputMode="numeric"
-                    value={attrs[d.key] ?? ""}
-                    onChange={(e) => setAttrs((a) => ({ ...a, [d.key]: e.target.value }))}
-                    placeholder={d.unit ?? ""}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </details>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {editId ? (
-          <>
-            <Button className="flex-1 rounded-full" onClick={() => save()} disabled={busy || uploading}>Spara ändringar</Button>
-            {existing?.status === "draft" && (
-              <Button variant="outline" className="rounded-full" onClick={() => save("published")} disabled={busy || uploading}>
-                Publicera
-              </Button>
+      {editId && loadingExisting ? (
+        <LoadingRows rows={4} />
+      ) : (
+        <form
+          className="space-y-6"
+          noValidate
+          // Enter i ett fält ska inte publicera; knapparna längst ner sparar.
+          onSubmit={(e) => e.preventDefault()}
+        >
+          <FormSection n={1} title="Bilder" description="Bra bilder i dagsljus gör att fler vill hyra. Visa gärna det som ingår.">
+            {user && (
+              <PhotoUploader
+                userId={user.id}
+                value={photos}
+                onChange={setPhotos}
+                onUploaded={(path) => uploadedNow.current.add(path)}
+                onRemove={(path) => {
+                  if (uploadedNow.current.has(path)) {
+                    void supabase.storage.from(PHOTO_BUCKET).remove([path]);
+                  } else {
+                    removedSaved.current.push(path);
+                  }
+                }}
+                onBusyChange={setUploading}
+              />
             )}
-          </>
-        ) : (
-          <>
-            <Button className="flex-1 rounded-full" onClick={() => save("published")} disabled={busy || uploading}>
-              Publicera
-            </Button>
-            <Button variant="outline" className="rounded-full" onClick={() => save("draft")} disabled={busy || uploading}>
-              Spara som utkast
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
+          </FormSection>
+
+          <FormSection n={2} title="Om saken">
+            <F id="title" label="Rubrik" hint="Säg vad det är, gärna med märke, storlek eller modell.">
+              <Input
+                id="title"
+                value={form.title}
+                maxLength={100}
+                placeholder="T.ex. Släpvagn 750 kg"
+                onChange={(e) => set("title", e.target.value)}
+              />
+            </F>
+
+            <F id="description" label="Beskrivning" hint="Skick, mått och det man behöver veta innan man hyr.">
+              <Textarea
+                id="description"
+                rows={6}
+                value={form.description}
+                maxLength={5000}
+                placeholder="Skick, vad som ingår, mått, när det kan hämtas och lämnas tillbaka …"
+                onChange={(e) => set("description", e.target.value)}
+              />
+            </F>
+
+            <F id="category" label="Kategori">
+              <Select value={form.category_slug} onValueChange={(v) => { set("category_slug", v); setAttrs({}); }}>
+                <SelectTrigger id="category"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ACTIVE_CATEGORIES.map((c) => (
+                    <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </F>
+
+            {attrDefs.length > 0 && (
+              <details className="group rounded-xl border border-border">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                  Fler detaljer (valfritt)
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+                </summary>
+                <div className="space-y-4 border-t border-border px-4 py-4">
+                  {attrDefs.map((d) => {
+                    const id = `attr-${d.key}`;
+                    return (
+                      <div key={d.key} className="space-y-1.5">
+                        <Label htmlFor={id}>{d.label}</Label>
+                        {d.type === "select" ? (
+                          <Select value={attrs[d.key] ?? ""} onValueChange={(v) => setAttrs((a) => ({ ...a, [d.key]: v }))}>
+                            <SelectTrigger id={id}><SelectValue placeholder="Välj" /></SelectTrigger>
+                            <SelectContent>
+                              {(d.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        ) : d.type === "bool" ? (
+                          <div className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-2.5">
+                            <span className="text-sm text-muted-foreground">Ja/nej</span>
+                            <Switch
+                              id={id}
+                              checked={attrs[d.key] === "true"}
+                              onCheckedChange={(c) => setAttrs((a) => ({ ...a, [d.key]: String(c) }))}
+                            />
+                          </div>
+                        ) : (
+                          <Input
+                            id={id}
+                            inputMode="numeric"
+                            value={attrs[d.key] ?? ""}
+                            onChange={(e) => setAttrs((a) => ({ ...a, [d.key]: e.target.value }))}
+                            placeholder={d.unit ?? ""}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
+            )}
+          </FormSection>
+
+          <FormSection n={3} title="Pris" description="Hyra och deposition betalas direkt mellan er. Hyrkoll tar inga avgifter.">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <F id="price-day" label="Pris per dygn (kr)" hint="Syns på hyrlappen i sökningen.">
+                <Input id="price-day" inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
+              </F>
+              <F id="price-week" label="Pris per vecka (valfritt)" hint="Gäller hyror på 7 dygn eller mer.">
+                <Input id="price-week" inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
+              </F>
+              <F id="deposit" label="Deposition (valfritt)" hint="Betalas tillbaka när saken är tillbaka utan skador.">
+                <Input id="deposit" inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
+              </F>
+            </div>
+          </FormSection>
+
+          <FormSection n={4} title="Hyresvillkor">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <F id="min-days" label="Kortaste hyra (dygn)" hint="Mellan 1 och 30 dygn.">
+                <Input
+                  id="min-days"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={30}
+                  value={form.min_days}
+                  onChange={(e) => set("min_days", e.target.value)}
+                />
+              </F>
+              <F id="policy" label="Avbokning">
+                <Select value={policy} onValueChange={(v) => setPolicy(asPolicy(v))}>
+                  <SelectTrigger id="policy"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(CANCELLATION_POLICIES) as CancellationPolicy[]).map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {CANCELLATION_POLICIES[p].label} – {CANCELLATION_POLICIES[p].text}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </F>
+            </div>
+            <fieldset className="space-y-2">
+              <legend className="mb-2 text-sm font-medium">Utlämning</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Label
+                  htmlFor="pickup"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 font-normal transition-colors hover:bg-muted/60 has-[[data-state=checked]]:border-foreground"
+                >
+                  <Checkbox id="pickup" checked={pickup} onCheckedChange={(v) => setPickup(v === true)} />
+                  Upphämtning hos mig
+                </Label>
+                <Label
+                  htmlFor="delivery"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 font-normal transition-colors hover:bg-muted/60 has-[[data-state=checked]]:border-foreground"
+                >
+                  <Checkbox id="delivery" checked={delivery} onCheckedChange={(v) => setDelivery(v === true)} />
+                  Jag kan leverera
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground">Välj minst ett av dem.</p>
+            </fieldset>
+            {delivery && (
+              <F id="delivery-fee" label="Leveransavgift (kr, 0 = ingår)">
+                <Input
+                  id="delivery-fee"
+                  inputMode="numeric"
+                  value={form.delivery_fee}
+                  placeholder="0"
+                  onChange={(e) => set("delivery_fee", e.target.value)}
+                  className="sm:max-w-[12rem]"
+                />
+              </F>
+            )}
+            <F id="included" label="Det här ingår (valfritt)">
+              <Textarea
+                id="included"
+                rows={2}
+                maxLength={1000}
+                value={form.included}
+                placeholder="T.ex. 2 batterier, laddare och väska"
+                onChange={(e) => set("included", e.target.value)}
+              />
+            </F>
+            <F id="rules" label="Regler (valfritt)" hint="Hyresgästen ser reglerna innan den bokar, och de kommer med i hyresavtalet.">
+              <Textarea
+                id="rules"
+                rows={2}
+                maxLength={1000}
+                value={form.rental_rules}
+                placeholder="T.ex. Lämnas tillbaka rengjord. Visa legitimation vid upphämtning."
+                onChange={(e) => set("rental_rules", e.target.value)}
+              />
+            </F>
+          </FormSection>
+
+          <FormSection n={5} title="Plats" description="Visas ungefärligt i annonsen. Exakt adress bestämmer ni i meddelanden.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <F id="city" label="Kommun">
+                <Select value={form.city} onValueChange={(v) => set("city", v)}>
+                  <SelectTrigger id="city"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CITIES.map((c) => <SelectItem key={c.slug} value={c.name}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </F>
+              <F id="area" label="Område (valfritt)">
+                <Input id="area" value={form.area} maxLength={60} placeholder="T.ex. Södermalm" onChange={(e) => set("area", e.target.value)} />
+              </F>
+            </div>
+          </FormSection>
+
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-end">
+            {uploading && (
+              <p className="text-sm text-muted-foreground sm:mr-auto" role="status">
+                Väntar på att bilderna laddas upp …
+              </p>
+            )}
+            {editId ? (
+              <>
+                {existing?.status === "draft" && (
+                  <Button type="button" variant="outline" size="lg" onClick={() => save("published")} disabled={disabled}>
+                    Publicera
+                  </Button>
+                )}
+                <Button type="button" size="lg" onClick={() => save()} disabled={disabled}>
+                  Spara ändringar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button type="button" variant="outline" size="lg" onClick={() => save("draft")} disabled={disabled}>
+                  Spara som utkast
+                </Button>
+                <Button type="button" size="lg" onClick={() => save("published")} disabled={disabled}>
+                  Publicera
+                </Button>
+              </>
+            )}
+          </div>
+        </form>
+      )}
+    </Page>
   );
 }
 
-const F = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <div className="space-y-1.5">
-    <Label>{label}</Label>
-    {children}
-  </div>
-);
+/** Ett numrerat avsnitt i formuläret. */
+function FormSection({
+  n,
+  title,
+  description,
+  children,
+}: {
+  n: number;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  const id = `avsnitt-${n}`;
+  return (
+    <section aria-labelledby={id} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="mb-5 flex gap-3">
+        <span
+          aria-hidden
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted font-display text-sm font-bold"
+        >
+          {n}
+        </span>
+        <div>
+          <h2 id={id} className="font-display text-xl font-bold leading-7">
+            {title}
+          </h2>
+          {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+        </div>
+      </div>
+      <div className="space-y-5">{children}</div>
+    </section>
+  );
+}
+
+/** Etikett, fält och hjälptext. Fältet ska ha samma `id`. */
+function F({ id, label, hint, children }: { id: string; label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}

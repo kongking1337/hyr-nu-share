@@ -23,6 +23,15 @@ C "Hyrlapp"; Marcus picked C). All three variants are kept on the local git bran
   This tag is the site's recognisable element. Use it for prices per day and nowhere else
   decorative, and don't add other loud elements next to it.
 
+- `ListingCard`: photo first, title, place and price tag; the whole card is a link and the heart sits
+  on top. `layout="list"` gives a row.
+- `src/components/layout.tsx`: `Page` (the page frame: `narrow` / `text` / `default` / `wide`
+  widths with the same padding everywhere), `PageHeader` (title, description, buttons),
+  `EmptyState` (icon, what's missing, what to do) and `LoadingRows` / `LoadingCards` skeletons.
+  Every page uses these instead of its own `mx-auto max-w-* px-4 py-*`.
+- shadcn primitives in `src/components/ui/` are restyled: pill buttons (`secondary` is the dark
+  ink pill), 44px rounded inputs and selects, borderless-shadow cards.
+
 ## Principles
 
 - One loud thing per screen: the orange (search sentence, price tags, main button). Everything
@@ -35,6 +44,6 @@ C "Hyrlapp"; Marcus picked C). All three variants are kept on the local git bran
 ## Redesign phases
 
 1. Design system, header, tab bar, footer, home page. Done.
-2. Search results, listing cards and the listing page.
-3. Bookings, messages, account, my listings, new listing.
-4. The rest (profile, auth, legal pages, admin), plus a shared page shell for widths and spacing.
+2. Search results, listing cards and the listing page. Done.
+3. Bookings, messages, account, my listings, new listing. Done.
+4. The rest (profile, auth, legal pages, admin, hidden pages) and the shared page shell. Done.

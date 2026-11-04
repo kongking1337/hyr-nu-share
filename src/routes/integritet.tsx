@@ -129,7 +129,7 @@ function PrivacyPage() {
 
       <p>
         Se även{" "}
-        <Link to="/villkor" className="text-primary underline">
+        <Link to="/villkor">
           användarvillkoren
         </Link>
         .

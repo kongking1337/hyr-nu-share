@@ -1,17 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Circle, CircleCheck, FileX, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState, Page } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { CANCELLATION_POLICIES, asPolicy, formatDates, fromISODate } from "@/lib/bookings";
 import { userMessage } from "@/lib/db-errors";
 import { notifyNewMessage } from "@/lib/notify.functions";
 import { kr } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/avtal/$id")({
   head: () => ({
@@ -93,25 +95,39 @@ function AgreementPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
-        <Skeleton className="h-[480px] rounded-3xl" />
-      </div>
+      <Page width="text">
+        <div className="space-y-6 rounded-2xl border border-border p-6 sm:p-10" aria-busy="true" aria-label="Laddar">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-4 w-2/3" />
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="space-y-2 pt-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-4/5" />
+            </div>
+          ))}
+        </div>
+      </Page>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-14 text-center">
-        <h1 className="font-display text-2xl font-semibold">Hyresavtal</h1>
-        <p className="text-muted-foreground">
+      <Page width="text">
+        <EmptyState
+          icon={FileX}
+          title="Hyresavtal"
+          action={
+            <Button asChild variant="outline">
+              <Link to="/bokningar">
+                <ArrowLeft aria-hidden /> Till Bokningar
+              </Link>
+            </Button>
+          }
+        >
           {userMessage(error, "Avtalet kunde inte visas.")}
-        </p>
-        <Button asChild variant="outline" className="rounded-full">
-          <Link to="/bokningar">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Till Bokningar
-          </Link>
-        </Button>
-      </div>
+        </EmptyState>
+      </Page>
     );
   }
 
@@ -143,112 +159,132 @@ function AgreementPage() {
     void refetch();
   }
 
+  const bothAgreed = !!a.owner_agreed_at && !!a.renter_agreed_at;
+  let n = 0;
+  const num = () => `${++n}.`;
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 print:max-w-none print:px-0 print:py-0">
+    <Page width="text" className="print:max-w-none print:px-0 print:py-0">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2 print:hidden">
-        <Button asChild variant="ghost" className="rounded-full">
+        <Button asChild variant="ghost" className="-ml-3">
           <Link to="/bokningar">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Bokningar
+            <ArrowLeft aria-hidden /> Bokningar
           </Link>
         </Button>
-        <Button variant="outline" className="rounded-full" onClick={() => window.print()}>
-          <Printer className="mr-1 h-4 w-4" /> Skriv ut / spara som PDF
+        <Button variant="outline" onClick={() => window.print()}>
+          <Printer aria-hidden /> Skriv ut / spara som PDF
         </Button>
       </div>
 
-      <article className="space-y-8 rounded-3xl border border-border p-6 sm:p-10 print:rounded-none print:border-0 print:p-0">
-        <header className="space-y-2">
-          <h1 className="font-display text-3xl font-semibold">Hyresavtal</h1>
-          <p className="text-sm text-muted-foreground">
+      <article className="rounded-2xl border border-border bg-card p-6 sm:p-10 print:rounded-none print:border-0 print:bg-transparent print:p-0">
+        <header className="border-b border-border pb-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Hyrkoll
+            {bothAgreed ? " · Godkänt av båda" : a.status === "confirmed" ? " · Väntar på godkännande" : ""}
+          </p>
+          <h1 className="mt-2 font-display text-3xl font-bold leading-tight sm:text-4xl">Hyresavtal</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Avtalet är mellan er två. Hyrkoll är inte part i avtalet.
           </p>
-          <dl className="grid gap-x-6 gap-y-1 pt-2 text-sm sm:grid-cols-[8rem_1fr]">
-            <dt className="font-medium">Uthyrare</dt>
-            <dd>{a.owner_name}</dd>
-            <dt className="font-medium">Hyresgäst</dt>
-            <dd>{a.renter_name}</dd>
+          <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+            <div className="rounded-xl bg-muted/60 px-4 py-3 print:border print:border-border print:bg-transparent">
+              <dt className="text-xs text-muted-foreground">Uthyrare</dt>
+              <dd className="font-semibold">{a.owner_name}</dd>
+            </div>
+            <div className="rounded-xl bg-muted/60 px-4 py-3 print:border print:border-border print:bg-transparent">
+              <dt className="text-xs text-muted-foreground">Hyresgäst</dt>
+              <dd className="font-semibold">{a.renter_name}</dd>
+            </div>
           </dl>
         </header>
 
-        <Section title="1. Det som hyrs ut">
-          <p className="font-medium">{t?.title ?? "Annonsen finns inte längre"}</p>
-          {t?.description && <p className="whitespace-pre-line text-muted-foreground">{t.description}</p>}
-          {t?.included && (
-            <p className="whitespace-pre-line">
-              <span className="font-medium">Det här ingår: </span>
-              {t.included}
-            </p>
-          )}
-        </Section>
-
-        <Section title="2. Hyrestid">
-          <p>
-            {formatDates(a.start_date, a.end_date)} ({a.days} dygn)
-          </p>
-          <p className="text-muted-foreground">
-            Från {fullDate(a.start_date)} till och med {fullDate(a.end_date)}.
-          </p>
-        </Section>
-
-        <Section title="3. Pris">
-          <table className="w-full max-w-sm text-sm">
-            <tbody>
-              <PriceRow label="Hyra" value={kr(Number(a.base_price))} />
-              {a.delivery && (
-                <PriceRow
-                  label="Leverans"
-                  value={Number(a.delivery_fee) > 0 ? kr(Number(a.delivery_fee)) : "Ingår"}
-                />
-              )}
-              <PriceRow label="Totalt" value={kr(Number(a.total_price))} strong />
-              <PriceRow
-                label="Deposition"
-                value={Number(a.deposit) > 0 ? kr(Number(a.deposit)) : "Ingen"}
-              />
-            </tbody>
-          </table>
-        </Section>
-
-        <Section title="4. Utlämning och återlämning">
-          <p>{a.delivery ? "Uthyraren levererar saken." : handover || "Enligt överenskommelse."}</p>
-          {t?.city && (
-            <p className="text-muted-foreground">
-              Plats: {t.area ? `${t.area}, ` : ""}
-              {t.city}
-            </p>
-          )}
-          {a.picked_up_at && <p className="text-muted-foreground">Utlämnad {dateTime(a.picked_up_at)}.</p>}
-          {a.returned_at && <p className="text-muted-foreground">Återlämnad {dateTime(a.returned_at)}.</p>}
-        </Section>
-
-        {t?.rental_rules && (
-          <Section title="5. Uthyrarens regler">
-            <p className="whitespace-pre-line">{t.rental_rules}</p>
+        <div className="divide-y divide-border">
+          <Section n={num()} title="Det som hyrs ut">
+            <p className="font-semibold">{t?.title ?? "Annonsen finns inte längre"}</p>
+            {t?.description && <p className="whitespace-pre-line text-muted-foreground">{t.description}</p>}
+            {t?.included && (
+              <p className="whitespace-pre-line">
+                <span className="font-semibold">Det här ingår: </span>
+                {t.included}
+              </p>
+            )}
           </Section>
-        )}
 
-        <Section title={t?.rental_rules ? "6. Avbokning" : "5. Avbokning"}>
-          <p>
-            {policy.label}: {policy.text}
-          </p>
-        </Section>
+          <Section n={num()} title="Hyrestid">
+            <p className="font-semibold">
+              {formatDates(a.start_date, a.end_date)} ({a.days} dygn)
+            </p>
+            <p className="text-muted-foreground">
+              Från {fullDate(a.start_date)} till och med {fullDate(a.end_date)}.
+            </p>
+          </Section>
 
-        <Section title={t?.rental_rules ? "7. Villkor" : "6. Villkor"}>
-          <ul className="list-disc space-y-1.5 pl-5">
-            {(STANDARD_TERMS[t?.terms_version ?? 1] ?? STANDARD_TERMS[1]!).map((term) => (
-              <li key={term}>{term}</li>
-            ))}
-          </ul>
-        </Section>
+          <Section n={num()} title="Pris">
+            <table className="w-full max-w-sm text-sm tabular-nums">
+              <caption className="sr-only">Pris</caption>
+              <tbody>
+                <PriceRow label="Hyra" value={kr(Number(a.base_price))} />
+                {a.delivery && (
+                  <PriceRow
+                    label="Leverans"
+                    value={Number(a.delivery_fee) > 0 ? kr(Number(a.delivery_fee)) : "Ingår"}
+                  />
+                )}
+                <PriceRow label="Totalt" value={kr(Number(a.total_price))} strong />
+                <PriceRow
+                  label="Deposition"
+                  value={Number(a.deposit) > 0 ? kr(Number(a.deposit)) : "Ingen"}
+                />
+              </tbody>
+            </table>
+          </Section>
 
-        <section className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
-          <Signature role="Uthyrare" name={a.owner_name} agreedAt={a.owner_agreed_at} />
-          <Signature role="Hyresgäst" name={a.renter_name} agreedAt={a.renter_agreed_at} />
+          <Section n={num()} title="Utlämning och återlämning">
+            <p>{a.delivery ? "Uthyraren levererar saken." : handover || "Enligt överenskommelse."}</p>
+            {t?.city && (
+              <p className="text-muted-foreground">
+                Plats: {t.area ? `${t.area}, ` : ""}
+                {t.city}
+              </p>
+            )}
+            {a.picked_up_at && <p className="text-muted-foreground">Utlämnad {dateTime(a.picked_up_at)}.</p>}
+            {a.returned_at && <p className="text-muted-foreground">Återlämnad {dateTime(a.returned_at)}.</p>}
+          </Section>
+
+          {t?.rental_rules && (
+            <Section n={num()} title="Uthyrarens regler">
+              <p className="whitespace-pre-line">{t.rental_rules}</p>
+            </Section>
+          )}
+
+          <Section n={num()} title="Avbokning">
+            <p>
+              <span className="font-semibold">{policy.label}:</span> {policy.text}
+            </p>
+          </Section>
+
+          <Section n={num()} title="Villkor">
+            <ul className="list-disc space-y-1.5 pl-5 marker:text-muted-foreground">
+              {(STANDARD_TERMS[t?.terms_version ?? 1] ?? STANDARD_TERMS[1]!).map((term) => (
+                <li key={term}>{term}</li>
+              ))}
+            </ul>
+          </Section>
+        </div>
+
+        <section aria-labelledby="underskrifter" className="mt-2 border-t border-border pt-6 print:break-inside-avoid">
+          <h2 id="underskrifter" className="sr-only">
+            Godkännanden
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-2">
+            <Signature role="Uthyrare" name={a.owner_name} agreedAt={a.owner_agreed_at} />
+            <Signature role="Hyresgäst" name={a.renter_name} agreedAt={a.renter_agreed_at} />
+          </div>
         </section>
 
         {canAccept && (
-          <div className="space-y-3 rounded-2xl bg-muted/60 p-4 print:hidden">
-            <div className="flex items-start gap-2.5">
+          <div className="mt-6 space-y-4 rounded-2xl bg-accent/60 p-4 sm:p-5 print:hidden">
+            <div className="flex items-start gap-3">
               <Checkbox
                 id="accept-agreement"
                 checked={accepted}
@@ -259,20 +295,23 @@ function AgreementPage() {
                 Jag har läst och godkänner avtalet
               </Label>
             </div>
-            <Button className="rounded-full" disabled={!accepted || busy} onClick={accept}>
+            <Button disabled={!accepted || busy} onClick={accept}>
               Godkänn avtalet
             </Button>
           </div>
         )}
       </article>
-    </div>
+    </Page>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-2 text-sm leading-relaxed">
-      <h2 className="font-display text-lg font-semibold">{title}</h2>
+    <section className="space-y-2 py-6 text-sm leading-relaxed print:break-inside-avoid sm:text-[15px]">
+      <h2 className="font-display text-lg font-bold">
+        <span className="mr-1.5 tabular-nums text-muted-foreground">{n}</span>
+        {title}
+      </h2>
       {children}
     </section>
   );
@@ -280,20 +319,26 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function PriceRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
-    <tr className={strong ? "font-semibold" : undefined}>
-      <td className="py-1 pr-6">{label}</td>
-      <td className="py-1 text-right">{value}</td>
+    <tr className={strong ? "border-t border-border font-semibold" : undefined}>
+      <th scope="row" className="py-1.5 pr-6 text-left font-[inherit]">
+        {label}
+      </th>
+      <td className="py-1.5 text-right">{value}</td>
     </tr>
   );
 }
 
 function Signature({ role, name, agreedAt }: { role: string; name: string; agreedAt: string | null }) {
   return (
-    <div className="space-y-1 text-sm">
-      <p className="font-medium">
-        {role}: {name}
-      </p>
-      <p className={agreedAt ? "text-primary" : "text-muted-foreground"}>
+    <div className="space-y-1 rounded-xl border border-border px-4 py-3 text-sm">
+      <p className="text-xs text-muted-foreground">{role}</p>
+      <p className="font-semibold">{name}</p>
+      <p className={cn("flex items-center gap-1.5", agreedAt ? "text-foreground" : "text-muted-foreground")}>
+        {agreedAt ? (
+          <CircleCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+        ) : (
+          <Circle className="h-4 w-4 shrink-0" aria-hidden />
+        )}
         {agreedAt ? `Godkänt ${dateTime(agreedAt)}` : "Inte godkänt än"}
       </p>
     </div>

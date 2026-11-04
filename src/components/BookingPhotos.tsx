@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,8 +28,9 @@ export function BookingPhotos({
   onSaved: () => void;
 }) {
   return (
-    <div className="space-y-4 rounded-3xl bg-muted/40 p-4">
-      <p className="text-sm text-muted-foreground">
+    <div className="space-y-5 rounded-2xl bg-muted/50 p-4 sm:p-5">
+      <p className="flex items-start gap-2 text-sm text-muted-foreground">
+        <Camera className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         Fota skicket så att ni båda har bevis om något går sönder.
       </p>
       <StagePhotos
@@ -97,23 +99,27 @@ function StagePhotos({
   }
 
   return (
-    <div className="space-y-2">
-      <h4 className="text-sm font-semibold">{title}</h4>
+    <div className="space-y-3">
+      <h4 className="font-sans text-sm font-semibold tracking-normal">{title}</h4>
       {theirs.length > 0 && (
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-          {theirs.map((p) => (
-            <a
-              key={p}
-              href={photoUrl(p)}
-              target="_blank"
-              rel="noreferrer"
-              className="block aspect-square overflow-hidden rounded-xl bg-muted"
-            >
-              <img src={photoUrl(p)} alt="Den andras bild" loading="lazy" className="h-full w-full object-cover" />
-            </a>
-          ))}
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground">Den andras bilder</p>
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+            {theirs.map((p) => (
+              <a
+                key={p}
+                href={photoUrl(p)}
+                target="_blank"
+                rel="noreferrer"
+                className="block aspect-square overflow-hidden rounded-xl bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <img src={photoUrl(p)} alt="Den andras bild" loading="lazy" className="h-full w-full object-cover" />
+              </a>
+            ))}
+          </div>
         </div>
       )}
+      {theirs.length > 0 && <p className="text-xs text-muted-foreground">Dina bilder</p>}
       <PhotoUploader
         userId={userId}
         value={current}

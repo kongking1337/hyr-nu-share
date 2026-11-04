@@ -63,5 +63,6 @@ export function Captcha({ onToken }: { onToken: (token: string | null) => void }
   }, []);
 
   if (!SITE_KEY) return null;
-  return <div ref={box} className="min-h-[65px]" />;
+  // Turnstile-rutan är 300 px bred; centrerad, och höjden reserverad så att formuläret inte hoppar.
+  return <div ref={box} className="flex min-h-[65px] justify-center" />;
 }

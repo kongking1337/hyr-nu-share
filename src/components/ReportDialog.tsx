@@ -35,15 +35,20 @@ const USER_REASONS = [
   "Annat",
 ];
 
-/** Anmäl en annons, konversation eller användare med skäl. Anmälan syns bara för administratörer. */
+/**
+ * Anmäl en annons, konversation eller användare med skäl. Anmälan syns bara för administratörer.
+ * `compact` visar bara ikonen på små skärmar (texten finns kvar för skärmläsare).
+ */
 export function ReportDialog({
   targetType,
   targetId,
   label,
+  compact = false,
 }: {
   targetType: "listing" | "conversation" | "user";
   targetId: string;
   label: string;
+  compact?: boolean;
 }) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -81,15 +86,22 @@ export function ReportDialog({
     toast.success("Tack! Anmälan är skickad till moderering.");
   }
 
+  const trigger = {
+    variant: "ghost" as const,
+    size: "sm" as const,
+    className: "text-muted-foreground hover:text-foreground",
+    title: compact ? label : undefined,
+  };
+  const content = (
+    <>
+      <Flag aria-hidden /> <span className={compact ? "sr-only sm:not-sr-only" : undefined}>{label}</span>
+    </>
+  );
+
   if (!user) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground"
-        onClick={() => toast.info("Logga in för att anmäla.")}
-      >
-        <Flag className="mr-1 h-4 w-4" /> {label}
+      <Button {...trigger} onClick={() => toast.info("Logga in för att anmäla.")}>
+        {content}
       </Button>
     );
   }
@@ -97,9 +109,7 @@ export function ReportDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-muted-foreground">
-          <Flag className="mr-1 h-4 w-4" /> {label}
-        </Button>
+        <Button {...trigger}>{content}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -109,22 +119,28 @@ export function ReportDialog({
             anmält.
           </DialogDescription>
         </DialogHeader>
-        <RadioGroup value={reason} onValueChange={setReason} className="space-y-1">
+        <RadioGroup value={reason} onValueChange={setReason} aria-label="Skäl" className="gap-1">
           {reasons.map((r) => (
-            <div key={r} className="flex items-center gap-2.5">
+            <Label
+              key={r}
+              htmlFor={`reason-${r}`}
+              className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-3 font-normal transition-colors hover:bg-muted has-[[data-state=checked]]:border-foreground has-[[data-state=checked]]:bg-muted"
+            >
               <RadioGroupItem id={`reason-${r}`} value={r} />
-              <Label htmlFor={`reason-${r}`} className="cursor-pointer font-normal">
-                {r}
-              </Label>
-            </div>
+              {r}
+            </Label>
           ))}
         </RadioGroup>
         <div className="space-y-1.5">
           <Label htmlFor="report-details">Berätta mer (valfritt)</Label>
+          <p id="report-details-hint" className="text-xs text-muted-foreground">
+            Vad hände, och när? Det hjälper moderatorerna att bedöma anmälan.
+          </p>
           <Textarea
             id="report-details"
             rows={3}
             maxLength={2000}
+            aria-describedby="report-details-hint"
             value={details}
             onChange={(e) => setDetails(e.target.value)}
           />
@@ -133,7 +149,7 @@ export function ReportDialog({
           <Button variant="ghost" onClick={() => setOpen(false)}>
             Avbryt
           </Button>
-          <Button onClick={send} disabled={busy}>
+          <Button variant="secondary" onClick={send} disabled={busy}>
             Skicka anmälan
           </Button>
         </DialogFooter>

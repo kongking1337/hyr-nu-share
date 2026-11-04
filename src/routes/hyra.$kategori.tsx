@@ -29,7 +29,7 @@ function CategoryPage() {
   const { kategori } = Route.useParams();
   const search = Route.useSearch();
   const params = { ...search, category: kategori };
-  const { patch, reset } = useUrlSearchState(params);
+  const { patch, reset } = useUrlSearchState(params, ["category"]);
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
     <SearchResultsPage
@@ -37,7 +37,8 @@ function CategoryPage() {
       patch={patch}
       reset={reset}
       heading={`Hyra ${name.toLowerCase()} i Stockholm`}
-      intro={`${name} att hyra av privatpersoner och företag i Stockholms län.`}
+      intro={`${name} att hyra av privatpersoner och företag i hela länet.`}
+      pinned={["category"]}
     />
   );
 }

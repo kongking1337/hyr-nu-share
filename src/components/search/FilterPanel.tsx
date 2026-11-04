@@ -17,10 +17,11 @@ type Patch = (p: Partial<SearchParams>) => void;
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+    // Etiketten omsluter fältet så att den hör ihop med det för skärmläsare.
+    <label className="block space-y-1.5">
+      <span className="block text-xs font-medium text-muted-foreground">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 
@@ -45,6 +46,39 @@ function Check({
   );
 }
 
+/** Liten valknapp (underkategori, radie). Vald = mörk pill, som vy-växlaren. */
+function Toggle({
+  selected,
+  disabled,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-40",
+        selected
+          ? "border-foreground bg-foreground text-background"
+          : "border-border bg-card hover:border-foreground/40",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+const TRIGGER =
+  "rounded-md py-3.5 text-sm font-semibold hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
 export function FilterPanel({ params, patch }: { params: SearchParams; patch: Patch }) {
   const subs = SUBCATEGORIES[params.category] ?? [];
   const attrDefs = CATEGORY_ATTRIBUTES[params.category] ?? [];
@@ -64,10 +98,10 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
       className="w-full"
     >
       <AccordionItem value="kategori">
-        <AccordionTrigger className="text-sm font-semibold">Kategori</AccordionTrigger>
-        <AccordionContent className="space-y-3 pb-4">
+        <AccordionTrigger className={TRIGGER}>Kategori</AccordionTrigger>
+        <AccordionContent className="space-y-3 px-0.5 pb-4">
           <Select value={params.category} onValueChange={(v) => patch({ category: v, sub: "all", attrs: "" })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label="Kategori"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alla kategorier</SelectItem>
               {ACTIVE_CATEGORIES.map((c) => (
@@ -77,28 +111,13 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
           </Select>
           {subs.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => patch({ sub: "all" })}
-                className={cn(
-                  "rounded-full border border-border px-3 py-1 text-xs",
-                  params.sub === "all" && "border-primary bg-primary/10 text-primary",
-                )}
-              >
+              <Toggle selected={params.sub === "all"} onClick={() => patch({ sub: "all" })}>
                 Alla typer
-              </button>
+              </Toggle>
               {subs.map((s) => (
-                <button
-                  key={s.slug}
-                  type="button"
-                  onClick={() => patch({ sub: s.slug })}
-                  className={cn(
-                    "rounded-full border border-border px-3 py-1 text-xs",
-                    params.sub === s.slug && "border-primary bg-primary/10 text-primary",
-                  )}
-                >
+                <Toggle key={s.slug} selected={params.sub === s.slug} onClick={() => patch({ sub: s.slug })}>
                   {s.name}
-                </button>
+                </Toggle>
               ))}
             </div>
           )}
@@ -107,10 +126,10 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
 
       {attrDefs.length > 0 && (
         <AccordionItem value="attribut">
-          <AccordionTrigger className="text-sm font-semibold">
+          <AccordionTrigger className={TRIGGER}>
             Egenskaper · {CATEGORY_SYNONYMS[params.category]?.name ?? params.category}
           </AccordionTrigger>
-          <AccordionContent className="space-y-3 pb-4">
+          <AccordionContent className="space-y-3 px-0.5 pb-4">
             {attrDefs.map((a) =>
               a.type === "bool" ? (
                 <Check
@@ -152,38 +171,37 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
       )}
 
       <AccordionItem value="plats">
-        <AccordionTrigger className="text-sm font-semibold">Plats</AccordionTrigger>
-        <AccordionContent className="space-y-3 pb-4">
+        <AccordionTrigger className={TRIGGER}>Plats</AccordionTrigger>
+        <AccordionContent className="space-y-3 px-0.5 pb-4">
           <Select value={params.location} onValueChange={(v) => patch({ location: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger aria-label="Plats"><SelectValue /></SelectTrigger>
             <SelectContent>
               {LOCATIONS.map((l) => (
                 <SelectItem key={l.slug} value={l.slug}>{l.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Radie">
             {RADIUS_OPTIONS.map((r) => (
-              <button
+              <Toggle
                 key={r}
-                type="button"
+                selected={params.radius === r}
                 disabled={params.location === REGION.slug}
                 onClick={() => patch({ radius: r })}
-                className={cn(
-                  "rounded-full border border-border px-3 py-1 text-xs disabled:opacity-40",
-                  params.radius === r && "border-primary bg-primary/10 text-primary",
-                )}
               >
                 {r} km
-              </button>
+              </Toggle>
             ))}
           </div>
+          {params.location === REGION.slug && (
+            <p className="text-xs text-muted-foreground">Välj en kommun för att ändra radien.</p>
+          )}
         </AccordionContent>
       </AccordionItem>
 
       <AccordionItem value="datum">
-        <AccordionTrigger className="text-sm font-semibold">Datum</AccordionTrigger>
-        <AccordionContent className="space-y-3 pb-4">
+        <AccordionTrigger className={TRIGGER}>Datum</AccordionTrigger>
+        <AccordionContent className="space-y-3 px-0.5 pb-4">
           <div className="grid grid-cols-2 gap-2">
             <Row label="Från">
               <Input
@@ -213,9 +231,9 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
       </AccordionItem>
 
       <AccordionItem value="pris">
-        <AccordionTrigger className="text-sm font-semibold">Pris</AccordionTrigger>
-        <AccordionContent className="space-y-3 pb-4">
-          <p className="text-xs text-muted-foreground">För saker som hyrs ut gäller priset per dygn.</p>
+        <AccordionTrigger className={TRIGGER}>Pris</AccordionTrigger>
+        <AccordionContent className="space-y-3 px-0.5 pb-4">
+          <p className="text-xs text-muted-foreground">Pris per dygn.</p>
           <div className="grid grid-cols-2 gap-2">
             <Row label="Min (kr)">
               <Input
@@ -240,11 +258,11 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
       </AccordionItem>
 
       <AccordionItem value="uthyrare">
-        <AccordionTrigger className="text-sm font-semibold">Uthyrare</AccordionTrigger>
-        <AccordionContent className="space-y-3 pb-4">
-          <Row label="Uthyrare">
+        <AccordionTrigger className={TRIGGER}>Uthyrare</AccordionTrigger>
+        <AccordionContent className="space-y-3 px-0.5 pb-4">
+          <Row label="Visa annonser från">
             <Select value={params.owner} onValueChange={(v) => patch({ owner: v as SearchParams["owner"] })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label="Visa annonser från"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alla</SelectItem>
                 <SelectItem value="private">Privatpersoner</SelectItem>

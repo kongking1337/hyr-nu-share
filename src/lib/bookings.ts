@@ -9,12 +9,12 @@ import type { CancellationPolicy } from "@/lib/providers/types";
 
 export type BookingStatus = "requested" | "confirmed" | "declined" | "cancelled" | "completed";
 
-export const BOOKING_STATUS: Record<BookingStatus, { label: string; className: string }> = {
-  requested: { label: "Väntar på svar", className: "bg-accent/20 text-foreground" },
-  confirmed: { label: "Godkänd", className: "bg-primary/15 text-primary" },
-  declined: { label: "Nekad", className: "bg-muted text-muted-foreground" },
-  cancelled: { label: "Avbokad", className: "bg-muted text-muted-foreground" },
-  completed: { label: "Avslutad", className: "bg-secondary text-secondary-foreground" },
+export const BOOKING_STATUS: Record<BookingStatus, { label: string }> = {
+  requested: { label: "Väntar på svar" },
+  confirmed: { label: "Godkänd" },
+  declined: { label: "Nekad" },
+  cancelled: { label: "Avbokad" },
+  completed: { label: "Avslutad" },
 };
 
 export const CANCELLATION_POLICIES: Record<

@@ -32,7 +32,7 @@ function CityCategoryPage() {
   const search = Route.useSearch();
   const city = cityBySlug(stad);
   const params = { ...search, category: kategori, location: city?.slug ?? search.location };
-  const { patch, reset } = useUrlSearchState(params);
+  const { patch, reset } = useUrlSearchState(params, city ? ["category", "location"] : ["category"]);
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
     <SearchResultsPage
@@ -41,6 +41,7 @@ function CityCategoryPage() {
       reset={reset}
       heading={`Hyra ${name.toLowerCase()} i ${city?.name ?? stad}`}
       intro={`${name} att hyra nära ${city?.name ?? stad}, av privatpersoner och företag.`}
+      pinned={city ? ["category", "location"] : ["category"]}
     />
   );
 }

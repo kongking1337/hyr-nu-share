@@ -1,9 +1,10 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Grid2x2, LayoutList, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Grid2x2, LayoutList, Plus, SearchX, SlidersHorizontal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { EmptyState, LoadingCards, LoadingRows, Page, PageHeader } from "@/components/layout";
 import { SearchBar } from "@/components/search/SearchBar";
 import { FilterPanel } from "@/components/search/FilterPanel";
 import { ActiveFilterChips, activeChips } from "@/components/search/ActiveFilterChips";
@@ -12,7 +13,7 @@ import { SaveSearchButton } from "@/components/SaveSearchButton";
 import { distanceKm } from "@/lib/geo";
 import { dedupe } from "@/lib/search/dedupe";
 import { filterResults, sortResults } from "@/lib/search/filter-sort";
-import { SORT_OPTIONS, type SearchParams } from "@/lib/search/params";
+import { DEFAULTS, SORT_OPTIONS, type SearchParams } from "@/lib/search/params";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
 import { resolveCenter, useSearchResults } from "@/lib/search/useSearchResults";
@@ -26,12 +27,15 @@ export function SearchResultsPage({
   reset,
   heading,
   intro,
+  pinned = [],
 }: {
   params: SearchParams;
   patch: (p: Partial<SearchParams>) => void;
   reset: () => void;
   heading?: string;
   intro?: string;
+  /** Filter som sidans adress bestämmer (t.ex. kategorin på /hyra/verktyg) och som inte går att ta bort här. */
+  pinned?: Array<keyof SearchParams>;
 }) {
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
@@ -58,7 +62,10 @@ export function SearchResultsPage({
   }, [results, params, center]);
 
   const visible = groups.slice(0, params.page * PAGE_SIZE);
-  const chipCount = activeChips(params).length;
+  const chips = activeChips(params).filter((c) => !pinned.includes(c.key as keyof SearchParams));
+  const chipCount = chips.length;
+  // Filter utöver sökordet, som "Rensa filter" tar bort (sökordet ligger kvar).
+  const filterCount = chips.filter((c) => c.key !== "q").length;
 
   function submitSearch(next: { q: string; location: string; radius: number; category?: string; sub?: string }) {
     const intent = interpretQuery(next.q);
@@ -74,18 +81,25 @@ export function SearchResultsPage({
   }
 
   const resultCount = groups.length;
+  const list = params.view === "list";
+  const loading = internalLoading || (externalLoading && !visible.length);
+  const empty = !internalLoading && !externalLoading && groups.length === 0;
+  const wideArea = !pinned.includes("location") && params.location !== DEFAULTS.location;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      {heading && <h1 className="mb-2 font-display text-3xl font-semibold">{heading}</h1>}
-      {intro && <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{intro}</p>}
+    <Page width="wide" className="pt-6 sm:pt-8">
+      {heading ? (
+        <PageHeader title={heading} description={intro} className="mb-6" />
+      ) : (
+        <h1 className="sr-only">Sök saker att hyra</h1>
+      )}
 
       <SearchBar q={params.q} location={params.location} radius={params.radius} size="md" onSubmit={submitSearch} />
 
       {notes.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <span className="flex items-center gap-1 text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5" /> Tolkning:
+            <Sparkles aria-hidden className="h-3.5 w-3.5" /> Vi tolkade sökningen som:
           </span>
           {notes.map((n) => (
             <span key={n} className="rounded-full bg-muted px-2.5 py-1">
@@ -95,13 +109,19 @@ export function SearchResultsPage({
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-3xl border border-border bg-card p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="font-display text-sm font-semibold">Filter</p>
+      <div className="mt-8 grid gap-10 lg:grid-cols-[250px_minmax(0,1fr)]">
+        <aside className="hidden lg:block" aria-labelledby="filter-rubrik">
+          <div className="sticky top-24 -mx-1 max-h-[calc(100vh-7rem)] overflow-y-auto px-1 pb-4">
+            <div className="flex items-baseline justify-between">
+              <h2 id="filter-rubrik" className="font-display text-lg font-bold">
+                Filter
+              </h2>
               {chipCount > 0 && (
-                <button onClick={reset} className="text-xs text-muted-foreground hover:underline">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="rounded text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                   Rensa alla
                 </button>
               )}
@@ -110,45 +130,49 @@ export function SearchResultsPage({
           </div>
         </aside>
 
-        <div className="min-w-0">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
-            <p className="min-w-0 truncate text-sm text-muted-foreground">
-              {internalLoading ? "Söker…" : `${resultCount} träffar`}
+        <section aria-labelledby="antal-traffar" className="min-w-0">
+          {/* Mobil: antal och vy-växlare på första raden, filter och sortering på andra. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+            <p id="antal-traffar" aria-live="polite" className="mr-auto font-display text-lg font-bold">
+              {internalLoading ? "Söker …" : resultCount === 1 ? "1 träff" : `${resultCount} träffar`}
             </p>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="order-last flex w-full items-center gap-2 sm:order-none sm:w-auto">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-full lg:hidden">
-                    <SlidersHorizontal className="mr-1 h-4 w-4" /> Filter{chipCount ? ` (${chipCount})` : ""}
+                  <Button variant="outline" className="lg:hidden">
+                    <SlidersHorizontal aria-hidden /> Filter{chipCount ? ` (${chipCount})` : ""}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[92vh] rounded-t-3xl p-0">
-                  <SheetHeader className="border-b border-border px-4 py-3">
-                    <SheetTitle>Filter</SheetTitle>
+                <SheetContent side="bottom" className="flex h-[90dvh] flex-col gap-0 rounded-t-3xl p-0">
+                  <SheetHeader className="border-b border-border px-5 py-4 text-left">
+                    <SheetTitle className="font-display text-lg font-bold">Filter</SheetTitle>
+                    <SheetDescription className="sr-only">
+                      Välj filter och tryck på Visa träffar.
+                    </SheetDescription>
                   </SheetHeader>
-                  <div className="h-[calc(92vh-9.5rem)] overflow-y-auto px-4 pb-4">
+                  <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
                     <FilterPanel params={draft} patch={(p) => setDraft((d) => ({ ...d, ...p }))} />
                   </div>
-                  <div className="sticky bottom-0 flex items-center gap-2 border-t border-border bg-background px-4 py-3">
-                    <Button variant="ghost" className="rounded-full" onClick={reset}>
+                  <div className="flex items-center gap-2 border-t border-border bg-background px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                    <Button variant="ghost" onClick={reset}>
                       Rensa
                     </Button>
                     <Button
-                      className="flex-1 rounded-full"
+                      className="flex-1"
                       onClick={() => {
                         patch(draft);
                         setMobileOpen(false);
                       }}
                     >
-                      Visa {resultCount} resultat
+                      Visa träffar
                     </Button>
                   </div>
                 </SheetContent>
               </Sheet>
 
               <Select value={params.sort} onValueChange={(v) => patch({ sort: v as SearchParams["sort"] })}>
-                <SelectTrigger className="h-9 w-[170px] rounded-full text-xs">
+                <SelectTrigger className="h-10 min-w-0 flex-1 rounded-full px-4 sm:w-[170px] sm:flex-none" aria-label="Sortera">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -159,75 +183,120 @@ export function SearchResultsPage({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
 
-              <div className="flex rounded-full border border-border p-0.5">
-                {([
-                  ["grid", Grid2x2, "Rutnät"],
-                  ["list", LayoutList, "Lista"],
-                ] as const).map(([v, Icon, label]) => (
-                  <button
-                    key={v}
-                    type="button"
-                    aria-label={label}
-                    onClick={() => patch({ view: v })}
-                    className={cn(
-                      "grid h-8 w-9 place-items-center rounded-full",
-                      params.view === v && "bg-foreground text-background",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                ))}
-              </div>
+            <div role="group" aria-label="Visning" className="flex shrink-0 rounded-full border border-input bg-card p-0.5 sm:order-last">
+              {([
+                ["grid", Grid2x2, "Rutnät"],
+                ["list", LayoutList, "Lista"],
+              ] as const).map(([v, Icon, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-label={label}
+                  aria-pressed={params.view === v}
+                  onClick={() => patch({ view: v })}
+                  className={cn(
+                    "grid h-[34px] w-9 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    params.view === v && "bg-foreground text-background hover:text-background",
+                  )}
+                >
+                  <Icon aria-hidden className="h-4 w-4" />
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <ActiveFilterChips params={params} onPatch={patch} onClearAll={reset} />
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <ActiveFilterChips params={params} onPatch={patch} onClearAll={reset} hide={pinned} />
             <SaveSearchButton label={params.q || "Min sökning"} filters={params as unknown as Record<string, unknown>} />
           </div>
 
           {sources.some((s) => s.status === "error") && (
-            <p className="mt-3 text-sm text-destructive">
+            <p role="alert" className="mt-4 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
               Sökningen kunde inte genomföras just nu. Ladda om sidan och försök igen.
             </p>
           )}
 
-          <div
-            className={cn(
-              "mt-4 grid gap-4",
-              params.view === "list" ? "grid-cols-1" : "sm:grid-cols-2 xl:grid-cols-3",
-            )}
-          >
-            {visible.map((g) => (
-              <ListingCard
-                key={g.key}
-                result={g.primary}
-                layout={params.view === "list" ? "list" : "grid"}
-                distanceKm={
-                  center.wholeRegion ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
-                }
-              />
+          {visible.length > 0 && (
+            <ul
+              className={cn(
+                "mt-6 grid",
+                list ? "grid-cols-1 gap-3" : "gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3",
+              )}
+            >
+              {visible.map((g) => (
+                <li key={g.key}>
+                  <ListingCard
+                    result={g.primary}
+                    layout={list ? "list" : "grid"}
+                    distanceKm={
+                      center.wholeRegion ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {loading &&
+            (list ? (
+              <LoadingRows rows={4} className="mt-6" />
+            ) : (
+              <LoadingCards className="mt-6 lg:grid-cols-2 xl:grid-cols-3" />
             ))}
-            {(internalLoading || (externalLoading && !visible.length)) &&
-              [0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-96 rounded-3xl" />)}
-          </div>
 
           {visible.length < groups.length && (
-            <div className="mt-6 flex justify-center">
-              <Button variant="outline" className="rounded-full" onClick={() => patch({ page: params.page + 1 })}>
+            <div className="mt-10 flex justify-center">
+              <Button variant="outline" onClick={() => patch({ page: params.page + 1 })}>
                 Visa fler ({groups.length - visible.length} kvar)
               </Button>
             </div>
           )}
 
-          {!internalLoading && !externalLoading && groups.length === 0 && (
-            <p className="mt-12 text-center text-muted-foreground">
-              Inga träffar. Prova större radie, färre filter eller ett bredare sökord.
-            </p>
+          {empty && (
+            <EmptyState
+              icon={SearchX}
+              title="Inga träffar"
+              className="mt-6"
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  {filterCount > 0 ? (
+                    <Button onClick={reset}>Rensa filter</Button>
+                  ) : params.q ? (
+                    <Button onClick={() => patch({ q: "" })}>Sök utan sökord</Button>
+                  ) : heading ? (
+                    <Button asChild>
+                      <Link to="/sok" search={DEFAULTS}>
+                        Se allt som går att hyra
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <Link to="/ny-annons">
+                        <Plus aria-hidden /> Lägg upp annons
+                      </Link>
+                    </Button>
+                  )}
+                  {wideArea && filterCount > 1 && (
+                    <Button variant="outline" onClick={() => patch({ location: DEFAULTS.location })}>
+                      Sök i hela Stockholm
+                    </Button>
+                  )}
+                </div>
+              }
+            >
+              {filterCount > 0
+                ? "Inget passar alla filter just nu. Ta bort några filter eller sök i ett större område."
+                : params.q
+                  ? `Inget matchar ”${params.q}”. Prova ett annat eller bredare sökord.`
+                  : heading
+                    ? "Här finns inget att hyra just nu. Kolla igen snart, eller se vad som finns i andra kategorier."
+                    : "Det finns inga annonser än. Lägg upp det första du vill hyra ut."}
+            </EmptyState>
           )}
-        </div>
+        </section>
       </div>
-    </div>
+    </Page>
   );
 }

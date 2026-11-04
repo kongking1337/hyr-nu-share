@@ -1,11 +1,15 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Ban, Check, EyeOff, Flag, Inbox, MessagesSquare, RotateCcw, Search, ShieldCheck, UserCheck, Users } from "lucide-react";
 import { toast } from "sonner";
+import { Count } from "@/components/Header";
+import { EmptyState, LoadingRows, Page, PageHeader } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import type { Database } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -106,36 +110,75 @@ function useAdminActions() {
 }
 
 function AdminPage() {
+  const { openReports } = useNotificationCounts();
+  const tab =
+    "h-9 shrink-0 gap-2 rounded-full px-4 font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-none";
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-3xl font-semibold">Moderering</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Hantera anmälningar, dölj annonser och spärra användare. Annonsören ser skälet när en annons
-        döljs.
-      </p>
-      <Tabs defaultValue="reports" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="reports">Anmälningar</TabsTrigger>
-          <TabsTrigger value="listings">Annonser</TabsTrigger>
-          <TabsTrigger value="blocked">Spärrade användare</TabsTrigger>
-          <TabsTrigger value="trust">Förtroende</TabsTrigger>
-        </TabsList>
-        <TabsContent value="reports" className="pt-4">
+    <Page width="wide">
+      <PageHeader
+        title="Moderering"
+        description="Hantera anmälningar, dölj annonser och spärra användare. Annonsören ser skälet när en annons döljs."
+      />
+      <Tabs defaultValue="reports">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <TabsList className="h-auto justify-start gap-1 rounded-full p-1">
+            <TabsTrigger value="reports" className={tab}>
+              Anmälningar
+              <Count n={openReports} />
+            </TabsTrigger>
+            <TabsTrigger value="listings" className={tab}>
+              Annonser
+            </TabsTrigger>
+            <TabsTrigger value="blocked" className={tab}>
+              Spärrade användare
+            </TabsTrigger>
+            <TabsTrigger value="trust" className={tab}>
+              Förtroende
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="reports" className="mt-6">
           <ReportsTab />
         </TabsContent>
-        <TabsContent value="listings" className="pt-4">
+        <TabsContent value="listings" className="mt-6">
           <ListingsTab />
         </TabsContent>
-        <TabsContent value="blocked" className="pt-4">
+        <TabsContent value="blocked" className="mt-6">
           <BlockedTab />
         </TabsContent>
-        <TabsContent value="trust" className="pt-4">
+        <TabsContent value="trust" className="mt-6">
           <TrustTab />
         </TabsContent>
       </Tabs>
-    </div>
+    </Page>
   );
 }
+
+type Tone = "neutral" | "muted" | "danger";
+const TONE: Record<Tone, string> = {
+  neutral: "bg-muted text-foreground",
+  muted: "bg-muted text-muted-foreground",
+  danger: "bg-destructive/10 text-destructive",
+};
+
+/** Liten statusetikett. Rött bara för det som kräver uppmärksamhet (dold, spärrad, många anmälningar). */
+function StatusBadge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold", TONE[tone])}>
+      {children}
+    </span>
+  );
+}
+
+function ListingStatusBadge({ status }: { status: string }) {
+  const tone: Tone = status === "removed" ? "danger" : status === "published" ? "neutral" : "muted";
+  return <StatusBadge tone={tone}>{STATUS_LABEL[status] ?? status}</StatusBadge>;
+}
+
+const dateTime = (iso: string) => new Date(iso).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" });
+
+/** Knapp för åtgärder som går ut över någon (spärra): tydligt röd men inte fylld. */
+const dangerOutline = "border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive";
 
 function ReportsTab() {
   const [open, setOpen] = useState(true);
@@ -149,25 +192,27 @@ function ReportsTab() {
   });
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
+    <div className="space-y-4">
+      <div role="group" aria-label="Visa anmälningar" className="flex gap-2">
         {[true, false].map((o) => (
           <Button
             key={String(o)}
             size="sm"
-            variant={open === o ? "default" : "outline"}
-            className="rounded-full"
+            variant={open === o ? "secondary" : "outline"}
+            aria-pressed={open === o}
             onClick={() => setOpen(o)}
           >
             {o ? "Öppna" : "Hanterade"}
           </Button>
         ))}
       </div>
-      {isLoading && <p className="text-sm text-muted-foreground">Hämtar …</p>}
+      {isLoading && <LoadingRows rows={3} />}
       {reports?.length === 0 && (
-        <p className="rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          {open ? "Inga öppna anmälningar." : "Inga hanterade anmälningar ännu."}
-        </p>
+        <EmptyState icon={open ? ShieldCheck : Inbox} title={open ? "Inga öppna anmälningar" : "Inga hanterade anmälningar ännu"}>
+          {open
+            ? "Allt är genomgånget. Nya anmälningar dyker upp här och räknas i menyn."
+            : "Anmälningar som du avfärdar eller åtgärdar hamnar här."}
+        </EmptyState>
       )}
       {reports?.map((r) => (
         <ReportCard key={r.id} report={r} />
@@ -195,129 +240,117 @@ function ReportCard({ report: r }: { report: Report }) {
   });
 
   return (
-    <article className="space-y-3 rounded-3xl border border-border p-5">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span className="rounded-full bg-muted px-2.5 py-1 font-medium text-foreground">
-          {TARGET_LABEL[r.target_type] ?? r.target_type}
-        </span>
-        <span>{new Date(r.created_at).toLocaleString("sv-SE")}</span>
-        <span>· anmäld av {r.reporter_name}</span>
+    <article className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
+        <StatusBadge>{TARGET_LABEL[r.target_type] ?? r.target_type}</StatusBadge>
         {r.reports_on_target > 1 && (
-          <span className="font-semibold text-destructive">
-            · {r.reports_on_target} öppna anmälningar
-          </span>
+          <StatusBadge tone="danger">
+            <Flag className="h-3 w-3" aria-hidden /> {r.reports_on_target} öppna anmälningar
+          </StatusBadge>
         )}
+        <span>
+          {dateTime(r.created_at)} · anmäld av {r.reporter_name}
+        </span>
       </div>
-      <p className="font-medium">{r.reason}</p>
-      {r.details && (
-        <p className="whitespace-pre-line text-sm text-muted-foreground">{r.details}</p>
-      )}
 
-      {r.target_type === "listing" && (
-        <p className="text-sm">
-          Annons:{" "}
-          {r.listing_title ? (
-            <Link
-              to="/annons/$id"
-              params={{ id: r.target_id }}
-              className="text-primary hover:underline"
-            >
-              {r.listing_title}
-            </Link>
-          ) : (
-            "borttagen"
+      <h3 className="mt-3 font-sans text-base font-semibold tracking-normal">{r.reason}</h3>
+      {r.details && <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{r.details}</p>}
+
+      {(r.target_type === "listing" || r.reported_user_name) && (
+        <dl className="mt-4 grid gap-2 rounded-xl bg-muted p-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
+          {r.target_type === "listing" && (
+            <>
+              <dt className="text-muted-foreground">Annons</dt>
+              <dd className="flex flex-wrap items-center gap-2">
+                {r.listing_title ? (
+                  <Link
+                    to="/annons/$id"
+                    params={{ id: r.target_id }}
+                    className="rounded-sm font-medium underline decoration-border underline-offset-4 hover:decoration-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {r.listing_title}
+                  </Link>
+                ) : (
+                  <span className="text-muted-foreground">Borttagen</span>
+                )}
+                {r.listing_status && <ListingStatusBadge status={r.listing_status} />}
+              </dd>
+            </>
           )}
-          {r.listing_status && (
-            <span className="text-muted-foreground">
-              {" "}
-              · {STATUS_LABEL[r.listing_status] ?? r.listing_status}
-            </span>
+          {r.reported_user_name && (
+            <>
+              <dt className="text-muted-foreground">Anmäld användare</dt>
+              <dd className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">{r.reported_user_name}</span>
+                {r.reported_user_blocked && <StatusBadge tone="danger">Spärrad</StatusBadge>}
+              </dd>
+            </>
           )}
-        </p>
-      )}
-      {r.reported_user_name && (
-        <p className="text-sm">
-          Anmäld användare: {r.reported_user_name}
-          {r.reported_user_blocked && <span className="text-destructive"> · spärrad</span>}
-        </p>
+        </dl>
       )}
 
       {r.target_type === "conversation" && (
-        <div>
+        <div className="mt-4">
           <Button
             size="sm"
             variant="outline"
-            className="rounded-full"
+            aria-expanded={showConversation}
             onClick={() => setShowConversation((s) => !s)}
           >
-            {showConversation ? "Dölj konversationen" : "Visa konversationen"}
+            <MessagesSquare /> {showConversation ? "Dölj konversationen" : "Visa konversationen"}
           </Button>
           {showConversation && (
-            <ul className="mt-3 space-y-2 rounded-2xl bg-muted/60 p-3 text-sm">
+            <ul className="mt-3 space-y-3 rounded-xl bg-muted p-4 text-sm">
               {messages?.map((m, i) => (
                 <li key={i}>
-                  <span className="font-medium">{m.sender_name}</span>{" "}
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(m.created_at).toLocaleString("sv-SE")}
-                  </span>
-                  <p className="whitespace-pre-line">{m.body}</p>
+                  <p>
+                    <span className="font-semibold">{m.sender_name}</span>{" "}
+                    <span className="text-xs text-muted-foreground">{dateTime(m.created_at)}</span>
+                  </p>
+                  <p className="mt-0.5 whitespace-pre-line">{m.body}</p>
                 </li>
               ))}
-              {messages?.length === 0 && (
-                <li className="text-muted-foreground">Inga meddelanden.</li>
-              )}
+              {messages?.length === 0 && <li className="text-muted-foreground">Inga meddelanden.</li>}
             </ul>
           )}
         </div>
       )}
 
       {isOpen ? (
-        <div className="space-y-2 border-t border-border pt-3">
+        <div className="mt-5 space-y-3 border-t border-border pt-4">
           {r.target_type === "listing" && r.listing_status && r.listing_status !== "removed" && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 value={hideReason}
                 onChange={(e) => setHideReason(e.target.value)}
-                className="max-w-sm"
+                className="sm:max-w-sm"
                 aria-label="Skäl som visas för annonsören"
                 placeholder="Skäl som visas för annonsören"
               />
-              <Button
-                size="sm"
-                variant="destructive"
-                className="rounded-full"
-                onClick={() => actions.hide(r.target_id, hideReason)}
-              >
-                Dölj annonsen
+              <Button variant="destructive" className="shrink-0" onClick={() => actions.hide(r.target_id, hideReason)}>
+                <EyeOff /> Dölj annonsen
               </Button>
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              onClick={() => actions.dismiss(r.id)}
-            >
-              Avfärda
+            <Button size="sm" variant="outline" onClick={() => actions.dismiss(r.id)}>
+              <Check /> Avfärda
             </Button>
             {r.reported_user_id && !r.reported_user_blocked && (
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-full text-destructive"
-                onClick={() =>
-                  actions.block(r.reported_user_id!, r.reported_user_name ?? "användaren")
-                }
+                className={dangerOutline}
+                onClick={() => actions.block(r.reported_user_id!, r.reported_user_name ?? "användaren")}
               >
-                Spärra {r.reported_user_name}
+                <Ban /> Spärra {r.reported_user_name}
               </Button>
             )}
           </div>
         </div>
       ) : (
-        <p className="border-t border-border pt-3 text-sm text-muted-foreground">
-          {r.resolution} · {new Date(r.resolved_at!).toLocaleString("sv-SE")}
+        <p className="mt-5 border-t border-border pt-4 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{r.resolution}</span> · {dateTime(r.resolved_at!)}
         </p>
       )}
     </article>
@@ -328,7 +361,7 @@ function ListingsTab() {
   const actions = useAdminActions();
   const [search, setSearch] = useState("");
   const [reasons, setReasons] = useState<Record<string, string>>({});
-  const { data: listings } = useQuery({
+  const { data: listings, isLoading } = useQuery({
     queryKey: ["admin-listings", search],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("admin_listings", { _search: search.trim() });
@@ -338,66 +371,73 @@ function ListingsTab() {
   });
 
   return (
-    <div className="space-y-3">
-      <Input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Sök på rubrik …"
-        className="max-w-sm"
-      />
-      {listings?.map((l) => (
-        <div
-          key={l.id}
-          className="flex flex-wrap items-center gap-3 rounded-2xl border border-border p-3 text-sm"
-        >
-          <div className="min-w-0 flex-1">
-            <Link to="/annons/$id" params={{ id: l.id }} className="font-medium hover:underline">
-              {l.title}
-            </Link>
-            <p
-              className={cn(
-                "text-xs text-muted-foreground",
-                l.status === "removed" && "text-destructive",
+    <div className="space-y-4">
+      <div className="relative max-w-sm">
+        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+        <Input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Sök på rubrik …"
+          aria-label="Sök annonser på rubrik"
+          className="pl-10"
+        />
+      </div>
+      {isLoading && <LoadingRows rows={4} />}
+      {listings && listings.length > 0 && (
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+          {listings.map((l) => (
+            <li key={l.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    to="/annons/$id"
+                    params={{ id: l.id }}
+                    className="min-w-0 rounded-sm font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {l.title}
+                  </Link>
+                  <ListingStatusBadge status={l.status} />
+                  {l.owner_blocked && <StatusBadge tone="danger">Ägaren spärrad</StatusBadge>}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {l.city} · {l.owner_id ? l.owner_name : "Exempelannons"}
+                </p>
+                {l.moderation_reason && (
+                  <p className="mt-1 text-sm text-destructive">Skäl: {l.moderation_reason}</p>
+                )}
+              </div>
+              {l.status === "removed" ? (
+                <Button size="sm" variant="outline" className="self-start lg:self-auto" onClick={() => actions.restore(l.id)}>
+                  <RotateCcw /> Återställ
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    value={reasons[l.id] ?? ""}
+                    onChange={(e) => setReasons((r) => ({ ...r, [l.id]: e.target.value }))}
+                    placeholder="Skäl"
+                    className="h-9 min-w-0 flex-1 lg:w-48 lg:flex-none"
+                    aria-label={`Skäl för att dölja ${l.title}`}
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-9 shrink-0"
+                    onClick={() => actions.hide(l.id, reasons[l.id] ?? "")}
+                  >
+                    <EyeOff /> Dölj
+                  </Button>
+                </div>
               )}
-            >
-              {STATUS_LABEL[l.status] ?? l.status} · {l.city} ·{" "}
-              {l.owner_id ? l.owner_name : "Exempelannons"}
-              {l.owner_blocked && " · spärrad"}
-              {l.moderation_reason && ` · skäl: ${l.moderation_reason}`}
-            </p>
-          </div>
-          {l.status === "removed" ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full"
-              onClick={() => actions.restore(l.id)}
-            >
-              Återställ
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Input
-                value={reasons[l.id] ?? ""}
-                onChange={(e) => setReasons((r) => ({ ...r, [l.id]: e.target.value }))}
-                placeholder="Skäl"
-                className="h-9 w-40"
-                aria-label={`Skäl för att dölja ${l.title}`}
-              />
-              <Button
-                size="sm"
-                variant="destructive"
-                className="rounded-full"
-                onClick={() => actions.hide(l.id, reasons[l.id] ?? "")}
-              >
-                Dölj
-              </Button>
-            </div>
-          )}
-        </div>
-      ))}
+            </li>
+          ))}
+        </ul>
+      )}
       {listings?.length === 0 && (
-        <p className="text-sm text-muted-foreground">Inga annonser hittades.</p>
+        <EmptyState icon={Search} title="Inga annonser hittades">
+          {search.trim() ? "Prova ett annat ord ur rubriken." : "Det finns inga annonser än."}
+        </EmptyState>
       )}
     </div>
   );
@@ -405,7 +445,7 @@ function ListingsTab() {
 
 function BlockedTab() {
   const actions = useAdminActions();
-  const { data: users } = useQuery({
+  const { data: users, isLoading } = useQuery({
     queryKey: ["admin-blocked"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("admin_blocked_users");
@@ -415,34 +455,33 @@ function BlockedTab() {
   });
 
   return (
-    <div className="space-y-3">
-      {users?.map((u) => (
-        <div
-          key={u.id}
-          className="flex items-center justify-between gap-3 rounded-2xl border border-border p-3 text-sm"
-        >
-          <span>
-            {u.name}{" "}
-            <span className="text-xs text-muted-foreground">
-              · spärrad {new Date(u.blocked_at).toLocaleDateString("sv-SE")}
-            </span>
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => actions.unblock(u.id)}
-          >
-            Häv spärr
-          </Button>
-        </div>
-      ))}
-      {users?.length === 0 && (
-        <p className="text-sm text-muted-foreground">Inga spärrade användare.</p>
+    <div className="space-y-4">
+      {isLoading && <LoadingRows rows={2} />}
+      {users && users.length > 0 && (
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+          {users.map((u) => (
+            <li key={u.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="font-semibold">{u.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  Spärrad {new Date(u.blocked_at).toLocaleDateString("sv-SE")}
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => actions.unblock(u.id)}>
+                Häv spärr
+              </Button>
+            </li>
+          ))}
+        </ul>
       )}
-      <p className="text-xs text-muted-foreground">
-        När spärren hävs kommer annonserna inte tillbaka automatiskt. Återställ dem under "Annonser"
-        om det behövs.
+      {users?.length === 0 && (
+        <EmptyState icon={UserCheck} title="Inga spärrade användare">
+          Du kan spärra en användare från en anmälan eller under Förtroende.
+        </EmptyState>
+      )}
+      <p className="max-w-2xl text-sm text-muted-foreground">
+        När spärren hävs kommer annonserna inte tillbaka automatiskt. Återställ dem under Annonser om
+        det behövs.
       </p>
     </div>
   );
@@ -464,64 +503,72 @@ function TrustTab() {
   });
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
+    <div className="space-y-4">
+      <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
         Ett grovt värde för att hitta troliga bedragare tidigt. Börjar på 50. Upp: kontots ålder,
         avslutade hyror och bra omdömen. Ner: anmälningar (−5 öppna, −15 åtgärdade), dolda annonser
         (−10), användare som blockerat personen (−5) och spärr. Lägst först.
       </p>
-      {isLoading && <p className="text-sm text-muted-foreground">Hämtar …</p>}
-      {users?.map((u) => (
-        <div
-          key={u.user_id}
-          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-3 text-sm"
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className={cn(
-                "grid h-10 w-10 shrink-0 place-items-center rounded-full font-semibold tabular-nums",
-                u.score < 30
-                  ? "bg-destructive/15 text-destructive"
-                  : u.score < 50
-                    ? "bg-accent/30 text-foreground"
-                    : "bg-primary/15 text-primary",
+      {isLoading && <LoadingRows rows={4} />}
+      {users && users.length > 0 && (
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+          {users.map((u) => (
+            <li key={u.user_id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span
+                  className={cn(
+                    "grid h-11 w-11 shrink-0 place-items-center rounded-full font-display font-bold tabular-nums",
+                    u.score < 30
+                      ? "bg-destructive/10 text-destructive"
+                      : u.score < 50
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-muted text-foreground",
+                  )}
+                  title="Förtroendevärde"
+                  aria-label={`Förtroendevärde ${u.score} av 100`}
+                >
+                  {u.score}
+                </span>
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2">
+                    {u.blocked ? (
+                      <span className="font-semibold">{u.name}</span>
+                    ) : (
+                      <Link
+                        to="/profil/$id"
+                        params={{ id: u.user_id }}
+                        className="rounded-sm font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {u.name}
+                      </Link>
+                    )}
+                    {u.blocked && <StatusBadge tone="danger">Spärrad</StatusBadge>}
+                  </p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {u.member_days} dagar · {u.listings} annonser · {u.completed_rentals} hyror
+                    {u.review_count > 0 && ` · ${u.rating} i snitt (${u.review_count})`}
+                    {u.reports_open + u.reports_upheld > 0 &&
+                      ` · anmälningar: ${u.reports_open} öppna, ${u.reports_upheld} åtgärdade`}
+                    {u.removed_listings > 0 && ` · ${u.removed_listings} dolda annonser`}
+                    {u.blocked_by > 0 && ` · blockerad av ${u.blocked_by}`}
+                  </p>
+                </div>
+              </div>
+              {!u.blocked && u.score < 30 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={dangerOutline}
+                  onClick={() => void actions.block(u.user_id, u.name)}
+                >
+                  <Ban /> Spärra
+                </Button>
               )}
-              title="Förtroendevärde"
-            >
-              {u.score}
-            </span>
-            <span>
-              {u.blocked ? (
-                <span className="font-medium">{u.name}</span>
-              ) : (
-                <Link to="/profil/$id" params={{ id: u.user_id }} className="font-medium hover:underline">
-                  {u.name}
-                </Link>
-              )}
-              {u.blocked && <span className="ml-2 text-xs text-destructive">spärrad</span>}
-              <span className="block text-xs text-muted-foreground">
-                {u.member_days} dagar · {u.listings} annonser · {u.completed_rentals} hyror
-                {u.review_count > 0 && ` · ${u.rating} i snitt (${u.review_count})`}
-                {u.reports_open + u.reports_upheld > 0 &&
-                  ` · anmälningar: ${u.reports_open} öppna, ${u.reports_upheld} åtgärdade`}
-                {u.removed_listings > 0 && ` · ${u.removed_listings} dolda annonser`}
-                {u.blocked_by > 0 && ` · blockerad av ${u.blocked_by}`}
-              </span>
-            </span>
-          </div>
-          {!u.blocked && u.score < 30 && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full text-destructive"
-              onClick={() => void actions.block(u.user_id, u.name)}
-            >
-              Spärra
-            </Button>
-          )}
-        </div>
-      ))}
-      {users?.length === 0 && <p className="text-sm text-muted-foreground">Inga användare än.</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {users?.length === 0 && <EmptyState icon={Users} title="Inga användare än" />}
     </div>
   );
 }

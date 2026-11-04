@@ -130,7 +130,7 @@ function TermsPage() {
       <h2>8. Personuppgifter</h2>
       <p>
         Hur vi hanterar personuppgifter står i{" "}
-        <Link to="/integritet" className="text-primary underline">
+        <Link to="/integritet">
           integritetspolicyn
         </Link>
         .
@@ -145,7 +145,7 @@ function TermsPage() {
       <h2>10. Kontakt</h2>
       <p>
         Frågor om villkoren: {contactText}. Se även{" "}
-        <Link to="/kontakt" className="text-primary underline">
+        <Link to="/kontakt">
           kontaktsidan
         </Link>
         .

@@ -42,33 +42,40 @@ export function ActiveFilterChips({
   params,
   onPatch,
   onClearAll,
+  hide = [],
 }: {
   params: SearchParams;
   onPatch: (p: Partial<SearchParams>) => void;
   onClearAll: () => void;
+  /** Filter som sidan låser (t.ex. kategorin på /hyra/verktyg) visas inte som borttagbara. */
+  hide?: string[];
 }) {
-  const chips = activeChips(params);
+  const chips = activeChips(params).filter((c) => !hide.includes(c.key));
   if (!chips.length) return null;
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <ul className="flex flex-wrap items-center gap-2" aria-label="Valda filter">
       {chips.map((c) => (
-        <button
-          key={c.key}
-          type="button"
-          onClick={() => onPatch(c.patch)}
-          className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs transition-colors hover:border-primary hover:text-primary"
-        >
-          {c.label}
-          <X className="h-3 w-3" />
-        </button>
+        <li key={c.key}>
+          <button
+            type="button"
+            onClick={() => onPatch(c.patch)}
+            aria-label={`Ta bort filter: ${c.label}`}
+            className="flex h-8 items-center gap-1.5 rounded-full bg-muted pl-3 pr-2.5 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {c.label}
+            <X aria-hidden className="h-3.5 w-3.5 opacity-70" />
+          </button>
+        </li>
       ))}
-      <button
-        type="button"
-        onClick={onClearAll}
-        className="rounded-full px-3 py-1.5 text-xs font-semibold text-muted-foreground underline-offset-4 hover:underline"
-      >
-        Rensa alla
-      </button>
-    </div>
+      <li>
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="h-8 rounded-full px-2 text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Rensa alla
+        </button>
+      </li>
+    </ul>
   );
 }

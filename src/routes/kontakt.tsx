@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Mail } from "lucide-react";
 import { LegalPage } from "@/components/LegalPage";
+import { Button } from "@/components/ui/button";
 import { SITE, contactText, operatorText } from "@/lib/site";
 
 export const Route = createFileRoute("/kontakt")({
@@ -17,19 +19,27 @@ export const Route = createFileRoute("/kontakt")({
 
 function ContactPage() {
   return (
-    <LegalPage title="Kontakt">
-      <p>
-        Hyrkoll drivs av {operatorText}. E-post:{" "}
-        {SITE.contactEmail ? (
-          <a href={`mailto:${SITE.contactEmail}`} className="text-primary underline">
-            {SITE.contactEmail}
-          </a>
-        ) : (
-          contactText
-        )}
-        .
-      </p>
-
+    <LegalPage
+      title="Kontakt"
+      intro={
+        <>
+          <p>Hyrkoll drivs av {operatorText}.</p>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-muted p-5">
+            <div className="min-w-0">
+              <p className="text-sm text-muted-foreground">E-post</p>
+              <p className="break-all font-display text-xl font-bold">{SITE.contactEmail || contactText}</p>
+            </div>
+            {SITE.contactEmail && (
+              <Button asChild>
+                <a href={`mailto:${SITE.contactEmail}`}>
+                  <Mail /> Mejla oss
+                </a>
+              </Button>
+            )}
+          </div>
+        </>
+      }
+    >
       <h2>Anmäl en annons eller konversation</h2>
       <p>
         Snabbast är knappen Anmäl på annonsen eller i konversationen. Gäller det något olagligt,
@@ -47,11 +57,11 @@ function ContactPage() {
 
       <p>
         Läs även{" "}
-        <Link to="/villkor" className="text-primary underline">
+        <Link to="/villkor">
           användarvillkoren
         </Link>{" "}
         och{" "}
-        <Link to="/integritet" className="text-primary underline">
+        <Link to="/integritet">
           integritetspolicyn
         </Link>
         .

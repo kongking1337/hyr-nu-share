@@ -70,10 +70,10 @@ export function OfferCard({
     : null;
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start gap-3">
         {offer.listingImage && !compact && (
-          <img src={offer.listingImage} alt="" loading="lazy" className="h-16 w-20 rounded-2xl object-cover" />
+          <img src={offer.listingImage} alt="" loading="lazy" className="h-16 w-20 rounded-xl object-cover" />
         )}
         <div className="min-w-40 flex-1">
           <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
@@ -90,7 +90,7 @@ export function OfferCard({
             {offer.counterpartName && ` · ${offer.counterpartName}`}
             {offer.counterpartRating != null && (
               <span className="ml-1 inline-flex items-center gap-0.5">
-                <Star className="h-3 w-3 fill-accent text-accent" />
+                <Star className="h-3 w-3 fill-foreground text-foreground" aria-hidden />
                 {offer.counterpartRating} ({offer.counterpartReviews ?? 0})
               </span>
             )}
@@ -98,7 +98,7 @@ export function OfferCard({
         </div>
         <div className="text-right">
           <p className="text-[11px] text-muted-foreground">Ordinarie {kr(list)}</p>
-          <p className="font-display text-xl font-semibold">{kr(amount)}</p>
+          <p className="font-display text-xl font-bold">{kr(amount)}</p>
           <p className="text-[11px] text-muted-foreground">
             {diff >= 0 ? "−" : "+"}
             {kr(Math.abs(diff))} · {Math.abs(Math.round(pct))} % {diff >= 0 ? "rabatt" : "över"}
@@ -106,7 +106,7 @@ export function OfferCard({
         </div>
       </div>
 
-      {offer.message && <p className="mt-3 rounded-2xl bg-muted/60 px-3 py-2 text-sm">{offer.message}</p>}
+      {offer.message && <p className="mt-3 rounded-xl bg-muted px-3 py-2 text-sm">{offer.message}</p>}
 
       <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
         <Clock className="h-3 w-3" /> {open ? timeLeft(offer.expires_at) : OFFER_STATUS_LABEL[status]}
@@ -129,19 +129,19 @@ export function OfferCard({
         <div className="mt-3 flex flex-wrap gap-2">
           {canRespond && (
             <>
-              <Button size="sm" className="rounded-full" onClick={() => onAction!("accept")}>
+              <Button size="sm" onClick={() => onAction!("accept")}>
                 Acceptera
               </Button>
-              <Button size="sm" variant="outline" className="rounded-full" onClick={() => setCountering((v) => !v)}>
+              <Button size="sm" variant="outline" onClick={() => setCountering((v) => !v)}>
                 Motbud
               </Button>
-              <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onAction!("decline")}>
+              <Button size="sm" variant="ghost" onClick={() => onAction!("decline")}>
                 Neka
               </Button>
             </>
           )}
           {canWithdraw && (
-            <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onAction!("withdraw")}>
+            <Button size="sm" variant="ghost" onClick={() => onAction!("withdraw")}>
               Återkalla bud
             </Button>
           )}
@@ -152,13 +152,13 @@ export function OfferCard({
         <div className="mt-2 flex gap-2">
           <Input
             inputMode="numeric"
+            aria-label="Motbud, totalt för perioden"
             value={counter}
             onChange={(e) => setCounter(e.target.value)}
             placeholder="Motbud, totalt för perioden"
           />
           <Button
             size="sm"
-            className="rounded-full"
             onClick={() => {
               const v = Number(counter);
               if (!v) return;

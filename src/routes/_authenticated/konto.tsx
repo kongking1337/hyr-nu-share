@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
-import { BadgeCheck, LogOut, Trash2 } from "lucide-react";
+import { BadgeCheck, ChevronRight, LogOut, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadingRows, Page, PageHeader } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
@@ -101,115 +102,172 @@ function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-semibold">Mitt konto</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
-        </div>
-        <Button
-          variant="outline"
-          className="rounded-full"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            navigate({ to: "/" });
-          }}
-        >
-          <LogOut className="mr-1 h-4 w-4" /> Logga ut
-        </Button>
+    <Page width="text">
+      <PageHeader
+        title="Mitt konto"
+        description={user?.email}
+        actions={
+          <Button
+            variant="outline"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/" });
+            }}
+          >
+            <LogOut aria-hidden /> Logga ut
+          </Button>
+        }
+      />
+
+      <div className="space-y-6">
+        <nav aria-label="Genvägar" className="grid gap-3 sm:grid-cols-2">
+          <Shortcut to="/mina-annonser" title="Mina annonser" text="Redigera, pausa och ta bort dina annonser." />
+          {user && (
+            <Link
+              to="/profil/$id"
+              params={{ id: user.id }}
+              className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span>
+                <span className="block font-display text-lg font-bold">Din profil</span>
+                <span className="block text-sm text-muted-foreground">Så ser andra dig och dina omdömen.</span>
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+            </Link>
+          )}
+        </nav>
+
+        <SettingsCard id="profil" title="Profil" description="Det här visas för andra på din profil och i dina annonser.">
+          <div className="space-y-1.5">
+            <Label htmlFor="full-name">Namn</Label>
+            <Input
+              id="full-name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-describedby="full-name-hint"
+            />
+            <p id="full-name-hint" className="text-xs text-muted-foreground">
+              I dina annonser visas förnamn och första bokstaven i efternamnet, t.ex. "Anna S.".
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="city">Ort (visas på din profil)</Label>
+            <Input id="city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="bio">Om mig (visas på din profil)</Label>
+            <Textarea
+              id="bio"
+              rows={4}
+              maxLength={MAX_BIO_LENGTH}
+              value={bio}
+              placeholder="T.ex. vad du hyr ut, var du bor och när du brukar kunna lämna över saker."
+              onChange={(e) => setBio(e.target.value)}
+              aria-describedby="bio-count"
+            />
+            <p id="bio-count" className="text-right text-xs tabular-nums text-muted-foreground">
+              {bio.length} / {MAX_BIO_LENGTH}
+            </p>
+          </div>
+          <div>
+            <Button onClick={saveProfile}>Spara profilen</Button>
+          </div>
+        </SettingsCard>
+
+        <PhoneSection verified={!!profile?.phone_verified} />
+
+        <SettingsCard id="losenord" title="Byt lösenord">
+          <form onSubmit={changePassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-password">Nytt lösenord (minst {MIN_PASSWORD_LENGTH} tecken)</Label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button type="submit" variant="outline" disabled={busy || !password}>
+              Byt lösenord
+            </Button>
+          </form>
+        </SettingsCard>
+
+        <BlockedUsersSection />
       </div>
 
-      <Link
-        to="/mina-annonser"
-        className="mt-6 flex items-center justify-between rounded-3xl border border-border p-5 transition-colors hover:bg-muted/60"
+      <section
+        aria-labelledby="radera-konto"
+        className="mt-16 space-y-4 rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-5 sm:p-6"
       >
-        <span>
-          <span className="block font-display text-lg font-semibold">Mina annonser</span>
-          <span className="block text-sm text-muted-foreground">
-            Redigera, pausa och ta bort dina annonser.
-          </span>
-        </span>
-        <span className="text-sm text-primary">Öppna →</span>
-      </Link>
-
-      <section className="mt-8 space-y-4">
-        <h2 className="font-display text-xl font-semibold">Profil</h2>
-        <div className="space-y-1.5">
-          <Label>Namn</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
-          <p className="text-xs text-muted-foreground">
-            I dina annonser visas förnamn och första bokstaven i efternamnet, t.ex. "Anna S.".
+        <div>
+          <h2 id="radera-konto" className="flex items-center gap-2 font-display text-xl font-bold text-destructive">
+            <TriangleAlert className="h-5 w-5" aria-hidden /> Radera konto
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ditt konto, din profil, dina annonser och bilder, favoriter, sparade sökningar och konversationer raderas
+            för gott. Det går inte att ångra.
           </p>
         </div>
         <div className="space-y-1.5">
-          <Label>Ort (visas på din profil)</Label>
-          <Input value={city} onChange={(e) => setCity(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="bio">Om mig (visas på din profil)</Label>
-          <Textarea
-            id="bio"
-            rows={4}
-            maxLength={MAX_BIO_LENGTH}
-            value={bio}
-            placeholder="T.ex. vad du hyr ut, var du bor och när du brukar kunna lämna över saker."
-            onChange={(e) => setBio(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button className="rounded-full" onClick={saveProfile}>Spara</Button>
-          {user && (
-            <Link to="/profil/$id" params={{ id: user.id }} className="text-sm text-primary hover:underline">
-              Visa din profil →
-            </Link>
-          )}
-        </div>
-      </section>
-
-      <PhoneSection verified={!!profile?.phone_verified} />
-
-      <section className="mt-10 space-y-3">
-        <h2 className="font-display text-xl font-semibold">Byt lösenord</h2>
-        <form onSubmit={changePassword} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="new-password">Nytt lösenord (minst {MIN_PASSWORD_LENGTH} tecken)</Label>
-            <Input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <Button type="submit" variant="outline" className="rounded-full" disabled={busy || !password}>
-            Byt lösenord
-          </Button>
-        </form>
-      </section>
-
-      <BlockedUsersSection />
-
-      <section className="mt-10 space-y-3 rounded-3xl border border-destructive/40 p-5">
-        <h2 className="font-display text-xl font-semibold">Radera konto</h2>
-        <p className="text-sm text-muted-foreground">
-          Ditt konto, din profil, dina annonser och bilder, favoriter, sparade sökningar och konversationer raderas
-          för gott.
-          Det går inte att ångra.
-        </p>
-        <div className="space-y-1.5">
           <Label htmlFor="confirm-delete">Skriv RADERA för att bekräfta</Label>
-          <Input id="confirm-delete" value={confirmDelete} onChange={(e) => setConfirmDelete(e.target.value)} />
+          <Input
+            id="confirm-delete"
+            autoComplete="off"
+            className="max-w-xs"
+            value={confirmDelete}
+            onChange={(e) => setConfirmDelete(e.target.value)}
+          />
         </div>
         <Button
           variant="destructive"
-          className="rounded-full"
           disabled={busy || confirmDelete.trim().toUpperCase() !== "RADERA"}
           onClick={deleteAccount}
         >
-          <Trash2 className="mr-1 h-4 w-4" /> Radera mitt konto
+          <Trash2 aria-hidden /> Radera mitt konto
         </Button>
       </section>
-    </div>
+    </Page>
+  );
+}
+
+/** Ett avsnitt i inställningarna: rubrik, kort förklaring och innehåll. */
+function SettingsCard({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  title: string;
+  description?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section aria-labelledby={id} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <h2 id={id} className="font-display text-xl font-bold">
+        {title}
+      </h2>
+      {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+      <div className="mt-5 space-y-4">{children}</div>
+    </section>
+  );
+}
+
+function Shortcut({ to, title, text }: { to: "/mina-annonser"; title: string; text: string }) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <span>
+        <span className="block font-display text-lg font-bold">{title}</span>
+        <span className="block text-sm text-muted-foreground">{text}</span>
+      </span>
+      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+    </Link>
   );
 }
 
@@ -290,39 +348,40 @@ function PhoneSection({ verified }: { verified: boolean }) {
   }
 
   return (
-    <section className="mt-10 space-y-3">
-      <h2 className="font-display text-xl font-semibold">Verifiera telefonnummer</h2>
-      <p className="text-sm text-muted-foreground">
-        Numret visas aldrig för andra. Andra ser bara att det är verifierat.
-      </p>
+    <SettingsCard
+      id="telefon"
+      title="Verifiera telefonnummer"
+      description="Numret visas aldrig för andra. Andra ser bara att det är verifierat."
+    >
       {verified && !sentTo && (
-        <p className="flex items-center gap-1.5 text-sm font-medium text-primary">
-          <BadgeCheck className="h-4 w-4" /> Verifierat ✓
+        <p className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-semibold">
+          <BadgeCheck className="h-4 w-4 text-primary" aria-hidden /> Verifierat
         </p>
       )}
       {sentTo ? (
-        <form onSubmit={verify} className="space-y-3">
+        <form onSubmit={verify} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="sms-code">Koden i SMS:et till {sentTo}</Label>
             <Input
               id="sms-code"
               inputMode="numeric"
               autoComplete="one-time-code"
+              className="max-w-xs"
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="rounded-full" disabled={busy || !code.trim()}>
+            <Button type="submit" disabled={busy || !code.trim()}>
               Verifiera
             </Button>
-            <Button type="button" variant="ghost" className="rounded-full" onClick={() => setSentTo(null)}>
+            <Button type="button" variant="ghost" onClick={() => setSentTo(null)}>
               Byt nummer
             </Button>
           </div>
         </form>
       ) : (
-        <form onSubmit={sendCode} className="space-y-3">
+        <form onSubmit={sendCode} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="phone">{verified ? "Byt till ett annat nummer" : "Mobilnummer"}</Label>
             <Input
@@ -330,16 +389,17 @@ function PhoneSection({ verified }: { verified: boolean }) {
               type="tel"
               autoComplete="tel"
               placeholder="070-123 45 67"
+              className="max-w-xs"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
-          <Button type="submit" variant="outline" className="rounded-full" disabled={busy || !phone.trim()}>
+          <Button type="submit" variant="outline" disabled={busy || !phone.trim()}>
             Skicka kod
           </Button>
         </form>
       )}
-    </section>
+    </SettingsCard>
   );
 }
 
@@ -372,22 +432,27 @@ function BlockedUsersSection() {
   }
 
   return (
-    <section className="mt-10 space-y-3">
-      <h2 className="font-display text-xl font-semibold">Blockerade användare</h2>
-      {isLoading ? null : !blocked?.length ? (
+    <SettingsCard
+      id="blockerade"
+      title="Blockerade användare"
+      description="De du har blockerat kan inte skriva till dig eller skicka förfrågningar."
+    >
+      {isLoading ? (
+        <LoadingRows rows={1} />
+      ) : !blocked?.length ? (
         <p className="text-sm text-muted-foreground">Du har inte blockerat någon.</p>
       ) : (
-        <ul className="divide-y divide-border rounded-3xl border border-border">
+        <ul className="divide-y divide-border rounded-xl border border-border">
           {blocked.map((b) => (
-            <li key={b.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-              <span className="font-medium">{b.name}</span>
-              <Button size="sm" variant="ghost" className="rounded-full" onClick={() => unblock(b.id, b.name)}>
+            <li key={b.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+              <span className="min-w-0 truncate font-medium">{b.name}</span>
+              <Button size="sm" variant="ghost" onClick={() => unblock(b.id, b.name)}>
                 Ta bort blockering
               </Button>
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </SettingsCard>
   );
 }
