@@ -247,6 +247,8 @@ function MyListings() {
                 <Button size="sm" variant="outline" className="rounded-full" onClick={() => share(l.id, l.title)}>
                   <Share2 className="mr-1 h-4 w-4" /> Dela
                 </Button>
+                {/* Annonser som moderatorerna har dolt ligger kvar (databasen stoppar borttagningen). */}
+                {l.status !== "removed" && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button size="sm" variant="ghost" className="rounded-full text-destructive">
@@ -266,6 +268,7 @@ function MyListings() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                )}
               </div>
             </div>
           );

@@ -106,6 +106,14 @@ function AccountPage() {
       toast.error("Du har bokningar som inte är avslutade. Avboka dem eller avsluta hyran under Bokningar först.");
       return;
     }
+    const itemStillOut = (bookings ?? []).some(
+      (b) => b.status === "confirmed" && b.picked_up_at && !b.returned_at && b.end_date >= addDays(todayISO(), -60),
+    );
+    if (itemStillOut) {
+      setBusy(false);
+      toast.error(ITEM_STILL_OUT);
+      return;
+    }
     const recentlyEnded = (bookings ?? []).some(
       (b) =>
         b.status === "completed" &&
@@ -254,7 +262,9 @@ function AccountPage() {
 
 const MAX_BIO_LENGTH = 500;
 
-// Samma text som i delete_my_account (supabase/migrations/20261104120000_review_fixes.sql).
+// Samma texter som i delete_my_account (supabase/migrations/20261104120000_review_fixes.sql).
+const ITEM_STILL_OUT =
+  "Du har en hyra där saken inte är markerad som återlämnad. Uthyraren markerar det under Bokningar. Kontakta oss om det inte går.";
 const RECENT_RENTAL =
   "Du har en hyra som avslutades för mindre än 14 dagar sedan. Kontot kan raderas när 14 dagar har gått, så att den du hyrde med har kvar avtalet och bilderna om något behöver redas ut.";
 

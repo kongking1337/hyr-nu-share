@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { addDays, todayISO } from "@/lib/bookings";
 import { MAX_MESSAGE_LENGTH, sendMessage } from "@/lib/messages";
 import { photoUrl } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
@@ -83,7 +84,8 @@ function MessagesPage() {
   const counterpartId = parties ? (parties.owner_id === user?.id ? parties.renter_id : parties.owner_id) : null;
   const { data: iBlocked } = useIsBlocked(counterpartId);
 
-  // Under en pågående hyra går det att skriva även efter en blockering, så att saken kan lämnas tillbaka.
+  // Under en pågående hyra (till en vecka efter sista dagen) går det att skriva även efter en
+  // blockering, så att saken kan lämnas tillbaka. Samma regel som i databasen.
   const { data: ongoingRental } = useQuery({
     queryKey: ["ongoing-rental", user?.id, counterpartId],
     enabled: !!iBlocked && !!user && !!counterpartId,
@@ -92,6 +94,7 @@ function MessagesPage() {
         .from("bookings")
         .select("id", { count: "exact", head: true })
         .eq("status", "confirmed")
+        .gte("end_date", addDays(todayISO(), -7))
         .in("owner_id", [user!.id, counterpartId!])
         .in("renter_id", [user!.id, counterpartId!]);
       if (error) throw error;

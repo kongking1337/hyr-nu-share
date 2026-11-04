@@ -1787,3 +1787,147 @@ test("a draft gets today's date when it is published; pausing keeps the date", a
   await as(u.kim, "UPDATE public.listings SET status = 'published' WHERE id = $1", [id]);
   assert.equal(await publishedAt(), false);
 });
+
+test("a listing that goes back to draft doesn't get a new date when published again", async () => {
+  const [{ id }] = await listingFor(u.kim, "Studsa inte upp");
+  await as(u.kim, "UPDATE public.listings SET status = 'published' WHERE id = $1", [id]);
+  // Created a month ago, first published 20 days ago.
+  await platform(
+    "UPDATE public.listings SET created_at = now() - interval '30 days', published_at = now() - interval '20 days' WHERE id = $1",
+    [id],
+  );
+  await as(u.kim, "UPDATE public.listings SET status = 'draft' WHERE id = $1", [id]);
+  await as(u.kim, "UPDATE public.listings SET status = 'published' WHERE id = $1", [id]);
+  const [l] = await platform(
+    "SELECT published_at < now() - interval '19 days' AS old FROM public.listings WHERE id = $1",
+    [id],
+  );
+  assert.equal(l.old, true);
+});
+
+test("the browser can't choose when a message or report was written, or see who handled a report", async () => {
+  const insertMessage = (columns, values) =>
+    as(
+      u.bob,
+      `INSERT INTO public.messages (conversation_id, sender_id, body${columns}) VALUES ($1, $2, 'Hej'${values})`,
+      [u.bob.contactConversationId, u.bob.id],
+    );
+  // A message dated in the future stayed unread at the top of the inbox, and old dates
+  // got around the message limit.
+  await assert.rejects(insertMessage(", created_at", ", 'infinity'"));
+  await assert.rejects(insertMessage(", created_at", ", '2000-01-01'"));
+  await insertMessage("", "");
+
+  await rejects(
+    u.kim,
+    "INSERT INTO public.reports (reporter_id, target_type, target_id, reason, created_at) VALUES ($1, 'user', $2, 'Spam', '2000-01-01')",
+    [u.kim.id, u.alice.id],
+  );
+  await rejects(
+    u.kim,
+    "INSERT INTO public.reports (reporter_id, target_type, target_id, reason, notified_at) VALUES ($1, 'user', $2, 'Spam', now())",
+    [u.kim.id, u.alice.id],
+  );
+  const [{ id }] = await reportAs(u.kim, "user", u.alice.id, "Spam");
+  await as(u.admin, "SELECT public.admin_dismiss_report($1)", [id]);
+  const [mine] = await as(u.kim, "SELECT status, resolution FROM public.reports WHERE id = $1", [id]);
+  assert.deepEqual(mine, { status: "resolved", resolution: "Ingen åtgärd" });
+  await rejects(u.kim, "SELECT resolved_by FROM public.reports WHERE id = $1", [id]);
+});
+
+test("the admin gets at most one report email per 15 minutes", async () => {
+  await platform("DELETE FROM private.email_throttle");
+  const claimReport = (id, reporter) =>
+    asService("SELECT * FROM public.claim_report_notification($1, $2)", [id, reporter.id]);
+  const [first] = await reportAs(u.kim, "user", u.bob.id, "Spam");
+  const [second] = await reportAs(u.kim, "user", u.mallory.id, "Spam");
+  assert.equal((await claimReport(first.id, u.kim)).length, 1);
+  assert.deepEqual(await claimReport(second.id, u.kim), []);
+  await platform("UPDATE private.email_throttle SET last_sent = now() - interval '16 minutes'");
+  const [third] = await reportAs(u.kim, "user", u.olle.id, "Spam");
+  assert.equal((await claimReport(third.id, u.kim)).length, 1);
+});
+
+test("a block lets messages through only until a week after the booked days", async () => {
+  await createUser("nils", "Nils Nord");
+  await createUser("ola", "Ola Ort");
+  const listing = await createListing(u.nils, "Cykelkärra");
+  const r = await requestBooking(u.ola, listing, day(1), day(2));
+  await respond(u.nils, r.booking_id, "accept");
+  await as(u.ola, "INSERT INTO public.user_blocks (blocker_id, blocked_id) VALUES ($1, $2)", [u.ola.id, u.nils.id]);
+  const send = () =>
+    as(u.nils, "INSERT INTO public.messages (conversation_id, sender_id, body) VALUES ($1, $2, 'Hej')", [
+      r.conversation_id,
+      u.nils.id,
+    ]);
+  await send();
+  // Never marked as returned: the booking stays confirmed, but the days are long gone.
+  await platform(
+    "UPDATE public.bookings SET start_date = private.today() - 20, end_date = private.today() - 10 WHERE id = $1",
+    [r.booking_id],
+  );
+  await assert.rejects(send(), /kan inte skicka/);
+});
+
+test("listings hidden by moderators can't be deleted, and reactivating counts towards 50", async () => {
+  const [{ id }] = await listingFor(u.kim, "Dold annons");
+  await as(u.admin, "SELECT public.admin_set_listing_hidden($1, true, 'Spam')", [id]);
+  await assert.rejects(as(u.kim, "DELETE FROM public.listings WHERE id = $1", [id]), /moderatorer/);
+  assert.equal((await platform("SELECT id FROM public.listings WHERE id = $1", [id])).length, 1);
+
+  await createUser("pia", "Pia Park");
+  const [sold] = await platform(
+    `INSERT INTO public.listings (owner_id, listing_type, title, category_slug, city, price, status)
+     VALUES ($1, 'sale', 'Såld cykel', 'verktyg', 'Solna', 100, 'sold') RETURNING id`,
+    [u.pia.id],
+  );
+  await platform(
+    `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day, status)
+     SELECT $1, 'Annons ' || n, 'verktyg', 'Solna', 100, 'published' FROM generate_series(1, 50) n`,
+    [u.pia.id],
+  );
+  await assert.rejects(
+    as(u.pia, "UPDATE public.listings SET status = 'published' WHERE id = $1", [sold.id]),
+    /högst 50/,
+  );
+  await rejects(u.pia, "UPDATE public.listings SET price_hour = -5 WHERE owner_id = $1", [u.pia.id]);
+});
+
+test("condition photos can't be overwritten, or deleted during the rental and 14 days after", async () => {
+  await createUser("rolf", "Rolf Ros");
+  await createUser("siv", "Siv Sand");
+  const listing = await createListing(u.rolf, "Kompressor");
+  const r = await requestBooking(u.siv, listing, day(1), day(2));
+  await respond(u.rolf, r.booking_id, "accept");
+  const path = photoOf(u.siv);
+  await upload(u.siv, path);
+  await setPhotos(u.siv, r.booking_id, "pickup", [path]);
+
+  const del = () => as(u.siv, "DELETE FROM storage.objects WHERE name = $1 RETURNING name", [path]);
+  assert.deepEqual(await as(u.siv, "UPDATE storage.objects SET owner = NULL WHERE name = $1 RETURNING name", [path]), []);
+  assert.deepEqual(await del(), []);
+  await respond(u.siv, r.booking_id, "picked_up");
+  await respond(u.rolf, r.booking_id, "returned");
+  assert.deepEqual(await del(), []);
+  await platform("UPDATE public.bookings SET returned_at = now() - interval '15 days' WHERE id = $1", [r.booking_id]);
+  assert.equal((await del()).length, 1);
+});
+
+test("accounts can't be deleted while a handed-over item isn't marked as returned", async () => {
+  await createUser("tom", "Tom Torn");
+  await createUser("ulf", "Ulf Ull");
+  const listing = await createListing(u.tom, "Motorsåg");
+  const r = await requestBooking(u.ulf, listing, day(1), day(2));
+  await respond(u.tom, r.booking_id, "accept");
+  await respond(u.ulf, r.booking_id, "picked_up");
+  await platform(
+    "UPDATE public.bookings SET start_date = private.today() - 30, end_date = private.today() - 20 WHERE id = $1",
+    [r.booking_id],
+  );
+  await assert.rejects(as(u.ulf, "SELECT public.delete_my_account()"), /markerad som återlämnad/);
+  await platform(
+    "UPDATE public.bookings SET start_date = private.today() - 80, end_date = private.today() - 70 WHERE id = $1",
+    [r.booking_id],
+  );
+  await as(u.ulf, "SELECT public.delete_my_account()");
+});
