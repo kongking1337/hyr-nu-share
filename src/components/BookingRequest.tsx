@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck } from "lucide-react";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
-import { sv } from "date-fns/locale";
+import { sv } from "react-day-picker/locale";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -61,7 +61,9 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
   const rent = bookingPrice(listing, days);
   const deliveryFee = delivery ? listing.deliveryFee : 0;
 
-  const problem = !start
+  // Med en minsta hyrtid väntar vi på slutdatumet innan något visas som fel.
+  const needsEnd = !!start && !range?.to && listing.minDays > 1;
+  const problem = !start || needsEnd
     ? null
     : days < listing.minDays
       ? `Minst ${listing.minDays} dygn. Välj ett senare slutdatum.`
@@ -116,7 +118,7 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
         ]}
         modifiers={{ taken: takenRanges(taken) }}
         modifiersClassNames={{ taken: "line-through opacity-50" }}
-        className="mx-auto rounded-2xl border border-border p-2"
+        className="mx-auto rounded-2xl border border-border p-2 [--cell-size:2.5rem] lg:[--cell-size:2.25rem]"
       />
       <p className="text-xs text-muted-foreground">
         Tryck på första och sista dagen. Överstrukna dagar är upptagna.
@@ -161,7 +163,9 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
           <p className="font-medium">
             {formatDates(start, end!)} · {days} dygn
           </p>
-          {problem ? (
+          {needsEnd ? (
+            <p className="text-muted-foreground">Välj sista dagen. Minst {listing.minDays} dygn.</p>
+          ) : problem ? (
             <p className="text-destructive">{problem}</p>
           ) : (
             <>
@@ -196,7 +200,7 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
           <Button
             className="w-full rounded-full"
             onClick={send}
-            disabled={busy || !start || !!problem}
+            disabled={busy || !start || needsEnd || !!problem}
           >
             <CalendarCheck className="mr-1 h-4 w-4" /> Skicka förfrågan
           </Button>

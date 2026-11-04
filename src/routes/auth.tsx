@@ -347,6 +347,7 @@ function AuthPage() {
                 <Button
                   key={t}
                   type="button"
+                  aria-pressed={accountType === t}
                   variant={accountType === t ? "default" : "outline"}
                   className="rounded-full"
                   onClick={() => setAccountType(t)}

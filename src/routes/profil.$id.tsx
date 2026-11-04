@@ -23,6 +23,8 @@ export const Route = createFileRoute("/profil/$id")({
   component: ProfilePage,
 });
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** "november 2026" */
 const monthYear = (iso: string) =>
   new Date(iso).toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
@@ -42,8 +44,10 @@ function ProfilePage() {
   const isAdmin = useIsAdmin();
   const queryClient = useQueryClient();
 
-  const { data: profile, isLoading } = useQuery({
+  const validId = UUID.test(id);
+  const { data: profile, isLoading, isError, refetch } = useQuery({
     queryKey: ["public-profile", id],
+    enabled: validId,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("public_profile", { _user_id: id });
       if (error) throw error;
@@ -97,10 +101,21 @@ function ProfilePage() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
+        <h1 className="font-display text-2xl font-semibold text-foreground">Profilen kunde inte hämtas</h1>
+        <Button className="mt-4 rounded-full" onClick={() => void refetch()}>
+          Försök igen
+        </Button>
+      </div>
+    );
+  }
+
   if (!profile) {
     return (
       <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
-        Profilen finns inte.
+        <h1 className="font-display text-2xl font-semibold text-foreground">Profilen finns inte</h1>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
+import { createFileRoute, notFound, stripSearchParams } from "@tanstack/react-router";
 import { SearchResultsPage } from "@/components/search/SearchResultsPage";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { DEFAULTS, validateSearchParams } from "@/lib/search/params";
@@ -7,6 +7,10 @@ import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 export const Route = createFileRoute("/hyra/$kategori")({
   validateSearch: validateSearchParams,
   search: { middlewares: [stripSearchParams(DEFAULTS)] },
+  // Okända kategorier ger 404, inte en tom sida som sökmotorer indexerar.
+  beforeLoad: ({ params }) => {
+    if (!CATEGORY_SYNONYMS[params.kategori]) throw notFound();
+  },
   head: ({ params }) => {
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;
     const title = `Hyra ${name.toLowerCase()} i Stockholm | Hyrkoll`;
@@ -29,7 +33,7 @@ function CategoryPage() {
   const { kategori } = Route.useParams();
   const search = Route.useSearch();
   const params = { ...search, category: kategori };
-  const { patch, reset } = useUrlSearchState(params);
+  const { patch, reset } = useUrlSearchState(params, { category: kategori });
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
     <SearchResultsPage

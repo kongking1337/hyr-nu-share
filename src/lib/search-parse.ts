@@ -70,6 +70,7 @@ function nextWeekday(target: number, from = new Date()): Date {
 const WEEKDAYS: Record<string, number> = {
   sondag: 0, mandag: 1, tisdag: 2, onsdag: 3, torsdag: 4, fredag: 5, lordag: 6,
 };
+const WEEKDAY_NAMES = ["söndag", "måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag"];
 
 export function parseSearch(raw: string): ParsedSearch {
   const n = normalize(raw);
@@ -100,20 +101,22 @@ export function parseSearch(raw: string): ParsedSearch {
   let startDate: string | null = null;
   let endDate: string | null = null;
   if (n.includes("helg")) {
-    const sat = nextWeekday(6);
-    const sun = new Date(sat);
-    sun.setDate(sun.getDate() + 1);
-    startDate = iso(sat);
-    endDate = iso(sun);
+    // På lördagen och söndagen menas den här helgen, inte nästa.
+    const today = new Date();
+    const start = today.getDay() === 6 || today.getDay() === 0 ? today : nextWeekday(6);
+    const end = new Date(start);
+    if (start.getDay() === 6) end.setDate(end.getDate() + 1);
+    startDate = iso(start);
+    endDate = iso(end);
     notes.push("Period: kommande helg");
   } else if (n.includes("imorgon") || n.includes("i morgon")) {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     startDate = endDate = iso(d);
-    notes.push("Period: imorgon");
+    notes.push("Period: i morgon");
   } else if (n.includes("idag") || n.includes("i dag")) {
     startDate = endDate = iso(new Date());
-    notes.push("Period: idag");
+    notes.push("Period: i dag");
   } else if (n.includes("en vecka") || n.includes("veckan")) {
     const d = new Date();
     const e = new Date();
@@ -126,7 +129,7 @@ export function parseSearch(raw: string): ParsedSearch {
       if (n.includes(name)) {
         const d = nextWeekday(idx);
         startDate = endDate = iso(d);
-        notes.push(`Period: nästa ${name}`);
+        notes.push(`Period: nästa ${WEEKDAY_NAMES[idx]}`);
         break;
       }
     }

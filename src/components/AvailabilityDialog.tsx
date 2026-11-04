@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { CalendarDays, Trash2 } from "lucide-react";
-import { sv } from "date-fns/locale";
+import { sv } from "react-day-picker/locale";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

@@ -80,7 +80,8 @@ function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         className="relative flex h-10 items-center gap-2 rounded-full border border-border bg-card pl-3 pr-1 text-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label={total ? `Kontomeny, ${total} saker att se` : "Kontomeny"}
+        // Namnet börjar med den synliga texten, så att röststyrning ("Logga in") hittar knappen.
+        aria-label={`${user ? "Konto" : "Logga in"}${total ? `, ${total} saker att se` : ""}`}
       >
         <span className="hidden sm:inline">{user ? "Konto" : "Logga in"}</span>
         <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">

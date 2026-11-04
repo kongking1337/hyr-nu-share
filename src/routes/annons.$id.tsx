@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Info, MapPin, Truck, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingRequest } from "@/components/BookingRequest";
 import { ContactSeller } from "@/components/ContactSeller";
@@ -13,6 +14,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { CANCELLATION_POLICIES } from "@/lib/bookings";
 import { rowToUnified } from "@/lib/providers/internal";
 import { kr, priceLabel } from "@/lib/pricing";
+import { DEFAULTS } from "@/lib/search/params";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/annons/$id")({
   head: () => ({
@@ -30,8 +34,10 @@ function ListingPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
 
-  const { data: listing, isLoading } = useQuery({
+  const validId = UUID.test(id);
+  const { data: listing, isLoading, isError, refetch } = useQuery({
     queryKey: ["listing", id],
+    enabled: validId,
     queryFn: async () => {
       const { data: row, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
@@ -40,10 +46,27 @@ function ListingPage() {
   });
 
   if (isLoading) return <div className="mx-auto max-w-5xl p-4"><Skeleton className="h-[520px] rounded-3xl" /></div>;
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
+        <h1 className="font-display text-2xl font-semibold text-foreground">Annonsen kunde inte hämtas</h1>
+        <p className="mt-2">Något gick fel hos oss eller med anslutningen.</p>
+        <Button className="mt-4 rounded-full" onClick={() => void refetch()}>
+          Försök igen
+        </Button>
+      </div>
+    );
+  }
   if (!listing) {
     return (
       <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
-        Annonsen finns inte längre. Den kan vara pausad eller borttagen.
+        <h1 className="font-display text-2xl font-semibold text-foreground">Annonsen finns inte längre</h1>
+        <p className="mt-2">Den kan vara pausad eller borttagen.</p>
+        <Button asChild variant="outline" className="mt-4 rounded-full">
+          <Link to="/sok" search={DEFAULTS}>
+            Sök efter något annat
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -101,7 +124,7 @@ function ListingPage() {
                   {[
                     listing.pickupAvailable && "Hämtas hos uthyraren",
                     listing.deliveryAvailable &&
-                      `Leverans ${listing.deliveryFee > 0 ? `för ${kr(listing.deliveryFee)}` : "ingår"}`,
+                      `${listing.pickupAvailable ? "leverans" : "Leverans"} ${listing.deliveryFee > 0 ? `för ${kr(listing.deliveryFee)}` : "ingår"}`,
                   ]
                     .filter(Boolean)
                     .join(" eller ")}

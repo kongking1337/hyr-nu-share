@@ -19,7 +19,7 @@ export function ListingCard({
   return (
     <article
       className={cn(
-        "group overflow-hidden rounded-3xl border border-border bg-card transition-shadow hover:shadow-lg",
+        "group relative overflow-hidden rounded-3xl border border-border bg-card transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-lg",
         layout === "list" && "grid sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]",
       )}
     >
@@ -36,11 +36,20 @@ export function ListingCard({
             <ExampleBadge />
           </div>
         )}
-        <FavoriteButton listingId={r.id} className="absolute right-3 top-3" />
+        <FavoriteButton listingId={r.id} className="absolute right-3 top-3 z-10" />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
-        <h3 className="font-display text-base font-semibold leading-tight">{r.title}</h3>
+        {/* Hela kortet går att trycka på: länken täcker kortet (hjärtat ligger ovanpå). */}
+        <h3 className="font-display text-base font-semibold leading-tight">
+          <Link
+            to="/annons/$id"
+            params={{ id: r.id }}
+            className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+          >
+            {r.title}
+          </Link>
+        </h3>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" />
@@ -51,8 +60,8 @@ export function ListingCard({
           <span>{r.ownerType === "company" ? "Företag" : "Privatperson"}</span>
         </div>
         <p className="mt-auto font-display text-lg font-semibold">{priceLabel(r)}</p>
-        <Button asChild className="rounded-full">
-          <Link to="/annons/$id" params={{ id: r.id }}>
+        <Button asChild className="relative z-10 rounded-full">
+          <Link to="/annons/$id" params={{ id: r.id }} tabIndex={-1}>
             Visa annons
           </Link>
         </Button>

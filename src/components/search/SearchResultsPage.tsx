@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Grid2x2, LayoutList, SlidersHorizontal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,7 +10,7 @@ import { FilterPanel } from "@/components/search/FilterPanel";
 import { ActiveFilterChips, activeChips } from "@/components/search/ActiveFilterChips";
 import { ListingCard } from "@/components/ListingCard";
 import { SaveSearchButton } from "@/components/SaveSearchButton";
-import { distanceKm } from "@/lib/geo";
+import { REGION, distanceKm } from "@/lib/geo";
 import { dedupe } from "@/lib/search/dedupe";
 import { filterResults, sortResults } from "@/lib/search/filter-sort";
 import { SORT_OPTIONS, type SearchParams } from "@/lib/search/params";
@@ -42,9 +43,16 @@ export function SearchResultsPage({
 
   useEffect(() => {
     if (params.location !== "nara-mig" || myPos || typeof navigator === "undefined") return;
-    navigator.geolocation?.getCurrentPosition((pos) =>
-      setMyPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setMyPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        // Utan position kan "Nära mig" inte användas; säg det i stället för att tyst visa allt.
+        toast.info("Vi fick inte veta var du är. Sök i hela Stockholm eller välj en kommun.");
+        patch({ location: REGION.slug });
+      },
     );
+    // patch ändras vid varje rendering; positionen ska bara frågas efter när platsen ändras.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.location, myPos]);
 
   const center = resolveCenter(params.location, myPos);
@@ -74,10 +82,16 @@ export function SearchResultsPage({
   }
 
   const resultCount = groups.length;
+  const failed = sources.some((s) => s.status === "error");
+  const draftChanged = JSON.stringify(draft) !== JSON.stringify(params);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
-      {heading && <h1 className="mb-2 font-display text-3xl font-semibold">{heading}</h1>}
+      {heading ? (
+        <h1 className="mb-2 font-display text-3xl font-semibold">{heading}</h1>
+      ) : (
+        <h1 className="sr-only">Sök saker att hyra</h1>
+      )}
       {intro && <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{intro}</p>}
 
       <SearchBar q={params.q} location={params.location} radius={params.radius} size="md" onSubmit={submitSearch} />
@@ -111,15 +125,15 @@ export function SearchResultsPage({
         </aside>
 
         <div className="min-w-0">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
-            <p className="min-w-0 truncate text-sm text-muted-foreground">
-              {internalLoading ? "Söker…" : `${resultCount} träffar`}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <p className="w-full text-sm text-muted-foreground sm:w-auto" aria-live="polite">
+              {internalLoading ? "Söker…" : `${resultCount} ${resultCount === 1 ? "träff" : "träffar"}`}
             </p>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-full lg:hidden">
+                  <Button variant="outline" size="sm" className="shrink-0 rounded-full lg:hidden">
                     <SlidersHorizontal className="mr-1 h-4 w-4" /> Filter{chipCount ? ` (${chipCount})` : ""}
                   </Button>
                 </SheetTrigger>
@@ -141,14 +155,17 @@ export function SearchResultsPage({
                         setMobileOpen(false);
                       }}
                     >
-                      Visa {resultCount} resultat
+                      {draftChanged ? "Visa resultat" : `Visa ${resultCount} resultat`}
                     </Button>
                   </div>
                 </SheetContent>
               </Sheet>
 
               <Select value={params.sort} onValueChange={(v) => patch({ sort: v as SearchParams["sort"] })}>
-                <SelectTrigger className="h-9 w-[170px] rounded-full text-xs">
+                <SelectTrigger
+                  aria-label="Sortering"
+                  className="h-9 min-w-0 flex-1 rounded-full text-xs sm:w-[170px] sm:flex-none"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,7 +177,7 @@ export function SearchResultsPage({
                 </SelectContent>
               </Select>
 
-              <div className="flex rounded-full border border-border p-0.5">
+              <div className="flex shrink-0 rounded-full border border-border p-0.5">
                 {([
                   ["grid", Grid2x2, "Rutnät"],
                   ["list", LayoutList, "Lista"],
@@ -169,6 +186,7 @@ export function SearchResultsPage({
                     key={v}
                     type="button"
                     aria-label={label}
+                    aria-pressed={params.view === v}
                     onClick={() => patch({ view: v })}
                     className={cn(
                       "grid h-8 w-9 place-items-center rounded-full",
@@ -187,7 +205,7 @@ export function SearchResultsPage({
             <SaveSearchButton label={params.q || "Min sökning"} filters={params as unknown as Record<string, unknown>} />
           </div>
 
-          {sources.some((s) => s.status === "error") && (
+          {failed && (
             <p className="mt-3 text-sm text-destructive">
               Sökningen kunde inte genomföras just nu. Ladda om sidan och försök igen.
             </p>
@@ -221,7 +239,7 @@ export function SearchResultsPage({
             </div>
           )}
 
-          {!internalLoading && !externalLoading && groups.length === 0 && (
+          {!internalLoading && !externalLoading && !failed && groups.length === 0 && (
             <p className="mt-12 text-center text-muted-foreground">
               Inga träffar. Prova större radie, färre filter eller ett bredare sökord.
             </p>
