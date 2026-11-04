@@ -78,6 +78,7 @@ function ProfilePage() {
   });
 
   async function deleteReview(reviewId: string) {
+    if (!window.confirm("Ta bort omdömet? Det går inte att ångra.")) return;
     const { error } = await supabase.rpc("admin_delete_review", { _review_id: reviewId });
     if (error) {
       toast.error("Omdömet kunde inte tas bort.");

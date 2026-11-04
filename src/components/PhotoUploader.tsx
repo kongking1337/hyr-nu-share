@@ -18,6 +18,7 @@ export function PhotoUploader({
   onUploaded,
   onBusyChange,
   cover = true,
+  confirmRemove = false,
 }: {
   userId: string;
   value: string[];
@@ -26,13 +27,18 @@ export function PhotoUploader({
   onUploaded: (path: string) => void;
   onBusyChange: (busy: boolean) => void;
   cover?: boolean;
+  /** Fråga först (för bilder som tas bort direkt och inte går att få tillbaka). */
+  confirmRemove?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  // En omgång i taget: en ny omgång medan den förra laddas upp skulle skriva över listan.
+  const uploading = useRef(false);
   const room = MAX_PHOTOS - value.length;
 
   async function addFiles(files: File[]) {
-    if (!files.length) return;
+    if (!files.length || uploading.current) return;
+    uploading.current = true;
     if (files.length > room)
       toast.info(`Högst ${MAX_PHOTOS} bilder. De ${files.length - room} sista hoppas över.`);
     const queue = files.slice(0, room);
@@ -52,9 +58,11 @@ export function PhotoUploader({
     }
     setProgress(null);
     onBusyChange(false);
+    uploading.current = false;
   }
 
   const remove = (index: number) => {
+    if (confirmRemove && !window.confirm("Ta bort bilden? Det går inte att ångra.")) return;
     onRemove(value[index]!);
     onChange(value.filter((_, i) => i !== index));
   };
@@ -79,7 +87,7 @@ export function PhotoUploader({
                 type="button"
                 disabled={!!progress}
                 onClick={() => makeCover(i)}
-                className="absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-background/90"
+                className="absolute left-1 top-1 grid h-9 w-9 place-items-center rounded-full bg-background/90"
                 aria-label={`Gör bild ${i + 1} till omslagsbild`}
                 title="Gör till omslagsbild"
               >
@@ -90,7 +98,7 @@ export function PhotoUploader({
               type="button"
               disabled={!!progress}
               onClick={() => remove(i)}
-              className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-background/90"
+              className="absolute right-1 top-1 grid h-9 w-9 place-items-center rounded-full bg-background/90"
               aria-label={`Ta bort bild ${i + 1}`}
             >
               <X className="h-4 w-4" />
@@ -137,6 +145,7 @@ export function PhotoUploader({
           type="button"
           variant="outline"
           className="rounded-full"
+          disabled={!!progress}
           onClick={() => input.current?.click()}
         >
           <ImagePlus className="mr-1 h-4 w-4" /> Välj bilder

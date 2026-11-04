@@ -68,20 +68,32 @@ function useAdminActions() {
     return true;
   };
   return {
-    hide: (listingId: string, reason: string) =>
-      run(
+    hide: (listingId: string, reason: string) => {
+      if (
+        !window.confirm(
+          "Dölja annonsen? Öppna förfrågningar och bokningar som inte har börjat avslutas, och båda får ett meddelande. Det kommer inte tillbaka om annonsen återställs.",
+        )
+      ) {
+        return Promise.resolve(false);
+      }
+      return run(
         supabase.rpc("admin_set_listing_hidden", {
           _listing_id: listingId,
           _hidden: true,
           _reason: reason,
         }),
         "Annonsen är dold.",
-      ),
-    restore: (listingId: string) =>
-      run(
+      );
+    },
+    restore: (listingId: string) => {
+      if (!window.confirm("Publicera annonsen igen? Den syns direkt i sökningen.")) {
+        return Promise.resolve(false);
+      }
+      return run(
         supabase.rpc("admin_set_listing_hidden", { _listing_id: listingId, _hidden: false }),
         "Annonsen är publicerad igen.",
-      ),
+      );
+    },
     dismiss: (reportId: string) =>
       run(supabase.rpc("admin_dismiss_report", { _report_id: reportId }), "Anmälan är avfärdad."),
     block: (userId: string, name: string) => {

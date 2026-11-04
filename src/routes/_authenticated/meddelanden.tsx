@@ -36,16 +36,25 @@ function formatTime(iso: string): string {
     : d.toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
 }
 
+/** Enter skickar bara med riktigt tangentbord; på mobilen ger Enter ny rad. */
+const enterSends = () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
+
 function MessagesPage() {
   const { user } = useAuth();
   const { c: active } = Route.useSearch();
   const navigate = useNavigate({ from: "/meddelanden" });
   const queryClient = useQueryClient();
-  const [text, setText] = useState("");
+  // Ett utkast per konversation, så att en halvskriven text inte följer med till någon annan.
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const text = active ? (drafts[active] ?? "") : "";
+  const setText = (value: string) => {
+    if (active) setDrafts((d) => ({ ...d, [active]: value }));
+  };
   const [sending, setSending] = useState(false);
-  const bottom = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
+  const thread = useRef<HTMLDivElement>(null);
 
-  const { data: conversations, isLoading } = useQuery({
+  const { data: conversations, isLoading, isError: conversationsFailed, refetch: refetchConversations } = useQuery({
     queryKey: ["conversations", user?.id],
     enabled: !!user,
     refetchInterval: 30_000,
@@ -74,7 +83,24 @@ function MessagesPage() {
   const counterpartId = parties ? (parties.owner_id === user?.id ? parties.renter_id : parties.owner_id) : null;
   const { data: iBlocked } = useIsBlocked(counterpartId);
 
-  const { data: messages, refetch } = useQuery({
+  // Under en pågående hyra går det att skriva även efter en blockering, så att saken kan lämnas tillbaka.
+  const { data: ongoingRental } = useQuery({
+    queryKey: ["ongoing-rental", user?.id, counterpartId],
+    enabled: !!iBlocked && !!user && !!counterpartId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "confirmed")
+        .in("owner_id", [user!.id, counterpartId!])
+        .in("renter_id", [user!.id, counterpartId!]);
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+  });
+  const canWrite = !iBlocked || !!ongoingRental;
+
+  const { data: messages, refetch, isError: messagesFailed } = useQuery({
     queryKey: ["messages", active],
     enabled: !!active,
     refetchInterval: 10_000,
@@ -99,21 +125,35 @@ function MessagesPage() {
     });
   }, [active, lastMessageId, queryClient]);
 
+  // Rulla bara i tråden (inte hela sidan): till botten när en konversation öppnas, och när
+  // ett nytt meddelande kommer om man redan läser längst ner.
+  const nearBottom = useRef(true);
+  const shownConversation = useRef<string | undefined>(undefined);
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
-  }, [lastMessageId]);
+    const el = thread.current;
+    if (!el || !lastMessageId) return;
+    if (shownConversation.current !== active || nearBottom.current) el.scrollTop = el.scrollHeight;
+    shownConversation.current = active;
+  }, [active, lastMessageId]);
 
   async function send() {
-    if (!text.trim() || !active || !user) return;
+    const body = text;
+    const conversation = active;
+    if (!body.trim() || !conversation || !user || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
+    setDrafts((d) => ({ ...d, [conversation]: "" }));
+    nearBottom.current = true;
     try {
-      await sendMessage(active, user.id, text);
-      setText("");
+      await sendMessage(conversation, user.id, body);
       await refetch();
       void queryClient.invalidateQueries({ queryKey: ["conversations"] });
     } catch (e) {
+      // Texten kommer tillbaka så att inget behöver skrivas om.
+      setDrafts((d) => ({ ...d, [conversation]: d[conversation] || body }));
       toast.error(userMessage(e, "Meddelandet kunde inte skickas. Försök igen."));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -135,6 +175,14 @@ function MessagesPage() {
         >
           {isLoading && (
             <p className="px-3 py-6 text-sm text-muted-foreground">Hämtar konversationer …</p>
+          )}
+          {conversationsFailed && (
+            <p className="px-3 py-6 text-sm text-muted-foreground">
+              Konversationerna kunde inte hämtas.{" "}
+              <button className="text-primary hover:underline" onClick={() => void refetchConversations()}>
+                Försök igen
+              </button>
+            </p>
           )}
           {conversations?.map((c) => (
             <button
@@ -235,9 +283,24 @@ function MessagesPage() {
             </div>
           )}
 
-          <div className="flex-1 space-y-2 overflow-y-auto">
+          <div
+            ref={thread}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+            }}
+            className="max-h-[60vh] flex-1 space-y-2 overflow-y-auto md:max-h-[65vh]"
+          >
             {!active && (
               <p className="text-sm text-muted-foreground">Välj en konversation till vänster.</p>
+            )}
+            {active && messagesFailed && !messages && (
+              <p className="text-sm text-muted-foreground">
+                Meddelandena kunde inte hämtas.{" "}
+                <button className="text-primary hover:underline" onClick={() => void refetch()}>
+                  Försök igen
+                </button>
+              </p>
             )}
             {messages?.map((m) => {
               const mine = m.sender_id === user?.id;
@@ -267,17 +330,18 @@ function MessagesPage() {
                 </div>
               );
             })}
-            <div ref={bottom} />
           </div>
 
           {active && iBlocked && (
             <p className="mt-3 rounded-2xl bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
-              Du har blockerat {current?.counterpart_name ?? "den här personen"}. Ta bort blockeringen för
-              att skriva igen.
+              Du har blockerat {current?.counterpart_name ?? "den här personen"}.{" "}
+              {ongoingRental
+                ? "Ni kan skriva till varandra tills den pågående hyran är avslutad."
+                : "Ta bort blockeringen för att skriva igen."}
             </p>
           )}
 
-          {active && !iBlocked && (
+          {active && canWrite && (
             <div className="mt-3 flex items-end gap-2">
               <Textarea
                 rows={2}
@@ -285,12 +349,14 @@ function MessagesPage() {
                 maxLength={MAX_MESSAGE_LENGTH}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && enterSends()) {
                     e.preventDefault();
                     void send();
                   }
                 }}
-                placeholder="Skriv ett meddelande … (Enter skickar, Skift+Enter ny rad)"
+                placeholder={
+                  enterSends() ? "Skriv ett meddelande … (Enter skickar, Skift+Enter ny rad)" : "Skriv ett meddelande …"
+                }
                 aria-label="Meddelande"
               />
               <Button

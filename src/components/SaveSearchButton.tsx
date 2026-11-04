@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLoginPrompt } from "@/hooks/useLoginPrompt";
+import { userMessage } from "@/lib/db-errors";
 
 export function SaveSearchButton({
   label,
@@ -12,21 +14,24 @@ export function SaveSearchButton({
   filters: Record<string, unknown>;
 }) {
   const { user } = useAuth();
+  const loginPrompt = useLoginPrompt();
 
   async function save() {
     if (!user) {
-      toast.info("Logga in för att spara sökningen.");
+      loginPrompt("Logga in för att spara sökningen.");
       return;
     }
     const { error } = await supabase.from("saved_searches").insert({
       user_id: user.id,
-      label,
-      query: label,
+      label: label.slice(0, 200),
+      query: label.slice(0, 500),
       filters: filters as never,
     });
-    toast[error ? "error" : "success"](
-      error ? "Kunde inte spara sökningen" : "Sökningen är sparad under Favoriter",
-    );
+    if (error) {
+      toast.error(userMessage(error, "Kunde inte spara sökningen. Försök igen."));
+      return;
+    }
+    toast.success("Sökningen är sparad under Favoriter");
   }
 
   return (

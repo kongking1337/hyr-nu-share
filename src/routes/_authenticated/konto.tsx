@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
-import { addDays, todayISO } from "@/lib/bookings";
+import { addDays, toISODate, todayISO } from "@/lib/bookings";
 import { userMessage } from "@/lib/db-errors";
 import { removeAllMyPhotos } from "@/lib/photos";
+import { signOut } from "@/lib/sign-out";
 
 export const Route = createFileRoute("/_authenticated/konto")({
   head: () => ({
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/konto")({
 function AccountPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [bio, setBio] = useState("");
@@ -36,10 +38,14 @@ function AccountPage() {
   const [confirmDelete, setConfirmDelete] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const { data: profile } = useQuery({
+  const { data: profile, isError: profileFailed } = useQuery({
     queryKey: ["account", user?.id],
     enabled: !!user,
-    queryFn: async () => (await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle()).data,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
   });
 
   useEffect(() => {
@@ -55,11 +61,19 @@ function AccountPage() {
       toast.error(`"Om mig" får vara högst ${MAX_BIO_LENGTH} tecken.`);
       return;
     }
+    setBusy(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: name, city, bio: bio.trim() || null })
+      .update({ full_name: name.trim(), city: city.trim() || null, bio: bio.trim() || null })
       .eq("id", user!.id);
-    toast[error ? "error" : "success"](error ? "Kunde inte spara" : "Profil sparad");
+    setBusy(false);
+    if (error) {
+      toast.error(userMessage(error, "Profilen kunde inte sparas. Försök igen."));
+      return;
+    }
+    toast.success("Profilen är sparad.");
+    void queryClient.invalidateQueries({ queryKey: ["account", user?.id] });
+    void queryClient.invalidateQueries({ queryKey: ["public-profile", user?.id] });
   }
 
   async function changePassword(e: FormEvent) {
@@ -78,13 +92,28 @@ function AccountPage() {
 
   async function deleteAccount() {
     setBusy(true);
-    // Mitt i en hyra går det inte att radera kontot (databasen stoppar det också).
-    // Kolla först, så att bilderna inte hinner tas bort.
-    const { data: bookings } = await supabase.rpc("my_bookings");
+    // Mitt i en hyra, och 14 dagar efter den, går det inte att radera kontot (databasen
+    // stoppar det också). Kolla först, så att bilderna inte hinner tas bort.
+    const { data: bookings, error: bookingsError } = await supabase.rpc("my_bookings");
+    if (bookingsError) {
+      setBusy(false);
+      toast.error("Kontot kunde inte raderas. Försök igen eller kontakta oss.");
+      return;
+    }
     const cutoff = addDays(todayISO(), -14);
     if ((bookings ?? []).some((b) => b.status === "confirmed" && b.end_date >= cutoff)) {
       setBusy(false);
       toast.error("Du har bokningar som inte är avslutade. Avboka dem eller avsluta hyran under Bokningar först.");
+      return;
+    }
+    const recentlyEnded = (bookings ?? []).some(
+      (b) =>
+        b.status === "completed" &&
+        (b.returned_at ? toISODate(new Date(b.returned_at)) : b.end_date) >= cutoff,
+    );
+    if (recentlyEnded) {
+      setBusy(false);
+      toast.error(RECENT_RENTAL);
       return;
     }
     // Bildfilerna tas bort via Storage innan kontot raderas.
@@ -95,7 +124,7 @@ function AccountPage() {
       toast.error(userMessage(error, "Kontot kunde inte raderas. Försök igen eller kontakta oss."));
       return;
     }
-    await supabase.auth.signOut();
+    await signOut();
     toast.success("Ditt konto och dina annonser är raderade.");
     navigate({ to: "/" });
   }
@@ -111,7 +140,7 @@ function AccountPage() {
           variant="outline"
           className="rounded-full"
           onClick={async () => {
-            await supabase.auth.signOut();
+            await signOut();
             navigate({ to: "/" });
           }}
         >
@@ -135,15 +164,21 @@ function AccountPage() {
       <section className="mt-8 space-y-4">
         <h2 className="font-display text-xl font-semibold">Profil</h2>
         <div className="space-y-1.5">
-          <Label>Namn</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <Label htmlFor="profile-name">Namn</Label>
+          <Input
+            id="profile-name"
+            autoComplete="name"
+            maxLength={80}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
           <p className="text-xs text-muted-foreground">
             I dina annonser visas förnamn och första bokstaven i efternamnet, t.ex. "Anna S.".
           </p>
         </div>
         <div className="space-y-1.5">
-          <Label>Ort (visas på din profil)</Label>
-          <Input value={city} onChange={(e) => setCity(e.target.value)} />
+          <Label htmlFor="profile-city">Ort (visas på din profil)</Label>
+          <Input id="profile-city" maxLength={60} value={city} onChange={(e) => setCity(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bio">Om mig (visas på din profil)</Label>
@@ -157,7 +192,11 @@ function AccountPage() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button className="rounded-full" onClick={saveProfile}>Spara</Button>
+          {/* Inte förrän profilen är hämtad: annars skulle ett tomt formulär skriva över namnet. */}
+          <Button className="rounded-full" onClick={saveProfile} disabled={busy || !profile}>Spara</Button>
+          {profileFailed && (
+            <span className="text-sm text-muted-foreground">Profilen kunde inte hämtas. Ladda om sidan.</span>
+          )}
           {user && (
             <Link to="/profil/$id" params={{ id: user.id }} className="text-sm text-primary hover:underline">
               Visa din profil →
@@ -192,9 +231,9 @@ function AccountPage() {
       <section className="mt-10 space-y-3 rounded-3xl border border-destructive/40 p-5">
         <h2 className="font-display text-xl font-semibold">Radera konto</h2>
         <p className="text-sm text-muted-foreground">
-          Ditt konto, din profil, dina annonser och bilder, favoriter, sparade sökningar och konversationer raderas
-          för gott.
-          Det går inte att ångra.
+          Ditt konto, din profil, dina annonser och bilder, bokningar, favoriter, sparade sökningar och
+          konversationer raderas för gott. Omdömen du har skrivit ligger kvar utan ditt namn. Det går inte
+          att ångra. Under en pågående hyra och 14 dagar efter den går kontot inte att radera.
         </p>
         <div className="space-y-1.5">
           <Label htmlFor="confirm-delete">Skriv RADERA för att bekräfta</Label>
@@ -214,6 +253,10 @@ function AccountPage() {
 }
 
 const MAX_BIO_LENGTH = 500;
+
+// Samma text som i delete_my_account (supabase/migrations/20261104120000_review_fixes.sql).
+const RECENT_RENTAL =
+  "Du har en hyra som avslutades för mindre än 14 dagar sedan. Kontot kan raderas när 14 dagar har gått, så att den du hyrde med har kvar avtalet och bilderna om något behöver redas ut.";
 
 /** Visa telefonverifiering bara om telefoninloggning (SMS) är påslagen i Supabase. */
 function usePhoneEnabled(): boolean {

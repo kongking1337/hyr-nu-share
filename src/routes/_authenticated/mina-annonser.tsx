@@ -69,15 +69,16 @@ function MyListings() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("all");
 
-  const { data, refetch, isLoading } = useQuery({
+  const { data, refetch, isLoading, isError } = useQuery({
     queryKey: ["my-listings", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data: listings } = await supabase
+      const { data: listings, error } = await supabase
         .from("listings")
         .select("*")
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
+      if (error) throw error;
       return { listings: listings ?? [] };
     },
   });
@@ -88,7 +89,7 @@ function MyListings() {
 
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
-    if (error) { toast.error("Kunde inte uppdatera status."); return; }
+    if (error) { toast.error(userMessage(error, "Kunde inte uppdatera status.")); return; }
     toast.success(STATUS_TOAST[status] ?? "Status uppdaterad.");
     refetch();
   }
@@ -98,8 +99,8 @@ function MyListings() {
     void id; void created_at; void published_at;
     const { error } = await supabase
       .from("listings")
-      .insert({ ...rest, title: `${l.title} (kopia)`, status: "draft", booking_count: 0 });
-    if (error) { toast.error("Kunde inte duplicera annonsen."); return; }
+      .insert({ ...rest, title: `${l.title.slice(0, 92).trim()} (kopia)`, status: "draft", booking_count: 0 });
+    if (error) { toast.error(userMessage(error, "Kunde inte duplicera annonsen.")); return; }
     toast.success("Kopia skapad som utkast.");
     refetch();
   }
@@ -150,9 +151,27 @@ function MyListings() {
 
       <div className="mt-5 space-y-3">
         {isLoading && <p className="text-sm text-muted-foreground">Hämtar dina annonser …</p>}
-        {!isLoading && !filtered.length && (
+        {isError && (
+          <p className="text-sm text-muted-foreground">
+            Annonserna kunde inte hämtas.{" "}
+            <button className="text-primary hover:underline" onClick={() => void refetch()}>
+              Försök igen
+            </button>
+          </p>
+        )}
+        {!isLoading && !isError && !filtered.length && (
           <div className="rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            Inga annonser med den statusen.
+            {listings.length === 0 ? (
+              <>
+                Du har inga annonser än.{" "}
+                <Link to="/ny-annons" className="text-primary hover:underline">
+                  Lägg upp din första
+                </Link>
+                .
+              </>
+            ) : (
+              "Inga annonser med den statusen."
+            )}
           </div>
         )}
 
@@ -216,9 +235,12 @@ function MyListings() {
                     <Play className="mr-1 h-4 w-4" /> Publicera igen
                   </Button>
                 )}
-                <Button size="sm" variant="outline" className="rounded-full" onClick={() => duplicate(l)}>
-                  <Copy className="mr-1 h-4 w-4" /> Duplicera
-                </Button>
+                {/* En annons som moderatorerna har dolt ska inte kunna läggas upp igen som kopia. */}
+                {l.status !== "removed" && (
+                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => duplicate(l)}>
+                    <Copy className="mr-1 h-4 w-4" /> Duplicera
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" className="rounded-full" asChild>
                   <Link to="/annons/$id" params={{ id: l.id }}><ExternalLink className="mr-1 h-4 w-4" /> Visa annons</Link>
                 </Button>

@@ -7,12 +7,13 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { BottomTabs } from "@/components/BottomTabs";
 import { Header, Wordmark } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -120,6 +121,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  // Vid utloggning (även i en annan flik eller när inloggningen gått ut) glöms allt som
+  // hämtats, så att nästa person vid samma dator inte ser det, och sidor som kräver
+  // inloggning skickar vidare till inloggningen.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      queryClient.clear();
+      // Inte direkt i callbacken: Supabase låser sessionen medan den körs.
+      setTimeout(() => void router.invalidate(), 0);
+    });
+    return () => data.subscription.unsubscribe();
+  }, [queryClient, router]);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -25,7 +25,7 @@ export function AvailabilityDialog({ listingId, title }: { listingId: string; ti
   const [busy, setBusy] = useState(false);
   const wide = useWide();
 
-  const { data, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["availability", listingId],
     enabled: open,
     queryFn: async () => {
@@ -33,7 +33,7 @@ export function AvailabilityDialog({ listingId, title }: { listingId: string; ti
       const [booked, blocked] = await Promise.all([
         supabase
           .from("bookings")
-          .select("start_date, end_date")
+          .select("start_date, end_date, status, returned_at")
           .eq("listing_id", listingId)
           .in("status", ["confirmed", "completed"])
           .gte("end_date", today),
@@ -46,7 +46,14 @@ export function AvailabilityDialog({ listingId, title }: { listingId: string; ti
       ]);
       if (booked.error) throw booked.error;
       if (blocked.error) throw blocked.error;
-      return { booked: booked.data ?? [], blocked: blocked.data ?? [] };
+      // Lämnas saken tillbaka tidigt blir resten av dagarna lediga (som i databasens booked_dates).
+      const bookedRanges = (booked.data ?? [])
+        .map((b) => {
+          const returned = b.status === "completed" && b.returned_at ? toISODate(new Date(b.returned_at)) : null;
+          return { start_date: b.start_date, end_date: returned && returned < b.end_date ? returned : b.end_date };
+        })
+        .filter((b) => b.end_date >= today);
+      return { booked: bookedRanges, blocked: blocked.data ?? [] };
     },
   });
 
@@ -125,7 +132,16 @@ export function AvailabilityDialog({ listingId, title }: { listingId: string; ti
 
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Blockerade perioder</h3>
-          {!data?.blocked.length && (
+          {isLoading && <p className="text-sm text-muted-foreground">Hämtar kalendern …</p>}
+          {isError && (
+            <p className="text-sm text-muted-foreground">
+              Kalendern kunde inte hämtas.{" "}
+              <button className="text-primary hover:underline" onClick={() => void refetch()}>
+                Försök igen
+              </button>
+            </p>
+          )}
+          {data && !data.blocked.length && (
             <p className="text-sm text-muted-foreground">Inga blockerade dagar framåt.</p>
           )}
           {data?.blocked.map((b) => (

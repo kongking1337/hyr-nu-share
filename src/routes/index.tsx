@@ -6,6 +6,7 @@ import {
 import { useState } from "react";
 import { ListingRow } from "@/components/ListingRow";
 import { supabase } from "@/integrations/supabase/client";
+import { photoUrl } from "@/lib/photos";
 import { rowToUnified } from "@/lib/providers/internal";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
@@ -99,7 +100,9 @@ function Index() {
         .limit(1000);
       const byCategory = new Map<string, { count: number; image: string | undefined }>();
       for (const row of data ?? []) {
-        const c = byCategory.get(row.category_slug) ?? { count: 0, image: row.images?.[0] };
+        // images innehåller sökvägar i Storage för egna annonser, inte färdiga adresser.
+        const first = row.images?.[0];
+        const c = byCategory.get(row.category_slug) ?? { count: 0, image: first ? photoUrl(first) : undefined };
         c.count += 1;
         byCategory.set(row.category_slug, c);
       }

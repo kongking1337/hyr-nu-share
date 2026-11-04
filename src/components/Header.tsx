@@ -9,12 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/integrations/supabase/client";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { useTheme } from "@/hooks/useTheme";
 import { DEFAULTS, cleanParams } from "@/lib/search/params";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
+import { signOut } from "@/lib/sign-out";
 import { cn } from "@/lib/utils";
 
 /** Ordmärket "hyrkoll." */
@@ -69,6 +69,8 @@ function HeaderSearch() {
 
 function AccountMenu() {
   const navigate = useNavigate();
+  const href = useRouterState({ select: (s) => s.location.href });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { dark, toggle } = useTheme();
   const { user, isAdmin, unread, pendingBookings, openReports } = useNotificationCounts();
   const total = unread + pendingBookings + openReports;
@@ -121,7 +123,9 @@ function AccountMenu() {
         ) : (
           <>
             <DropdownMenuItem asChild>
-              <Link to="/auth">Logga in eller skapa konto</Link>
+              <Link to="/auth" search={pathname === "/auth" ? {} : { redirect: href }}>
+                Logga in eller skapa konto
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/favoriter">Favoriter</Link>
@@ -141,7 +145,7 @@ function AccountMenu() {
         {user && (
           <DropdownMenuItem
             onSelect={async () => {
-              await supabase.auth.signOut();
+              await signOut();
               void navigate({ to: "/" });
             }}
           >

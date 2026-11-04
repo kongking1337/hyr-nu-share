@@ -1,10 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Heart, MapPin } from "lucide-react";
-import { toast } from "sonner";
+import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExampleBadge } from "@/components/ExampleBadge";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { priceLabel } from "@/lib/pricing";
 import type { UnifiedResult } from "@/lib/providers/types";
 import { cn } from "@/lib/utils";
@@ -18,17 +16,6 @@ export function ListingCard({
   distanceKm?: number | null;
   layout?: "grid" | "list";
 }) {
-  const { user } = useAuth();
-
-  async function favorite() {
-    if (!user) {
-      toast.info("Logga in för att spara favoriter.");
-      return;
-    }
-    const { error } = await supabase.from("favorites").insert({ user_id: user.id, listing_id: r.id });
-    toast[error ? "error" : "success"](error ? "Kunde inte spara (kanske redan sparad)" : "Sparad i favoriter");
-  }
-
   return (
     <article
       className={cn(
@@ -49,13 +36,7 @@ export function ListingCard({
             <ExampleBadge />
           </div>
         )}
-        <button
-          onClick={favorite}
-          aria-label="Spara som favorit"
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 backdrop-blur hover:bg-background"
-        >
-          <Heart className="h-4 w-4" />
-        </button>
+        <FavoriteButton listingId={r.id} className="absolute right-3 top-3" />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">

@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -56,6 +56,18 @@ function kronor(v: string): number | null {
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
 }
 
+/** Det som jämförs för att se om något är ändrat och inte sparat. */
+function snapshot(v: {
+  form: typeof EMPTY;
+  pickup: boolean;
+  delivery: boolean;
+  policy: CancellationPolicy;
+  attrs: Record<string, string>;
+  photos: string[];
+}): string {
+  return JSON.stringify([v.form, v.pickup, v.delivery, v.policy, v.attrs, v.photos]);
+}
+
 function ListingForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -74,39 +86,71 @@ function ListingForm() {
   const removedSaved = useRef<string[]>([]);
   const set = (k: keyof typeof EMPTY, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Fråga innan sidan lämnas med osparade ändringar (t.ex. ett tryck i flikraden på mobilen).
+  const [baseline, setBaseline] = useState<string | null>(() =>
+    editId ? null : snapshot({ form: EMPTY, pickup: true, delivery: false, policy: "flexible", attrs: {}, photos: [] }),
+  );
+  const saved = useRef(false);
+  const dirty = baseline !== null && snapshot({ form, pickup, delivery, policy, attrs, photos }) !== baseline;
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!dirty || saved.current) return false;
+      if (!window.confirm("Du har ändringar som inte är sparade. Vill du lämna sidan ändå?")) return true;
+      // Bilder som laddats upp till en annons som aldrig sparades tas bort.
+      const unsaved = [...uploadedNow.current];
+      if (unsaved.length) void supabase.storage.from(PHOTO_BUCKET).remove(unsaved);
+      return false;
+    },
+    enableBeforeUnload: () => dirty && !saved.current,
+  });
+
   const attrDefs = CATEGORY_ATTRIBUTES[form.category_slug] ?? [];
 
   /* Redigeringsläge: hämta befintlig annons */
-  const { data: existing } = useQuery({
+  const { data: existing, isError: loadFailed } = useQuery({
     queryKey: ["edit-listing", editId],
     enabled: !!editId,
-    queryFn: async () => (await supabase.from("listings").select("*").eq("id", editId!).maybeSingle()).data,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("listings").select("*").eq("id", editId!).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
   });
   const notOwner = !!existing && existing.owner_id !== user?.id;
+  const notFound = !!editId && existing === null;
 
   useEffect(() => {
     if (!existing) return;
     // En gammal "säljes"-annons blir en uthyrningsannons när den sparas (den har inget dygnspris än).
-    setForm({
-      title: existing.title,
-      description: existing.description ?? "",
-      category_slug: existing.category_slug,
-      city: existing.city,
-      area: existing.area ?? "",
-      price_day: existing.price_day != null ? String(existing.price_day) : "",
-      price_week: existing.price_week != null ? String(existing.price_week) : "",
-      deposit: existing.deposit ? String(existing.deposit) : "",
-      min_days: String(existing.min_days ?? 1),
-      delivery_fee: existing.delivery_fee ? String(existing.delivery_fee) : "",
-      included: existing.included ?? "",
-      rental_rules: existing.rental_rules ?? "",
-    });
-    setPickup(existing.pickup_available);
-    setDelivery(existing.delivery_available);
-    setPolicy(asPolicy(existing.cancellation_policy));
-    setPhotos(existing.images ?? []);
     const a = (existing.attributes as Record<string, unknown>) ?? {};
-    setAttrs(Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v)])));
+    const loaded = {
+      form: {
+        title: existing.title,
+        description: existing.description ?? "",
+        category_slug: existing.category_slug,
+        city: existing.city,
+        area: existing.area ?? "",
+        price_day: existing.price_day != null ? String(existing.price_day) : "",
+        price_week: existing.price_week != null ? String(existing.price_week) : "",
+        deposit: existing.deposit ? String(existing.deposit) : "",
+        min_days: String(existing.min_days ?? 1),
+        delivery_fee: existing.delivery_fee ? String(existing.delivery_fee) : "",
+        included: existing.included ?? "",
+        rental_rules: existing.rental_rules ?? "",
+      },
+      pickup: existing.pickup_available,
+      delivery: existing.delivery_available,
+      policy: asPolicy(existing.cancellation_policy),
+      attrs: Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v)])),
+      photos: existing.images ?? [],
+    };
+    setForm(loaded.form);
+    setPickup(loaded.pickup);
+    setDelivery(loaded.delivery);
+    setPolicy(loaded.policy);
+    setPhotos(loaded.photos);
+    setAttrs(loaded.attrs);
+    setBaseline(snapshot(loaded));
   }, [existing]);
 
   function validate(): string | null {
@@ -166,11 +210,13 @@ function ListingForm() {
     };
 
     if (editId) {
-      const { error } = await supabase.from("listings").update(payload).eq("id", editId);
+      const { data: updated, error } = await supabase.from("listings").update(payload).eq("id", editId).select("id");
       setBusy(false);
       if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
+      if (!updated?.length) { toast.error("Annonsen finns inte längre."); return; }
       void removeUnusedPhotos(user!.id, removedSaved.current);
       toast.success("Annonsen är uppdaterad.");
+      saved.current = true;
       navigate({ to: "/mina-annonser" });
       return;
     }
@@ -182,6 +228,7 @@ function ListingForm() {
       .single();
     setBusy(false);
     if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
+    saved.current = true;
     if (status === "draft") {
       toast.success("Utkast sparat.");
       navigate({ to: "/mina-annonser" });
@@ -191,10 +238,14 @@ function ListingForm() {
     }
   }
 
-  if (notOwner) {
+  if (notOwner || notFound || loadFailed) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10 text-muted-foreground">
-        Du kan bara redigera dina egna annonser.
+        {notOwner
+          ? "Du kan bara redigera dina egna annonser."
+          : notFound
+            ? "Annonsen finns inte längre."
+            : "Annonsen kunde inte hämtas. Ladda om sidan och försök igen."}
       </div>
     );
   }
@@ -220,8 +271,9 @@ function ListingForm() {
         />}
       </F>
 
-      <F label="Rubrik">
+      <F label="Rubrik" htmlFor="listing-title">
         <Input
+          id="listing-title"
           value={form.title}
           maxLength={100}
           placeholder="T.ex. Släpvagn 750 kg"
@@ -229,8 +281,9 @@ function ListingForm() {
         />
       </F>
 
-      <F label="Beskrivning">
+      <F label="Beskrivning" htmlFor="listing-description">
         <Textarea
+          id="listing-description"
           rows={6}
           value={form.description}
           maxLength={5000}
@@ -239,9 +292,9 @@ function ListingForm() {
         />
       </F>
 
-      <F label="Kategori">
+      <F label="Kategori" htmlFor="listing-category">
         <Select value={form.category_slug} onValueChange={(v) => { set("category_slug", v); setAttrs({}); }}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger id="listing-category"><SelectValue /></SelectTrigger>
           <SelectContent>
             {ACTIVE_CATEGORIES.map((c) => (
               <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
@@ -251,22 +304,23 @@ function ListingForm() {
       </F>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <F label="Pris per dygn (kr)">
-          <Input inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
+        <F label="Pris per dygn (kr)" htmlFor="listing-price-day">
+          <Input id="listing-price-day" inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
         </F>
-        <F label="Pris per vecka (valfritt)">
-          <Input inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
+        <F label="Pris per vecka (valfritt)" htmlFor="listing-price-week">
+          <Input id="listing-price-week" inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
         </F>
-        <F label="Deposition (valfritt)">
-          <Input inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
+        <F label="Deposition (valfritt)" htmlFor="listing-deposit">
+          <Input id="listing-deposit" inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
         </F>
       </div>
 
       <section className="space-y-4 rounded-3xl border border-border p-5">
         <h2 className="font-display text-base font-semibold">Hyresvillkor</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <F label="Kortaste hyra (dygn)">
+          <F label="Kortaste hyra (dygn)" htmlFor="listing-min-days">
             <Input
+              id="listing-min-days"
               type="number"
               inputMode="numeric"
               min={1}
@@ -275,9 +329,9 @@ function ListingForm() {
               onChange={(e) => set("min_days", e.target.value)}
             />
           </F>
-          <F label="Avbokning">
+          <F label="Avbokning" htmlFor="listing-policy">
             <Select value={policy} onValueChange={(v) => setPolicy(asPolicy(v))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="listing-policy"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(Object.keys(CANCELLATION_POLICIES) as CancellationPolicy[]).map((p) => (
                   <SelectItem key={p} value={p}>
@@ -299,8 +353,9 @@ function ListingForm() {
           </div>
         </div>
         {delivery && (
-          <F label="Leveransavgift (kr, 0 = ingår)">
+          <F label="Leveransavgift (kr, 0 = ingår)" htmlFor="listing-delivery-fee">
             <Input
+              id="listing-delivery-fee"
               inputMode="numeric"
               value={form.delivery_fee}
               placeholder="0"
@@ -308,8 +363,9 @@ function ListingForm() {
             />
           </F>
         )}
-        <F label="Det här ingår (valfritt)">
+        <F label="Det här ingår (valfritt)" htmlFor="listing-included">
           <Textarea
+            id="listing-included"
             rows={2}
             maxLength={1000}
             value={form.included}
@@ -317,8 +373,9 @@ function ListingForm() {
             onChange={(e) => set("included", e.target.value)}
           />
         </F>
-        <F label="Regler (valfritt)">
+        <F label="Regler (valfritt)" htmlFor="listing-rules">
           <Textarea
+            id="listing-rules"
             rows={2}
             maxLength={1000}
             value={form.rental_rules}
@@ -329,16 +386,16 @@ function ListingForm() {
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <F label="Kommun">
+        <F label="Kommun" htmlFor="listing-city">
           <Select value={form.city} onValueChange={(v) => set("city", v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id="listing-city"><SelectValue /></SelectTrigger>
             <SelectContent>
               {CITIES.map((c) => <SelectItem key={c.slug} value={c.name}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </F>
-        <F label="Område (valfritt)">
-          <Input value={form.area} maxLength={60} placeholder="T.ex. Södermalm" onChange={(e) => set("area", e.target.value)} />
+        <F label="Område (valfritt)" htmlFor="listing-area">
+          <Input id="listing-area" value={form.area} maxLength={60} placeholder="T.ex. Södermalm" onChange={(e) => set("area", e.target.value)} />
         </F>
       </div>
 
@@ -348,10 +405,10 @@ function ListingForm() {
           <div className="mt-4 space-y-3">
             {attrDefs.map((d) => (
               <div key={d.key} className="space-y-1.5">
-                <Label className="text-sm">{d.label}</Label>
+                <Label htmlFor={`attr-${d.key}`} className="text-sm">{d.label}</Label>
                 {d.type === "select" ? (
                   <Select value={attrs[d.key] ?? ""} onValueChange={(v) => setAttrs((a) => ({ ...a, [d.key]: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Välj" /></SelectTrigger>
+                    <SelectTrigger id={`attr-${d.key}`}><SelectValue placeholder="Välj" /></SelectTrigger>
                     <SelectContent>
                       {(d.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                     </SelectContent>
@@ -360,12 +417,14 @@ function ListingForm() {
                   <div className="flex items-center justify-between rounded-2xl bg-muted/60 px-4 py-2.5">
                     <span className="text-sm text-muted-foreground">Ja/nej</span>
                     <Switch
+                      id={`attr-${d.key}`}
                       checked={attrs[d.key] === "true"}
                       onCheckedChange={(c) => setAttrs((a) => ({ ...a, [d.key]: String(c) }))}
                     />
                   </div>
                 ) : (
                   <Input
+                    id={`attr-${d.key}`}
                     inputMode="numeric"
                     value={attrs[d.key] ?? ""}
                     onChange={(e) => setAttrs((a) => ({ ...a, [d.key]: e.target.value }))}
@@ -403,9 +462,9 @@ function ListingForm() {
   );
 }
 
-const F = ({ label, children }: { label: string; children: React.ReactNode }) => (
+const F = ({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) => (
   <div className="space-y-1.5">
-    <Label>{label}</Label>
+    <Label htmlFor={htmlFor}>{label}</Label>
     {children}
   </div>
 );

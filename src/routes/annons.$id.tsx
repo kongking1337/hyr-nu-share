@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BookingRequest } from "@/components/BookingRequest";
 import { ContactSeller } from "@/components/ContactSeller";
 import { ExampleBadge } from "@/components/ExampleBadge";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { ReportDialog } from "@/components/ReportDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,7 +64,10 @@ function ListingPage() {
                 <ExampleBadge />
               </div>
             )}
-            <h1 className="font-display text-3xl font-semibold">{listing.title}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="min-w-0 break-words font-display text-3xl font-semibold">{listing.title}</h1>
+              {!mine && <FavoriteButton listingId={listing.id} className="mt-1 shrink-0 border border-border" />}
+            </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" /> {listing.area ? `${listing.area}, ` : ""}{listing.city}

@@ -81,7 +81,8 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
       _end: end,
       _delivery: delivery,
       // Databasen räknar priset själv; stämmer det inte med det kunden ser stoppas förfrågan.
-      _expected_total: rent + deliveryFee,
+      // Avrundat till ören, så att flyttalsfel (199,9 × 9) inte ser ut som ett nytt pris.
+      _expected_total: Math.round((rent + deliveryFee) * 100) / 100,
       ...(message.trim() ? { _message: message.trim() } : {}),
     });
     setBusy(false);
@@ -106,6 +107,7 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
         weekStartsOn={1}
         selected={range}
         onSelect={setRange}
+        resetOnSelect
         excludeDisabled
         disabled={[
           { before: fromISODate(today) },
@@ -117,8 +119,16 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
         className="mx-auto rounded-2xl border border-border p-2"
       />
       <p className="text-xs text-muted-foreground">
-        Överstrukna dagar är upptagna.
+        Tryck på första och sista dagen. Överstrukna dagar är upptagna.
         {listing.minDays > 1 && ` Minst ${listing.minDays} dygn.`}
+        {range && (
+          <>
+            {" "}
+            <button type="button" className="text-primary hover:underline" onClick={() => setRange(undefined)}>
+              Rensa datum
+            </button>
+          </>
+        )}
       </p>
 
       {listing.deliveryAvailable && listing.pickupAvailable && (

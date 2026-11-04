@@ -76,7 +76,7 @@ function BookingsPage() {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
 
-  const { data: bookings = [], isLoading, refetch } = useQuery({
+  const { data: bookings = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["my-bookings", user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -163,7 +163,16 @@ function BookingsPage() {
 
       {isLoading && <p className="mt-6 text-sm text-muted-foreground">Hämtar dina bokningar …</p>}
 
-      {!isLoading && bookings.length === 0 && (
+      {isError && (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Bokningarna kunde inte hämtas.{" "}
+          <button className="text-primary hover:underline" onClick={() => void refetch()}>
+            Försök igen
+          </button>
+        </p>
+      )}
+
+      {!isLoading && !isError && bookings.length === 0 && (
         <div className="mt-6 rounded-3xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
           Du har inga bokningar än.{" "}
           <Link to="/sok" search={DEFAULTS} className="text-primary hover:underline">
@@ -293,9 +302,15 @@ function BookingCard({
             <Button size="sm" className="rounded-full" disabled={busy} onClick={() => onAction("accept")}>
               <Check className="mr-1 h-4 w-4" /> Godkänn
             </Button>
-            <Button size="sm" variant="outline" className="rounded-full" disabled={busy} onClick={() => onAction("decline")}>
-              <X className="mr-1 h-4 w-4" /> Neka
-            </Button>
+            <ConfirmButton
+              variant="outline"
+              disabled={busy}
+              label={<><X className="mr-1 h-4 w-4" /> Neka</>}
+              title={`Neka förfrågan för ${formatDates(b.start_date, b.end_date)}?`}
+              description={`${b.counterpart_name} får ett meddelande om att förfrågan är nekad. Det går inte att ångra.`}
+              confirmLabel="Neka"
+              onConfirm={() => onAction("decline")}
+            />
           </>
         )}
         {status === "requested" && !b.i_am_owner && (
@@ -304,14 +319,24 @@ function BookingCard({
           </Button>
         )}
         {confirmed && !b.picked_up_at && b.start_date <= addDays(today, 1) && (
-          <Button size="sm" className="rounded-full" disabled={busy} onClick={() => onAction("picked_up")}>
-            <PackageOpen className="mr-1 h-4 w-4" /> Markera som utlämnad
-          </Button>
+          <ConfirmButton
+            disabled={busy}
+            label={<><PackageOpen className="mr-1 h-4 w-4" /> Markera som utlämnad</>}
+            title="Markera som utlämnad?"
+            description="Gör det när saken har lämnats över. Fota gärna skicket först (längre ner på kortet). Det går inte att ångra, och bokningen kan inte avbokas efteråt."
+            confirmLabel="Markera som utlämnad"
+            onConfirm={() => onAction("picked_up")}
+          />
         )}
         {confirmed && b.picked_up_at && b.i_am_owner && (
-          <Button size="sm" className="rounded-full" disabled={busy} onClick={() => onAction("returned")}>
-            <PackageCheck className="mr-1 h-4 w-4" /> Markera som återlämnad
-          </Button>
+          <ConfirmButton
+            disabled={busy}
+            label={<><PackageCheck className="mr-1 h-4 w-4" /> Markera som återlämnad</>}
+            title="Markera som återlämnad?"
+            description="Gör det när du har fått tillbaka saken och sett efter att den är hel. Fota gärna skicket. Hyran avslutas och det går inte att ångra."
+            confirmLabel="Markera som återlämnad"
+            onConfirm={() => onAction("returned")}
+          />
         )}
         {confirmed && b.picked_up_at && !b.i_am_owner && (
           <p className="self-center text-xs text-muted-foreground">
@@ -351,9 +376,11 @@ function BookingCard({
               <AlertDialogHeader>
                 <AlertDialogTitle>Avboka {formatDates(b.start_date, b.end_date)}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {lateCancellation(policy, b.start_date)
-                    ? `Det är senare än uthyrarens regel: ${CANCELLATION_POLICIES[policy].text} Avboka bara om det verkligen behövs, och förklara gärna varför i konversationen.`
-                    : `${b.counterpart_name} får ett meddelande om att bokningen är avbokad.`}
+                  {b.i_am_owner
+                    ? `${b.counterpart_name} får ett meddelande om att bokningen är avbokad. Förklara gärna varför i konversationen.`
+                    : lateCancellation(policy, b.start_date)
+                      ? `Det är senare än uthyrarens regel: ${CANCELLATION_POLICIES[policy].text} Avboka bara om det verkligen behövs, och förklara gärna varför i konversationen.`
+                      : `${b.counterpart_name} får ett meddelande om att bokningen är avbokad.`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -373,11 +400,51 @@ function BookingCard({
             pickupPhotos={b.pickup_photos ?? []}
             returnPhotos={b.return_photos ?? []}
             showReturn={!!b.picked_up_at}
+            returnedAt={b.returned_at}
             onSaved={onPhotosSaved}
           />
         </div>
       )}
     </div>
+  );
+}
+
+/** Knapp som frågar först, för steg som inte går att ångra. */
+function ConfirmButton({
+  label,
+  title,
+  description,
+  confirmLabel,
+  onConfirm,
+  disabled,
+  variant = "default",
+}: {
+  label: React.ReactNode;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  disabled?: boolean;
+  variant?: "default" | "outline";
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button size="sm" variant={variant} className="rounded-full" disabled={disabled}>
+          {label}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Avbryt</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

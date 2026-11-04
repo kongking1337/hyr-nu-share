@@ -1,4 +1,5 @@
 import { CITIES, findCity, normalize } from "./geo";
+import { toISODate } from "@/lib/bookings";
 
 export const CATEGORY_SYNONYMS: Record<string, { name: string; words: string[] }> = {
   slapvagn: {
@@ -55,7 +56,8 @@ export type ParsedSearch = {
   notes: string[];
 };
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+// Lokalt datum: toISOString() ger gårdagens datum mellan midnatt och 01/02 svensk tid.
+const iso = toISODate;
 
 function nextWeekday(target: number, from = new Date()): Date {
   const d = new Date(from);
