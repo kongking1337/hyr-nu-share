@@ -61,20 +61,31 @@ type Agreement = {
  */
 const STANDARD_TERMS: Record<number, string[]> = {
   1: [
-  "Hyresgästen ansvarar för saken under hyrestiden och lämnar tillbaka den i samma skick och i tid.",
-  "Uthyraren intygar att saken fungerar och är säker att använda, och visar hur den används.",
-  "Skador och fel meddelas direkt. Ersättning för skador som hyresgästen orsakat kommer parterna överens om, och depositionen kan användas till det.",
-  "Hyra och deposition betalas direkt mellan parterna. Depositionen betalas tillbaka när saken lämnats tillbaka utan skador.",
-  "Hyrkoll är inte part i avtalet och förmedlar inga betalningar.",
-  "Bilderna på skicket vid utlämning och återlämning (under Bokningar) gäller som dokumentation.",
+    "Hyresgästen ansvarar för saken under hyrestiden och lämnar tillbaka den i samma skick och i tid.",
+    "Uthyraren intygar att saken fungerar och är säker att använda, och visar hur den används.",
+    "Skador och fel meddelas direkt. Ersättning för skador som hyresgästen orsakat kommer parterna överens om, och depositionen kan användas till det.",
+    "Hyra och deposition betalas direkt mellan parterna. Depositionen betalas tillbaka när saken lämnats tillbaka utan skador.",
+    "Hyrkoll är inte part i avtalet och förmedlar inga betalningar.",
+    "Bilderna på skicket vid utlämning och återlämning (under Bokningar) gäller som dokumentation.",
   ],
 };
 
 const fullDate = (iso: string) =>
-  fromISODate(iso).toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  fromISODate(iso).toLocaleDateString("sv-SE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
 const dateTime = (iso: string) =>
-  new Date(iso).toLocaleString("sv-SE", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleString("sv-SE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 function AgreementPage() {
   const { id } = Route.useParams();
@@ -103,9 +114,7 @@ function AgreementPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-14 text-center">
         <h1 className="font-display text-2xl font-semibold">Hyresavtal</h1>
-        <p className="text-muted-foreground">
-          {userMessage(error, "Avtalet kunde inte visas.")}
-        </p>
+        <p className="text-muted-foreground">{userMessage(error, "Avtalet kunde inte visas.")}</p>
         <Button asChild variant="outline" className="rounded-full">
           <Link to="/bokningar">
             <ArrowLeft className="mr-1 h-4 w-4" /> Till Bokningar
@@ -172,7 +181,9 @@ function AgreementPage() {
 
         <Section title="1. Det som hyrs ut">
           <p className="font-medium">{t?.title ?? "Annonsen finns inte längre"}</p>
-          {t?.description && <p className="whitespace-pre-line text-muted-foreground">{t.description}</p>}
+          {t?.description && (
+            <p className="whitespace-pre-line text-muted-foreground">{t.description}</p>
+          )}
           {t?.included && (
             <p className="whitespace-pre-line">
               <span className="font-medium">Det här ingår: </span>
@@ -217,8 +228,12 @@ function AgreementPage() {
               {t.city}
             </p>
           )}
-          {a.picked_up_at && <p className="text-muted-foreground">Utlämnad {dateTime(a.picked_up_at)}.</p>}
-          {a.returned_at && <p className="text-muted-foreground">Återlämnad {dateTime(a.returned_at)}.</p>}
+          {a.picked_up_at && (
+            <p className="text-muted-foreground">Utlämnad {dateTime(a.picked_up_at)}.</p>
+          )}
+          {a.returned_at && (
+            <p className="text-muted-foreground">Återlämnad {dateTime(a.returned_at)}.</p>
+          )}
         </Section>
 
         {t?.rental_rules && (
@@ -255,7 +270,10 @@ function AgreementPage() {
                 onCheckedChange={(v) => setAccepted(v === true)}
                 className="mt-0.5"
               />
-              <Label htmlFor="accept-agreement" className="cursor-pointer text-sm font-normal leading-snug">
+              <Label
+                htmlFor="accept-agreement"
+                className="cursor-pointer text-sm font-normal leading-snug"
+              >
                 Jag har läst och godkänner avtalet
               </Label>
             </div>
@@ -287,7 +305,15 @@ function PriceRow({ label, value, strong }: { label: string; value: string; stro
   );
 }
 
-function Signature({ role, name, agreedAt }: { role: string; name: string; agreedAt: string | null }) {
+function Signature({
+  role,
+  name,
+  agreedAt,
+}: {
+  role: string;
+  name: string;
+  agreedAt: string | null;
+}) {
   return (
     <div className="space-y-1 text-sm">
       <p className="font-medium">

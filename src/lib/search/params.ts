@@ -5,14 +5,7 @@ import { CITIES, REGION } from "@/lib/geo";
  * Exempel: /sok?q=slapvagn&location=solna&radius=10&priceMax=500&sort=price
  */
 export type SortKey =
-  | "recommended"
-  | "price"
-  | "total"
-  | "price_desc"
-  | "distance"
-  | "newest"
-  | "rating"
-  | "popular";
+  "recommended" | "price" | "total" | "price_desc" | "distance" | "newest" | "rating" | "popular";
 
 export const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "recommended", label: "Rekommenderat" },
@@ -100,13 +93,16 @@ const num = (v: unknown, d: number) => {
 };
 const oneOf = <T extends string>(v: unknown, allowed: readonly T[], d: T): T =>
   allowed.includes(v as T) ? (v as T) : d;
-const bool = (v: unknown, d: boolean) => (v === true || v === "true" ? true : v === false || v === "false" ? false : d);
+const bool = (v: unknown, d: boolean) =>
+  v === true || v === "true" ? true : v === false || v === "false" ? false : d;
 
 /** "ÅÅÅÅ-MM-DD" som är ett riktigt datum, annars tomt (handskrivna länkar gav "NaN undefined"). */
 const isoDate = (v: unknown): string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) ? v : "";
 
-export function validateSearchParams(search: Partial<Record<keyof SearchParams, unknown>>): SearchParams {
+export function validateSearchParams(
+  search: Partial<Record<keyof SearchParams, unknown>>,
+): SearchParams {
   const from = isoDate(search["from"]);
   const to = isoDate(search["to"]);
   return {

@@ -99,7 +99,12 @@ export function BlockUserButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="rounded-full text-muted-foreground" disabled={busy}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="rounded-full text-muted-foreground"
+          disabled={busy}
+        >
           <Ban className="mr-1 h-4 w-4" /> Blockera
         </Button>
       </AlertDialogTrigger>
@@ -114,11 +119,12 @@ export function BlockUserButton({
               </p>
               <p>
                 Godkända bokningar ligger kvar, och så länge en hyra pågår kan ni fortfarande skriva
-                till varandra så att saken kan lämnas tillbaka. Avboka under Bokningar om det behövs.
+                till varandra så att saken kan lämnas tillbaka. Avboka under Bokningar om det
+                behövs.
               </p>
               <p>
-                {name} får inget besked om blockeringen, men märker att meddelanden och förfrågningar
-                inte går fram. Du kan ta bort blockeringen när du vill.
+                {name} får inget besked om blockeringen, men märker att meddelanden och
+                förfrågningar inte går fram. Du kan ta bort blockeringen när du vill.
               </p>
             </div>
           </AlertDialogDescription>

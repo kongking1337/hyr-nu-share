@@ -14,7 +14,10 @@ export function useFavoriteIds() {
     queryKey: ["favorite-ids", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("favorites").select("listing_id").eq("user_id", user!.id);
+      const { data, error } = await supabase
+        .from("favorites")
+        .select("listing_id")
+        .eq("user_id", user!.id);
       if (error) throw error;
       return new Set((data ?? []).map((f) => f.listing_id));
     },
@@ -22,7 +25,13 @@ export function useFavoriteIds() {
 }
 
 /** Hjärtat på annonser: sparar eller tar bort en favorit. Fyllt hjärta = sparad. */
-export function FavoriteButton({ listingId, className }: { listingId: string; className?: string }) {
+export function FavoriteButton({
+  listingId,
+  className,
+}: {
+  listingId: string;
+  className?: string;
+}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: ids } = useFavoriteIds();
@@ -38,13 +47,19 @@ export function FavoriteButton({ listingId, className }: { listingId: string; cl
     setBusy(true);
     const { error } = saved
       ? await supabase.from("favorites").delete().eq("user_id", user.id).eq("listing_id", listingId)
-      : await supabase.from("favorites").upsert(
-          { user_id: user.id, listing_id: listingId },
-          { onConflict: "user_id,listing_id", ignoreDuplicates: true },
-        );
+      : await supabase
+          .from("favorites")
+          .upsert(
+            { user_id: user.id, listing_id: listingId },
+            { onConflict: "user_id,listing_id", ignoreDuplicates: true },
+          );
     setBusy(false);
     if (error) {
-      toast.error(saved ? "Favoriten kunde inte tas bort. Försök igen." : "Favoriten kunde inte sparas. Försök igen.");
+      toast.error(
+        saved
+          ? "Favoriten kunde inte tas bort. Försök igen."
+          : "Favoriten kunde inte sparas. Försök igen.",
+      );
       return;
     }
     toast.success(saved ? "Borttagen från favoriter" : "Sparad i favoriter");

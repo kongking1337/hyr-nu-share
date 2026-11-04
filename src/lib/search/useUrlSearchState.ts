@@ -26,7 +26,10 @@ export function useUrlSearchState(current: SearchParams, fixed: Partial<SearchPa
       if (!leaves) fixedKeys.forEach((k) => delete search[k]);
       // Första tangenten blir ett eget steg i historiken, resten av samma fält ersätter det.
       const keys = Object.keys(p);
-      const typed = keys.length > 0 && keys.every((k) => TYPED.includes(k as keyof SearchParams)) ? keys.join() : null;
+      const typed =
+        keys.length > 0 && keys.every((k) => TYPED.includes(k as keyof SearchParams))
+          ? keys.join()
+          : null;
       const replace = typed !== null && typed === lastTyped.current;
       lastTyped.current = typed;
       void navigate({

@@ -78,7 +78,9 @@ export function seriesFor(listing: AnalyticsListing, days: number): DayPoint[] {
     const season = 1 + 0.25 * Math.sin((d.getMonth() / 12) * Math.PI * 2);
     const decay = paused && i < 14 ? 0.15 : 1;
 
-    const views = Math.round((4 + rnd(s) * 22) * popularity * (weekend ? 1.35 : 1) * season * decay);
+    const views = Math.round(
+      (4 + rnd(s) * 22) * popularity * (weekend ? 1.35 : 1) * season * decay,
+    );
     const visitors = Math.round(views * (0.62 + rnd(s + 1) * 0.2));
     const clicks = Math.round(views * (0.28 + rnd(s + 2) * 0.18));
     const favorites = Math.round(clicks * (0.08 + rnd(s + 3) * 0.14));
@@ -118,7 +120,17 @@ export function totals(points: DayPoint[]): StatTotals {
       cancellations: a.cancellations + p.cancellations,
       revenue: a.revenue + p.revenue,
     }),
-    { views: 0, visitors: 0, clicks: 0, favorites: 0, shares: 0, requests: 0, bookings: 0, cancellations: 0, revenue: 0 },
+    {
+      views: 0,
+      visitors: 0,
+      clicks: 0,
+      favorites: 0,
+      shares: 0,
+      requests: 0,
+      bookings: 0,
+      cancellations: 0,
+      revenue: 0,
+    },
   );
   const net = Math.max(t.bookings - t.cancellations, 0);
   return {
@@ -152,7 +164,8 @@ export function funnel(t: StatTotals): FunnelStep[] {
 export function dashboardKpis(listings: AnalyticsListing[], days = 30) {
   const cur = listings.map((l) => totals(seriesFor(l, days)));
   const prevAll = listings.map((l) => seriesFor(l, days * 2).slice(0, days)).map(totals);
-  const sum = (arr: StatTotals[], k: keyof StatTotals) => arr.reduce((a, t) => a + (t[k] as number), 0);
+  const sum = (arr: StatTotals[], k: keyof StatTotals) =>
+    arr.reduce((a, t) => a + (t[k] as number), 0);
 
   const active = listings.filter((l) => l.status === "published").length;
   const rated = listings.filter((l) => (l.rating ?? 0) > 0);
@@ -163,7 +176,8 @@ export function dashboardKpis(listings: AnalyticsListing[], days = 30) {
   const bookings = sum(cur, "bookings");
   const revenue = sum(cur, "revenue");
 
-  const pct = (now: number, before: number) => (before ? ((now - before) / before) * 100 : now > 0 ? 100 : 0);
+  const pct = (now: number, before: number) =>
+    before ? ((now - before) / before) * 100 : now > 0 ? 100 : 0;
 
   return {
     views,
@@ -179,7 +193,10 @@ export function dashboardKpis(listings: AnalyticsListing[], days = 30) {
     active,
     rating,
     conversion: views ? (bookings / views) * 100 : 0,
-    conversionDelta: pct(views ? bookings / views : 0, prevViews ? sum(prevAll, "bookings") / prevViews : 0),
+    conversionDelta: pct(
+      views ? bookings / views : 0,
+      prevViews ? sum(prevAll, "bookings") / prevViews : 0,
+    ),
   };
 }
 

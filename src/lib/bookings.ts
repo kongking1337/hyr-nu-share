@@ -91,8 +91,13 @@ export function formatDates(start: string, end: string): string {
 }
 
 /** Upptagna perioder som react-day-picker förstår (för `disabled` och `modifiers`). */
-export function takenRanges(rows: Array<{ start_date: string; end_date: string }> | null | undefined) {
-  return (rows ?? []).map((r) => ({ from: fromISODate(r.start_date), to: fromISODate(r.end_date) }));
+export function takenRanges(
+  rows: Array<{ start_date: string; end_date: string }> | null | undefined,
+) {
+  return (rows ?? []).map((r) => ({
+    from: fromISODate(r.start_date),
+    to: fromISODate(r.end_date),
+  }));
 }
 
 /** Sant om någon dag i perioden är upptagen. */

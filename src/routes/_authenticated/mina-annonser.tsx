@@ -1,15 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  Copy,
-  ExternalLink,
-  Pause,
-  Pencil,
-  Play,
-  Share2,
-  Trash2,
-} from "lucide-react";
+import { Copy, ExternalLink, Pause, Pencil, Play, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,22 +77,34 @@ function MyListings() {
 
   const listings = data?.listings ?? [];
 
-  const filtered = tab === "all" ? listings : listings.filter((l) => (l.status ?? "published") === tab);
+  const filtered =
+    tab === "all" ? listings : listings.filter((l) => (l.status ?? "published") === tab);
 
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
-    if (error) { toast.error(userMessage(error, "Kunde inte uppdatera status.")); return; }
+    if (error) {
+      toast.error(userMessage(error, "Kunde inte uppdatera status."));
+      return;
+    }
     toast.success(STATUS_TOAST[status] ?? "Status uppdaterad.");
     refetch();
   }
 
   async function duplicate(l: (typeof listings)[number]) {
-    const { id, created_at, published_at, ...rest } = l as Record<string, unknown> as any;
-    void id; void created_at; void published_at;
-    const { error } = await supabase
-      .from("listings")
-      .insert({ ...rest, title: `${l.title.slice(0, 92).trim()} (kopia)`, status: "draft", booking_count: 0 });
-    if (error) { toast.error(userMessage(error, "Kunde inte duplicera annonsen.")); return; }
+    const { id, created_at, published_at, ...rest } = l;
+    void id;
+    void created_at;
+    void published_at;
+    const { error } = await supabase.from("listings").insert({
+      ...rest,
+      title: `${l.title.slice(0, 92).trim()} (kopia)`,
+      status: "draft",
+      booking_count: 0,
+    });
+    if (error) {
+      toast.error(userMessage(error, "Kunde inte duplicera annonsen."));
+      return;
+    }
     toast.success("Kopia skapad som utkast.");
     refetch();
   }
@@ -108,7 +112,10 @@ function MyListings() {
   async function remove(id: string) {
     const images = listings.find((l) => l.id === id)?.images ?? [];
     const { error } = await supabase.from("listings").delete().eq("id", id);
-    if (error) { toast.error(userMessage(error, "Kunde inte ta bort annonsen.")); return; }
+    if (error) {
+      toast.error(userMessage(error, "Kunde inte ta bort annonsen."));
+      return;
+    }
     void removeUnusedPhotos(user!.id, images);
     toast.success("Annonsen är borttagen.");
     refetch();
@@ -118,8 +125,13 @@ function MyListings() {
     const url = `${window.location.origin}/annons/${id}`;
     try {
       if (navigator.share) await navigator.share({ title, url });
-      else { await navigator.clipboard.writeText(url); toast.success("Länken är kopierad."); }
-    } catch { /* avbruten delning */ }
+      else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Länken är kopierad.");
+      }
+    } catch {
+      /* avbruten delning */
+    }
   }
 
   return (
@@ -142,7 +154,9 @@ function MyListings() {
             <TabsTrigger key={t.key} value={t.key}>
               {t.label}
               <span className="ml-1 text-xs text-muted-foreground">
-                {t.key === "all" ? listings.length : listings.filter((l) => (l.status ?? "published") === t.key).length}
+                {t.key === "all"
+                  ? listings.length
+                  : listings.filter((l) => (l.status ?? "published") === t.key).length}
               </span>
             </TabsTrigger>
           ))}
@@ -178,7 +192,11 @@ function MyListings() {
         {filtered.map((l) => {
           const meta = STATUS_META[l.status ?? "published"] ?? STATUS_META["published"]!;
           const listingType = l.listing_type === "sale" ? "sale" : "rent";
-          const price = priceLabel({ listingType, price: l.price, priceDay: Number(l.price_day ?? 0) });
+          const price = priceLabel({
+            listingType,
+            price: l.price,
+            priceDay: Number(l.price_day ?? 0),
+          });
           const active = l.status === "published" || l.status === "paused";
 
           return (
@@ -192,7 +210,9 @@ function MyListings() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={`rounded-full border-0 ${meta.className}`}>{meta.label}</Badge>
+                    <Badge className={`rounded-full border-0 ${meta.className}`}>
+                      {meta.label}
+                    </Badge>
                     <span className="text-xs text-muted-foreground">
                       Publicerad{" "}
                       {new Date(l.published_at ?? l.created_at).toLocaleDateString("sv-SE")}
@@ -204,8 +224,9 @@ function MyListings() {
                   </p>
                   {l.status === "removed" && (
                     <p className="mt-2 rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                      Dold av Hyrkolls moderatorer{l.moderation_reason ? `: ${l.moderation_reason}` : ""}. Tycker du att det
-                      är fel?{" "}
+                      Dold av Hyrkolls moderatorer
+                      {l.moderation_reason ? `: ${l.moderation_reason}` : ""}. Tycker du att det är
+                      fel?{" "}
                       <Link to="/kontakt" className="underline">
                         Kontakta oss
                       </Link>
@@ -217,7 +238,9 @@ function MyListings() {
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" className="rounded-full" asChild>
-                  <Link to="/ny-annons" search={{ id: l.id }}><Pencil className="mr-1 h-4 w-4" /> Redigera</Link>
+                  <Link to="/ny-annons" search={{ id: l.id }}>
+                    <Pencil className="mr-1 h-4 w-4" /> Redigera
+                  </Link>
                 </Button>
                 {active && (
                   <Button
@@ -226,48 +249,73 @@ function MyListings() {
                     className="rounded-full"
                     onClick={() => setStatus(l.id, l.status === "paused" ? "published" : "paused")}
                   >
-                    {l.status === "paused" ? <><Play className="mr-1 h-4 w-4" /> Aktivera</> : <><Pause className="mr-1 h-4 w-4" /> Pausa</>}
+                    {l.status === "paused" ? (
+                      <>
+                        <Play className="mr-1 h-4 w-4" /> Aktivera
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="mr-1 h-4 w-4" /> Pausa
+                      </>
+                    )}
                   </Button>
                 )}
                 {active && <AvailabilityDialog listingId={l.id} title={l.title} />}
                 {l.status === "sold" && (
-                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => setStatus(l.id, "published")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setStatus(l.id, "published")}
+                  >
                     <Play className="mr-1 h-4 w-4" /> Publicera igen
                   </Button>
                 )}
                 {/* En annons som moderatorerna har dolt ska inte kunna läggas upp igen som kopia. */}
                 {l.status !== "removed" && (
-                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => duplicate(l)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => duplicate(l)}
+                  >
                     <Copy className="mr-1 h-4 w-4" /> Duplicera
                   </Button>
                 )}
                 <Button size="sm" variant="outline" className="rounded-full" asChild>
-                  <Link to="/annons/$id" params={{ id: l.id }}><ExternalLink className="mr-1 h-4 w-4" /> Visa annons</Link>
+                  <Link to="/annons/$id" params={{ id: l.id }}>
+                    <ExternalLink className="mr-1 h-4 w-4" /> Visa annons
+                  </Link>
                 </Button>
-                <Button size="sm" variant="outline" className="rounded-full" onClick={() => share(l.id, l.title)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => share(l.id, l.title)}
+                >
                   <Share2 className="mr-1 h-4 w-4" /> Dela
                 </Button>
                 {/* Annonser som moderatorerna har dolt ligger kvar (databasen stoppar borttagningen). */}
                 {l.status !== "removed" && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="ghost" className="rounded-full text-destructive">
-                      <Trash2 className="mr-1 h-4 w-4" /> Ta bort
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Ta bort annonsen?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        ”{l.title}” tas bort permanent.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => remove(l.id)}>Ta bort</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="rounded-full text-destructive">
+                        <Trash2 className="mr-1 h-4 w-4" /> Ta bort
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Ta bort annonsen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          ”{l.title}” tas bort permanent.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => remove(l.id)}>Ta bort</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
             </div>

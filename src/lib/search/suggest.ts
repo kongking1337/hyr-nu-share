@@ -82,7 +82,10 @@ export function pushRecentSearch(q: string) {
   if (typeof window === "undefined") return;
   const clean = q.trim();
   if (!clean) return;
-  const list = [clean, ...recentSearches().filter((r) => r.toLowerCase() !== clean.toLowerCase())].slice(0, 6);
+  const list = [
+    clean,
+    ...recentSearches().filter((r) => r.toLowerCase() !== clean.toLowerCase()),
+  ].slice(0, 6);
   localStorage.setItem(RECENT_KEY, JSON.stringify(list));
 }
 
@@ -112,12 +115,20 @@ export function suggest(query: string, limit = 8): Suggestion[] {
 
   for (const t of TERMS) {
     const s = score(q, t.label);
-    if (s > 0) out.push({ id: `t-${t.label}`, label: t.label, kind: "term", category: t.category, s });
+    if (s > 0)
+      out.push({ id: `t-${t.label}`, label: t.label, kind: "term", category: t.category, s });
   }
   for (const [slug, def] of Object.entries(CATEGORY_SYNONYMS)) {
     const s = Math.max(score(q, def.name), ...def.words.map((w) => score(q, w) - 10));
     if (s > 0)
-      out.push({ id: `c-${slug}`, label: def.name, kind: "category", category: slug, hint: "Kategori", s: s + 5 });
+      out.push({
+        id: `c-${slug}`,
+        label: def.name,
+        kind: "category",
+        category: slug,
+        hint: "Kategori",
+        s: s + 5,
+      });
   }
   for (const [cat, subs] of Object.entries(SUBCATEGORIES)) {
     for (const sub of subs) {

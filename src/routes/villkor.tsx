@@ -42,9 +42,7 @@ function TermsPage() {
           Du ansvarar för innehållet i dina annonser. Beskriv saken ärligt, med pris och skick.
         </li>
         <li>Använd egna bilder, eller bilder som du har rätt att använda.</li>
-        <li>
-          En annons ska gälla en sak (eller ett paket) som du faktiskt har och får hyra ut.
-        </li>
+        <li>En annons ska gälla en sak (eller ett paket) som du faktiskt har och får hyra ut.</li>
         <li>Välj rätt kategori och lägg inte upp samma annons flera gånger.</li>
         <li>Pausa eller ta bort annonsen när saken inte längre går att hyra.</li>
         <li>
@@ -60,8 +58,8 @@ function TermsPage() {
           inte kan komma.
         </li>
         <li>
-          Den som hyr ansvarar för saken under hyrestiden och lämnar tillbaka den i samma skick. Fota
-          gärna skicket vid utlämning och återlämning.
+          Den som hyr ansvarar för saken under hyrestiden och lämnar tillbaka den i samma skick.
+          Fota gärna skicket vid utlämning och återlämning.
         </li>
       </ul>
 
@@ -103,8 +101,8 @@ function TermsPage() {
           två; Hyrkoll är inte part i det.
         </li>
         <li>
-          Du kan blockera en användare. Då kan ni inte skicka meddelanden eller bokningsförfrågningar
-          till varandra.
+          Du kan blockera en användare. Då kan ni inte skicka meddelanden eller
+          bokningsförfrågningar till varandra.
         </li>
       </ul>
       <p>

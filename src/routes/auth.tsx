@@ -17,7 +17,8 @@ import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
  * Webbläsare läser "/\\" som "//", så bakstreck och styrtecken stoppas också.
  */
 function safeRedirect(value: unknown): string | undefined {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) return undefined;
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//"))
+    return undefined;
   if (value.includes("\\") || [...value].some((c) => c.charCodeAt(0) < 32)) return undefined;
   return value;
 }
@@ -213,17 +214,22 @@ function AuthPage() {
       <div className="mx-auto max-w-md space-y-4 px-4 py-14">
         <h1 className="font-display text-3xl font-semibold">Bekräfta din e-post</h1>
         <p className="text-sm text-muted-foreground">
-          Vi har skickat en länk till <span className="font-medium text-foreground">{confirmSentTo}</span>.
-          Klicka på den för att bekräfta kontot, så är du inloggad. Kolla skräpposten om mejlet inte har
-          kommit inom några minuter.
+          Vi har skickat en länk till{" "}
+          <span className="font-medium text-foreground">{confirmSentTo}</span>. Klicka på den för
+          att bekräfta kontot, så är du inloggad. Kolla skräpposten om mejlet inte har kommit inom
+          några minuter.
         </p>
         <p className="text-sm text-muted-foreground">
-          Har du redan ett konto med den adressen kommer inget nytt mejl. Logga in i stället, eller välj
-          "Glömt lösenordet?" om du inte minns lösenordet.
+          Har du redan ett konto med den adressen kommer inget nytt mejl. Logga in i stället, eller
+          välj "Glömt lösenordet?" om du inte minns lösenordet.
         </p>
         {captcha}
         <div className="flex flex-wrap gap-2">
-          <Button className="rounded-full" disabled={busy} onClick={() => void resendConfirmation()}>
+          <Button
+            className="rounded-full"
+            disabled={busy}
+            onClick={() => void resendConfirmation()}
+          >
             Skicka mejlet igen
           </Button>
           <Button
@@ -379,7 +385,10 @@ function AuthPage() {
                 onCheckedChange={(v) => setAccepted(v === true)}
                 className="mt-0.5"
               />
-              <Label htmlFor="accept-terms" className="cursor-pointer text-sm font-normal leading-snug">
+              <Label
+                htmlFor="accept-terms"
+                className="cursor-pointer text-sm font-normal leading-snug"
+              >
                 Jag är minst 18 år och godkänner{" "}
                 <Link to="/villkor" className="text-primary underline" target="_blank">
                   användarvillkoren

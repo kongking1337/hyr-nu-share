@@ -83,9 +83,13 @@ export function OfferPanel({
     const res = (data ?? {}) as { auto_accepted?: boolean; below_minimum?: boolean };
     setTooLow(!!res.below_minimum);
     if (res.auto_accepted) {
-      toast.success("Budet accepterades direkt enligt uthyrarens privata villkor. Bokningen är skapad och datumen blockerade.");
+      toast.success(
+        "Budet accepterades direkt enligt uthyrarens privata villkor. Bokningen är skapad och datumen blockerade.",
+      );
     } else if (res.below_minimum) {
-      toast.warning("Budet är skickat men ligger under uthyrarens privata gräns – ett högre bud har större chans.");
+      toast.warning(
+        "Budet är skickat men ligger under uthyrarens privata gräns – ett högre bud har större chans.",
+      );
     } else {
       toast.success("Budet är skickat till uthyraren.");
     }
@@ -104,7 +108,8 @@ export function OfferPanel({
       toast.error("Åtgärden kunde inte genomföras.");
       return;
     }
-    if (action === "accept") toast.success("Priset är låst och bokningen skapad – datumen är blockerade.");
+    if (action === "accept")
+      toast.success("Priset är låst och bokningen skapad – datumen är blockerade.");
     else toast.success("Uppdaterat.");
     refetch();
   }
@@ -122,31 +127,56 @@ export function OfferPanel({
       </p>
 
       {!open ? (
-        <Button variant="outline" className="mt-3 w-full rounded-full" onClick={() => setOpen(true)} disabled={disabled}>
+        <Button
+          variant="outline"
+          className="mt-3 w-full rounded-full"
+          onClick={() => setOpen(true)}
+          disabled={disabled}
+        >
           Lägg ett bud
         </Button>
       ) : (
         <div className="mt-3 space-y-2">
           <div className="space-y-1">
             <Label className="text-xs">Ditt bud – totalt för perioden (kr)</Label>
-            <Input aria-label="Ditt bud totalt" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(Math.round(listTotal * 0.9))} />
+            <Input
+              aria-label="Ditt bud totalt"
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder={String(Math.round(listTotal * 0.9))}
+            />
           </div>
           {value > 0 && (
             <div className="rounded-2xl bg-muted/60 px-3 py-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Ordinarie</span><span>{kr(listTotal)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Ditt bud</span><span className="font-semibold">{kr(value)}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Ordinarie</span>
+                <span>{kr(listTotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Ditt bud</span>
+                <span className="font-semibold">{kr(value)}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Skillnad</span>
-                <span>{diff >= 0 ? "−" : "+"}{kr(Math.abs(diff))} ({Math.abs(Math.round(pct))} %)</span>
+                <span>
+                  {diff >= 0 ? "−" : "+"}
+                  {kr(Math.abs(diff))} ({Math.abs(Math.round(pct))} %)
+                </span>
               </div>
             </div>
           )}
           {value > 0 && pct > 40 && (
             <p className="text-xs text-destructive">
-              Budet är mycket lägre än annonserat pris och accepteras sällan. Uthyrarens eventuella minimigräns är privat.
+              Budet är mycket lägre än annonserat pris och accepteras sällan. Uthyrarens eventuella
+              minimigräns är privat.
             </p>
           )}
-          <Textarea placeholder="Meddelande till uthyraren (valfritt)" value={message} onChange={(e) => setMessage(e.target.value)} />
+          <Textarea
+            placeholder="Meddelande till uthyraren (valfritt)"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
           <Button className="w-full rounded-full" onClick={submit} disabled={busy || disabled}>
             Skicka bud
           </Button>
@@ -155,8 +185,8 @@ export function OfferPanel({
 
       {tooLow && (
         <p className="mt-2 flex items-start gap-1 text-xs text-amber-700 dark:text-amber-400">
-          <Info className="mt-0.5 h-3.5 w-3.5" /> Ditt senaste bud ligger under uthyrarens privata gräns. Beloppet på gränsen
-          visas aldrig.
+          <Info className="mt-0.5 h-3.5 w-3.5" /> Ditt senaste bud ligger under uthyrarens privata
+          gräns. Beloppet på gränsen visas aldrig.
         </p>
       )}
 
@@ -173,12 +203,14 @@ export function OfferPanel({
             />
           ))}
           <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
-            <ShieldCheck className="mt-0.5 h-3 w-3" /> Budhistoriken är privat mellan dig och uthyraren. Enskilda bud visas
-            aldrig publikt.
+            <ShieldCheck className="mt-0.5 h-3 w-3" /> Budhistoriken är privat mellan dig och
+            uthyraren. Enskilda bud visas aldrig publikt.
           </p>
         </div>
       )}
-      {num(listTotal) === 0 && <p className="mt-2 text-xs text-muted-foreground">Välj datum för att lägga bud.</p>}
+      {num(listTotal) === 0 && (
+        <p className="mt-2 text-xs text-muted-foreground">Välj datum för att lägga bud.</p>
+      )}
     </div>
   );
 }

@@ -15,10 +15,7 @@ import { rowToUnified } from "@/lib/providers/internal";
 
 export const Route = createFileRoute("/profil/$id")({
   head: () => ({
-    meta: [
-      { title: "Profil – Hyrkoll" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Profil – Hyrkoll" }, { name: "robots", content: "noindex" }],
   }),
   component: ProfilePage,
 });
@@ -45,7 +42,12 @@ function ProfilePage() {
   const queryClient = useQueryClient();
 
   const validId = UUID.test(id);
-  const { data: profile, isLoading, isError, refetch } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["public-profile", id],
     enabled: validId,
     queryFn: async () => {
@@ -104,7 +106,9 @@ function ProfilePage() {
   if (isError) {
     return (
       <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
-        <h1 className="font-display text-2xl font-semibold text-foreground">Profilen kunde inte hämtas</h1>
+        <h1 className="font-display text-2xl font-semibold text-foreground">
+          Profilen kunde inte hämtas
+        </h1>
         <Button className="mt-4 rounded-full" onClick={() => void refetch()}>
           Försök igen
         </Button>
@@ -158,7 +162,8 @@ function ProfilePage() {
                 <span className="text-muted-foreground">Inga omdömen än</span>
               )}
               <span className="flex items-center gap-1 text-muted-foreground">
-                <Repeat className="h-4 w-4" /> {rentals} avslutade {rentals === 1 ? "hyra" : "hyror"}
+                <Repeat className="h-4 w-4" /> {rentals} avslutade{" "}
+                {rentals === 1 ? "hyra" : "hyror"}
               </span>
               {profile.response_hours != null && (
                 <span className="flex items-center gap-1 text-muted-foreground">
@@ -198,7 +203,8 @@ function ProfilePage() {
 
       <section>
         <h2 className="font-display text-2xl font-semibold">
-          Annonser <span className="text-base font-normal text-muted-foreground">({listings.length})</span>
+          Annonser{" "}
+          <span className="text-base font-normal text-muted-foreground">({listings.length})</span>
         </h2>
         {listings.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">Inga annonser just nu.</p>
@@ -213,7 +219,8 @@ function ProfilePage() {
 
       <section>
         <h2 className="font-display text-2xl font-semibold">
-          Omdömen <span className="text-base font-normal text-muted-foreground">({reviews.length})</span>
+          Omdömen{" "}
+          <span className="text-base font-normal text-muted-foreground">({reviews.length})</span>
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
           Omdömen kan bara skrivas efter en avslutad hyra på Hyrkoll.

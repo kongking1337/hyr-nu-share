@@ -68,15 +68,26 @@ export type MarketIndicator = {
 };
 
 /** Liten AI-marknadsindikator för resultatkort. */
-export function marketIndicator(priceDay: number, marketDay: number | null | undefined, sample = 0): MarketIndicator | null {
+export function marketIndicator(
+  priceDay: number,
+  marketDay: number | null | undefined,
+  sample = 0,
+): MarketIndicator | null {
   if (!priceDay) return null;
   if (!marketDay || marketDay <= 0) {
     return { label: "Uppskattning saknar underlag", pct: 0, tone: "neutral", estimate: true };
   }
   const pct = Math.round(((priceDay - marketDay) / marketDay) * 100);
-  if (pct <= -10) return { label: `${Math.abs(pct)} % under marknadspris`, pct, tone: "good", estimate: sample < 6 };
+  if (pct <= -10)
+    return {
+      label: `${Math.abs(pct)} % under marknadspris`,
+      pct,
+      tone: "good",
+      estimate: sample < 6,
+    };
   if (pct <= -3) return { label: "Bra pris", pct, tone: "good", estimate: sample < 6 };
-  if (pct >= 10) return { label: `${pct} % över marknadspris`, pct, tone: "high", estimate: sample < 6 };
+  if (pct >= 10)
+    return { label: `${pct} % över marknadspris`, pct, tone: "high", estimate: sample < 6 };
   return { label: "Marknadsnivå", pct, tone: "neutral", estimate: sample < 6 };
 }
 

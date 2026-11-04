@@ -42,7 +42,11 @@ function AccountPage() {
     queryKey: ["account", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user!.id)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -85,7 +89,10 @@ function AccountPage() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
-    if (error) { toast.error(authErrorMessage(error)); return; }
+    if (error) {
+      toast.error(authErrorMessage(error));
+      return;
+    }
     setPassword("");
     toast.success("Lösenordet är bytt.");
   }
@@ -103,11 +110,17 @@ function AccountPage() {
     const cutoff = addDays(todayISO(), -14);
     if ((bookings ?? []).some((b) => b.status === "confirmed" && b.end_date >= cutoff)) {
       setBusy(false);
-      toast.error("Du har bokningar som inte är avslutade. Avboka dem eller avsluta hyran under Bokningar först.");
+      toast.error(
+        "Du har bokningar som inte är avslutade. Avboka dem eller avsluta hyran under Bokningar först.",
+      );
       return;
     }
     const itemStillOut = (bookings ?? []).some(
-      (b) => b.status === "confirmed" && b.picked_up_at && !b.returned_at && b.end_date >= addDays(todayISO(), -60),
+      (b) =>
+        b.status === "confirmed" &&
+        b.picked_up_at &&
+        !b.returned_at &&
+        b.end_date >= addDays(todayISO(), -60),
     );
     if (itemStillOut) {
       setBusy(false);
@@ -186,7 +199,12 @@ function AccountPage() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="profile-city">Ort (visas på din profil)</Label>
-          <Input id="profile-city" maxLength={60} value={city} onChange={(e) => setCity(e.target.value)} />
+          <Input
+            id="profile-city"
+            maxLength={60}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bio">Om mig (visas på din profil)</Label>
@@ -201,12 +219,20 @@ function AccountPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* Inte förrän profilen är hämtad: annars skulle ett tomt formulär skriva över namnet. */}
-          <Button className="rounded-full" onClick={saveProfile} disabled={busy || !profile}>Spara</Button>
+          <Button className="rounded-full" onClick={saveProfile} disabled={busy || !profile}>
+            Spara
+          </Button>
           {profileFailed && (
-            <span className="text-sm text-muted-foreground">Profilen kunde inte hämtas. Ladda om sidan.</span>
+            <span className="text-sm text-muted-foreground">
+              Profilen kunde inte hämtas. Ladda om sidan.
+            </span>
           )}
           {user && (
-            <Link to="/profil/$id" params={{ id: user.id }} className="text-sm text-primary hover:underline">
+            <Link
+              to="/profil/$id"
+              params={{ id: user.id }}
+              className="text-sm text-primary hover:underline"
+            >
               Visa din profil →
             </Link>
           )}
@@ -228,7 +254,12 @@ function AccountPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" variant="outline" className="rounded-full" disabled={busy || !password}>
+          <Button
+            type="submit"
+            variant="outline"
+            className="rounded-full"
+            disabled={busy || !password}
+          >
             Byt lösenord
           </Button>
         </form>
@@ -239,13 +270,18 @@ function AccountPage() {
       <section className="mt-10 space-y-3 rounded-3xl border border-destructive/40 p-5">
         <h2 className="font-display text-xl font-semibold">Radera konto</h2>
         <p className="text-sm text-muted-foreground">
-          Ditt konto, din profil, dina annonser och bilder, bokningar, favoriter, sparade sökningar och
-          konversationer raderas för gott. Omdömen du har skrivit ligger kvar utan ditt namn. Det går inte
-          att ångra. Under en pågående hyra och 14 dagar efter den går kontot inte att radera.
+          Ditt konto, din profil, dina annonser och bilder, bokningar, favoriter, sparade sökningar
+          och konversationer raderas för gott. Omdömen du har skrivit ligger kvar utan ditt namn.
+          Det går inte att ångra. Under en pågående hyra och 14 dagar efter den går kontot inte att
+          radera.
         </p>
         <div className="space-y-1.5">
           <Label htmlFor="confirm-delete">Skriv RADERA för att bekräfta</Label>
-          <Input id="confirm-delete" value={confirmDelete} onChange={(e) => setConfirmDelete(e.target.value)} />
+          <Input
+            id="confirm-delete"
+            value={confirmDelete}
+            onChange={(e) => setConfirmDelete(e.target.value)}
+          />
         </div>
         <Button
           variant="destructive"
@@ -329,7 +365,11 @@ function PhoneSection({ verified }: { verified: boolean }) {
     e.preventDefault();
     if (!sentTo || !code.trim()) return;
     setBusy(true);
-    const { error } = await supabase.auth.verifyOtp({ phone: sentTo, token: code.trim(), type: "phone_change" });
+    const { error } = await supabase.auth.verifyOtp({
+      phone: sentTo,
+      token: code.trim(),
+      type: "phone_change",
+    });
     setBusy(false);
     if (error) {
       toast.error(authErrorMessage(error));
@@ -369,7 +409,12 @@ function PhoneSection({ verified }: { verified: boolean }) {
             <Button type="submit" className="rounded-full" disabled={busy || !code.trim()}>
               Verifiera
             </Button>
-            <Button type="button" variant="ghost" className="rounded-full" onClick={() => setSentTo(null)}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-full"
+              onClick={() => setSentTo(null)}
+            >
               Byt nummer
             </Button>
           </div>
@@ -387,7 +432,12 @@ function PhoneSection({ verified }: { verified: boolean }) {
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
-          <Button type="submit" variant="outline" className="rounded-full" disabled={busy || !phone.trim()}>
+          <Button
+            type="submit"
+            variant="outline"
+            className="rounded-full"
+            disabled={busy || !phone.trim()}
+          >
             Skicka kod
           </Button>
         </form>
@@ -434,7 +484,12 @@ function BlockedUsersSection() {
           {blocked.map((b) => (
             <li key={b.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
               <span className="font-medium">{b.name}</span>
-              <Button size="sm" variant="ghost" className="rounded-full" onClick={() => unblock(b.id, b.name)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="rounded-full"
+                onClick={() => unblock(b.id, b.name)}
+              >
                 Ta bort blockering
               </Button>
             </li>

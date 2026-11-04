@@ -4,11 +4,31 @@ import { toISODate } from "@/lib/bookings";
 export const CATEGORY_SYNONYMS: Record<string, { name: string; words: string[] }> = {
   slapvagn: {
     name: "Släpvagn",
-    words: ["slapvagn", "slap", "slapkarra", "karra", "trailer", "flyttslap", "slepvagn", "slapvang"],
+    words: [
+      "slapvagn",
+      "slap",
+      "slapkarra",
+      "karra",
+      "trailer",
+      "flyttslap",
+      "slepvagn",
+      "slapvang",
+    ],
   },
   verktyg: {
     name: "Verktyg",
-    words: ["verktyg", "hogtryckstvatt", "hogtrycktvatt", "tryckttvatt", "karcher", "borr", "borrmaskin", "tigersag", "slipmaskin", "spikpistol"],
+    words: [
+      "verktyg",
+      "hogtryckstvatt",
+      "hogtrycktvatt",
+      "tryckttvatt",
+      "karcher",
+      "borr",
+      "borrmaskin",
+      "tigersag",
+      "slipmaskin",
+      "spikpistol",
+    ],
   },
   kamera: {
     name: "Kamera & Foto",
@@ -68,7 +88,13 @@ function nextWeekday(target: number, from = new Date()): Date {
 }
 
 const WEEKDAYS: Record<string, number> = {
-  sondag: 0, mandag: 1, tisdag: 2, onsdag: 3, torsdag: 4, fredag: 5, lordag: 6,
+  sondag: 0,
+  mandag: 1,
+  tisdag: 2,
+  onsdag: 3,
+  torsdag: 4,
+  fredag: 5,
+  lordag: 6,
 };
 const WEEKDAY_NAMES = ["söndag", "måndag", "tisdag", "onsdag", "torsdag", "fredag", "lördag"];
 

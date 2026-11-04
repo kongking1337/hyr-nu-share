@@ -61,7 +61,8 @@ export const notifyNewReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { emailConfigured, escapeHtml, sendEmail } = await import("@/lib/email.server");
     const adminEmail = process.env["ADMIN_EMAIL"];
-    if (!emailConfigured() || !adminEmail || !process.env["SUPABASE_SERVICE_ROLE_KEY"]) return { sent: false };
+    if (!emailConfigured() || !adminEmail || !process.env["SUPABASE_SERVICE_ROLE_KEY"])
+      return { sent: false };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.rpc("claim_report_notification", {

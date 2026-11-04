@@ -21,7 +21,10 @@ export const Route = createFileRoute("/_authenticated/meddelanden")({
   head: () => ({
     meta: [
       { title: "Meddelanden – Hyrkoll" },
-      { name: "description", content: "Dina konversationer med uthyrare och de som vill hyra dina saker." },
+      {
+        name: "description",
+        content: "Dina konversationer med uthyrare och de som vill hyra dina saker.",
+      },
       { property: "og:title", content: "Meddelanden – Hyrkoll" },
       { property: "og:description", content: "Dina konversationer på Hyrkoll." },
     ],
@@ -38,7 +41,8 @@ function formatTime(iso: string): string {
 }
 
 /** Enter skickar bara med riktigt tangentbord; på mobilen ger Enter ny rad. */
-const enterSends = () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
+const enterSends = () =>
+  typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
 
 function MessagesPage() {
   const { user } = useAuth();
@@ -55,7 +59,12 @@ function MessagesPage() {
   const sendingRef = useRef(false);
   const thread = useRef<HTMLDivElement>(null);
 
-  const { data: conversations, isLoading, isError: conversationsFailed, refetch: refetchConversations } = useQuery({
+  const {
+    data: conversations,
+    isLoading,
+    isError: conversationsFailed,
+    refetch: refetchConversations,
+  } = useQuery({
     queryKey: ["conversations", user?.id],
     enabled: !!user,
     refetchInterval: 30_000,
@@ -81,7 +90,11 @@ function MessagesPage() {
       return data;
     },
   });
-  const counterpartId = parties ? (parties.owner_id === user?.id ? parties.renter_id : parties.owner_id) : null;
+  const counterpartId = parties
+    ? parties.owner_id === user?.id
+      ? parties.renter_id
+      : parties.owner_id
+    : null;
   const { data: iBlocked } = useIsBlocked(counterpartId);
 
   // Under en pågående hyra (till en vecka efter sista dagen) går det att skriva även efter en
@@ -103,7 +116,11 @@ function MessagesPage() {
   });
   const canWrite = !iBlocked || !!ongoingRental;
 
-  const { data: messages, refetch, isError: messagesFailed } = useQuery({
+  const {
+    data: messages,
+    refetch,
+    isError: messagesFailed,
+  } = useQuery({
     queryKey: ["messages", active],
     enabled: !!active,
     refetchInterval: 10_000,
@@ -182,7 +199,10 @@ function MessagesPage() {
           {conversationsFailed && (
             <p className="px-3 py-6 text-sm text-muted-foreground">
               Konversationerna kunde inte hämtas.{" "}
-              <button className="text-primary hover:underline" onClick={() => void refetchConversations()}>
+              <button
+                className="text-primary hover:underline"
+                onClick={() => void refetchConversations()}
+              >
                 Försök igen
               </button>
             </p>
@@ -322,7 +342,10 @@ function MessagesPage() {
                     )}
                     {m.body}
                     {m.kind === "booking" && (
-                      <Link to="/bokningar" className="mt-1.5 block text-xs font-semibold underline-offset-4 hover:underline">
+                      <Link
+                        to="/bokningar"
+                        className="mt-1.5 block text-xs font-semibold underline-offset-4 hover:underline"
+                      >
                         Visa bokningen →
                       </Link>
                     )}
@@ -352,13 +375,20 @@ function MessagesPage() {
                 maxLength={MAX_MESSAGE_LENGTH}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && enterSends()) {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !e.nativeEvent.isComposing &&
+                    enterSends()
+                  ) {
                     e.preventDefault();
                     void send();
                   }
                 }}
                 placeholder={
-                  enterSends() ? "Skriv ett meddelande … (Enter skickar, Skift+Enter ny rad)" : "Skriv ett meddelande …"
+                  enterSends()
+                    ? "Skriv ett meddelande … (Enter skickar, Skift+Enter ny rad)"
+                    : "Skriv ett meddelande …"
                 }
                 aria-label="Meddelande"
               />

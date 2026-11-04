@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Check, FileText, MessageSquare, PackageCheck, PackageOpen, Star, Undo2, X } from "lucide-react";
+import {
+  Check,
+  FileText,
+  MessageSquare,
+  PackageCheck,
+  PackageOpen,
+  Star,
+  Undo2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +85,12 @@ function BookingsPage() {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
 
-  const { data: bookings = [], isLoading, isError, refetch } = useQuery({
+  const {
+    data: bookings = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["my-bookings", user?.id],
     enabled: !!user,
     queryFn: async () => {
@@ -125,7 +139,9 @@ function BookingsPage() {
       toast.error(userMessage(error, "Det gick inte. Försök igen."));
       return;
     }
-    toast.success(action === "cancel" && b.status === "requested" ? "Förfrågan är återkallad." : DONE[action]);
+    toast.success(
+      action === "cancel" && b.status === "requested" ? "Förfrågan är återkallad." : DONE[action],
+    );
     const conversationId = (data as { conversation_id?: string } | null)?.conversation_id;
     // Mejla den andra (om e-post är uppsatt). Misslyckas det syns meddelandet ändå på sajten.
     if (conversationId) {
@@ -137,11 +153,15 @@ function BookingsPage() {
   }
 
   const today = todayISO();
-  const toAnswer = bookings.filter((b) => b.i_am_owner && b.status === "requested" && b.start_date >= today);
+  const toAnswer = bookings.filter(
+    (b) => b.i_am_owner && b.status === "requested" && b.start_date >= today,
+  );
   const upcoming = bookings
     .filter((b) => b.status === "confirmed")
     .sort((a, b) => a.start_date.localeCompare(b.start_date));
-  const waiting = bookings.filter((b) => !b.i_am_owner && b.status === "requested" && b.start_date >= today);
+  const waiting = bookings.filter(
+    (b) => !b.i_am_owner && b.status === "requested" && b.start_date >= today,
+  );
   const earlier = bookings.filter(
     (b) => !toAnswer.includes(b) && !upcoming.includes(b) && !waiting.includes(b),
   );
@@ -185,7 +205,8 @@ function BookingsPage() {
       {sections.map((s) => (
         <section key={s.title} className="mt-8">
           <h2 className="font-display text-xl font-semibold">
-            {s.title} <span className="text-base font-normal text-muted-foreground">({s.items.length})</span>
+            {s.title}{" "}
+            <span className="text-base font-normal text-muted-foreground">({s.items.length})</span>
           </h2>
           <div className="mt-3 space-y-3">
             {s.items.map((b) => (
@@ -231,7 +252,9 @@ function BookingCard({
   const today = todayISO();
   const status = (b.status in BOOKING_STATUS ? b.status : "requested") as BookingStatus;
   const expired = status === "requested" && b.start_date < today;
-  const meta = expired ? { label: "Utgången", className: "bg-muted text-muted-foreground" } : BOOKING_STATUS[status];
+  const meta = expired
+    ? { label: "Utgången", className: "bg-muted text-muted-foreground" }
+    : BOOKING_STATUS[status];
   const policy = asPolicy(b.cancellation_policy);
   const confirmed = status === "confirmed";
   // Omdömen kan lämnas i 14 dagar efter återlämningen, eller (om saken aldrig markerats som
@@ -287,11 +310,14 @@ function BookingCard({
           )}
           {confirmed && (
             <p className="text-xs text-muted-foreground">
-              Avbokning ({CANCELLATION_POLICIES[policy].label.toLowerCase()}): {CANCELLATION_POLICIES[policy].text}
+              Avbokning ({CANCELLATION_POLICIES[policy].label.toLowerCase()}):{" "}
+              {CANCELLATION_POLICIES[policy].text}
             </p>
           )}
           {b.message && (
-            <p className="mt-2 whitespace-pre-line rounded-2xl bg-muted/60 px-3 py-2 text-sm">{b.message}</p>
+            <p className="mt-2 whitespace-pre-line rounded-2xl bg-muted/60 px-3 py-2 text-sm">
+              {b.message}
+            </p>
           )}
         </div>
       </div>
@@ -299,13 +325,22 @@ function BookingCard({
       <div className="mt-4 flex flex-wrap gap-2">
         {status === "requested" && !expired && b.i_am_owner && (
           <>
-            <Button size="sm" className="rounded-full" disabled={busy} onClick={() => onAction("accept")}>
+            <Button
+              size="sm"
+              className="rounded-full"
+              disabled={busy}
+              onClick={() => onAction("accept")}
+            >
               <Check className="mr-1 h-4 w-4" /> Godkänn
             </Button>
             <ConfirmButton
               variant="outline"
               disabled={busy}
-              label={<><X className="mr-1 h-4 w-4" /> Neka</>}
+              label={
+                <>
+                  <X className="mr-1 h-4 w-4" /> Neka
+                </>
+              }
               title={`Neka förfrågan för ${formatDates(b.start_date, b.end_date)}?`}
               description={`${b.counterpart_name} får ett meddelande om att förfrågan är nekad. Det går inte att ångra.`}
               confirmLabel="Neka"
@@ -314,14 +349,24 @@ function BookingCard({
           </>
         )}
         {status === "requested" && !b.i_am_owner && (
-          <Button size="sm" variant="outline" className="rounded-full" disabled={busy} onClick={() => onAction("cancel")}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full"
+            disabled={busy}
+            onClick={() => onAction("cancel")}
+          >
             <Undo2 className="mr-1 h-4 w-4" /> Återkalla
           </Button>
         )}
         {confirmed && !b.picked_up_at && b.start_date <= addDays(today, 1) && (
           <ConfirmButton
             disabled={busy}
-            label={<><PackageOpen className="mr-1 h-4 w-4" /> Markera som utlämnad</>}
+            label={
+              <>
+                <PackageOpen className="mr-1 h-4 w-4" /> Markera som utlämnad
+              </>
+            }
             title="Markera som utlämnad?"
             description="Gör det när saken har lämnats över. Fota gärna skicket först (längre ner på kortet). Det går inte att ångra, och bokningen kan inte avbokas efteråt."
             confirmLabel="Markera som utlämnad"
@@ -331,7 +376,11 @@ function BookingCard({
         {confirmed && b.picked_up_at && b.i_am_owner && (
           <ConfirmButton
             disabled={busy}
-            label={<><PackageCheck className="mr-1 h-4 w-4" /> Markera som återlämnad</>}
+            label={
+              <>
+                <PackageCheck className="mr-1 h-4 w-4" /> Markera som återlämnad
+              </>
+            }
             title="Markera som återlämnad?"
             description="Gör det när du har fått tillbaka saken och sett efter att den är hel. Fota gärna skicket. Hyran avslutas och det går inte att ångra."
             confirmLabel="Markera som återlämnad"
@@ -355,9 +404,7 @@ function BookingCard({
             Ditt omdöme: <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {myRating}
           </span>
         )}
-        {reviewOpen && myRating === null && (
-          <ReviewDialog b={b} onDone={onReviewed} />
-        )}
+        {reviewOpen && myRating === null && <ReviewDialog b={b} onDone={onReviewed} />}
         {b.conversation_id && (
           <Button size="sm" variant="outline" className="rounded-full" asChild>
             <Link to="/meddelanden" search={{ c: b.conversation_id }}>
@@ -368,7 +415,12 @@ function BookingCard({
         {confirmed && !b.picked_up_at && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button size="sm" variant="ghost" className="rounded-full text-destructive" disabled={busy}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="rounded-full text-destructive"
+                disabled={busy}
+              >
                 <X className="mr-1 h-4 w-4" /> Avboka
               </Button>
             </AlertDialogTrigger>
@@ -506,7 +558,11 @@ function ReviewDialog({ b, onDone }: { b: Booking; onDone: () => void }) {
           />
         </div>
         <DialogFooter>
-          <Button className="rounded-full" onClick={() => void send()} disabled={sending || rating < 1}>
+          <Button
+            className="rounded-full"
+            onClick={() => void send()}
+            disabled={sending || rating < 1}
+          >
             Skicka omdöme
           </Button>
         </DialogFooter>

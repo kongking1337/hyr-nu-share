@@ -63,15 +63,16 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
 
   // Med en minsta hyrtid väntar vi på slutdatumet innan något visas som fel.
   const needsEnd = !!start && !range?.to && listing.minDays > 1;
-  const problem = !start || needsEnd
-    ? null
-    : days < listing.minDays
-      ? `Minst ${listing.minDays} dygn. Välj ett senare slutdatum.`
-      : days > MAX_BOOKING_DAYS
-        ? `Högst ${MAX_BOOKING_DAYS} dygn åt gången.`
-        : overlapsTaken(start, end!, taken)
-          ? "Några av dagarna är redan upptagna."
-          : null;
+  const problem =
+    !start || needsEnd
+      ? null
+      : days < listing.minDays
+        ? `Minst ${listing.minDays} dygn. Välj ett senare slutdatum.`
+        : days > MAX_BOOKING_DAYS
+          ? `Högst ${MAX_BOOKING_DAYS} dygn åt gången.`
+          : overlapsTaken(start, end!, taken)
+            ? "Några av dagarna är redan upptagna."
+            : null;
 
   async function send() {
     if (!user) return;
@@ -126,7 +127,11 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
         {range && (
           <>
             {" "}
-            <button type="button" className="text-primary hover:underline" onClick={() => setRange(undefined)}>
+            <button
+              type="button"
+              className="text-primary hover:underline"
+              onClick={() => setRange(undefined)}
+            >
               Rensa datum
             </button>
           </>
@@ -134,7 +139,11 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
       </p>
 
       {listing.deliveryAvailable && listing.pickupAvailable && (
-        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Upphämtning eller leverans">
+        <div
+          className="grid grid-cols-2 gap-2"
+          role="radiogroup"
+          aria-label="Upphämtning eller leverans"
+        >
           {[false, true].map((d) => (
             <button
               key={String(d)}
@@ -170,11 +179,14 @@ export function BookingRequest({ listing }: { listing: UnifiedResult }) {
           ) : (
             <>
               <Row label="Hyra" value={kr(rent)} />
-              {delivery && <Row label="Leverans" value={deliveryFee > 0 ? kr(deliveryFee) : "Ingår"} />}
+              {delivery && (
+                <Row label="Leverans" value={deliveryFee > 0 ? kr(deliveryFee) : "Ingår"} />
+              )}
               <Row label="Totalt" value={kr(rent + deliveryFee)} strong />
               {listing.deposit > 0 && (
                 <p className="pt-1 text-xs text-muted-foreground">
-                  Plus deposition {kr(listing.deposit)}, som du får tillbaka när saken lämnas tillbaka.
+                  Plus deposition {kr(listing.deposit)}, som du får tillbaka när saken lämnas
+                  tillbaka.
                 </p>
               )}
             </>

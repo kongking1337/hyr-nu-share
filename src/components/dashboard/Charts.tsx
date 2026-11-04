@@ -21,7 +21,13 @@ export function Sparkline({
   return (
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ height }} className="w-full">
       <path d={area} className="fill-primary/15" />
-      <path d={path} className="stroke-primary" strokeWidth={1.4} fill="none" vectorEffect="non-scaling-stroke" />
+      <path
+        d={path}
+        className="stroke-primary"
+        strokeWidth={1.4}
+        fill="none"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 }
@@ -51,7 +57,11 @@ export function Bars({
   );
 }
 
-export function FunnelChart({ steps }: { steps: { label: string; value: number; rate: number }[] }) {
+export function FunnelChart({
+  steps,
+}: {
+  steps: { label: string; value: number; rate: number }[];
+}) {
   return (
     <div className="space-y-2">
       {steps.map((s) => (
@@ -59,11 +69,15 @@ export function FunnelChart({ steps }: { steps: { label: string; value: number; 
           <div className="flex items-baseline justify-between text-sm">
             <span>{s.label}</span>
             <span className="font-medium">
-              {s.value} <span className="text-xs text-muted-foreground">({s.rate.toFixed(1)} %)</span>
+              {s.value}{" "}
+              <span className="text-xs text-muted-foreground">({s.rate.toFixed(1)} %)</span>
             </span>
           </div>
           <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-muted">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(1, s.rate)}%` }} />
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.max(1, s.rate)}%` }}
+            />
           </div>
         </div>
       ))}

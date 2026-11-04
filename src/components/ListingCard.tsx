@@ -23,7 +23,12 @@ export function ListingCard({
         layout === "list" && "grid sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]",
       )}
     >
-      <div className={cn("relative overflow-hidden bg-muted", layout === "grid" ? "aspect-[4/3]" : "h-full min-h-44")}>
+      <div
+        className={cn(
+          "relative overflow-hidden bg-muted",
+          layout === "grid" ? "aspect-[4/3]" : "h-full min-h-44",
+        )}
+      >
         <img
           src={r.images[0]}
           alt={r.title}

@@ -30,7 +30,9 @@ export type OfferView = OfferRow & {
 export function OfferStatusBadge({ offer }: { offer: Pick<OfferRow, "status" | "expires_at"> }) {
   const s = effectiveStatus(offer);
   return (
-    <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", OFFER_STATUS_TONE[s])}>
+    <span
+      className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", OFFER_STATUS_TONE[s])}
+    >
       {OFFER_STATUS_LABEL[s]}
     </span>
   );
@@ -73,7 +75,12 @@ export function OfferCard({
     <div className="rounded-3xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start gap-3">
         {offer.listingImage && !compact && (
-          <img src={offer.listingImage} alt="" loading="lazy" className="h-16 w-20 rounded-2xl object-cover" />
+          <img
+            src={offer.listingImage}
+            alt=""
+            loading="lazy"
+            className="h-16 w-20 rounded-2xl object-cover"
+          />
         )}
         <div className="min-w-40 flex-1">
           <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
@@ -81,7 +88,9 @@ export function OfferCard({
             {offer.actor === "owner" ? "Motbud från uthyraren" : "Bud från hyrestagaren"}
             <OfferStatusBadge offer={offer} />
             {offer.demo && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase text-muted-foreground">Demo</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
+                Demo
+              </span>
             )}
           </p>
           {offer.listingTitle && <p className="mt-0.5 text-sm">{offer.listingTitle}</p>}
@@ -106,10 +115,13 @@ export function OfferCard({
         </div>
       </div>
 
-      {offer.message && <p className="mt-3 rounded-2xl bg-muted/60 px-3 py-2 text-sm">{offer.message}</p>}
+      {offer.message && (
+        <p className="mt-3 rounded-2xl bg-muted/60 px-3 py-2 text-sm">{offer.message}</p>
+      )}
 
       <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-        <Clock className="h-3 w-3" /> {open ? timeLeft(offer.expires_at) : OFFER_STATUS_LABEL[status]}
+        <Clock className="h-3 w-3" />{" "}
+        {open ? timeLeft(offer.expires_at) : OFFER_STATUS_LABEL[status]}
       </p>
 
       {assessment && open && (
@@ -132,16 +144,31 @@ export function OfferCard({
               <Button size="sm" className="rounded-full" onClick={() => onAction!("accept")}>
                 Acceptera
               </Button>
-              <Button size="sm" variant="outline" className="rounded-full" onClick={() => setCountering((v) => !v)}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setCountering((v) => !v)}
+              >
                 Motbud
               </Button>
-              <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onAction!("decline")}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="rounded-full"
+                onClick={() => onAction!("decline")}
+              >
                 Neka
               </Button>
             </>
           )}
           {canWithdraw && (
-            <Button size="sm" variant="ghost" className="rounded-full" onClick={() => onAction!("withdraw")}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full"
+              onClick={() => onAction!("withdraw")}
+            >
               Återkalla bud
             </Button>
           )}

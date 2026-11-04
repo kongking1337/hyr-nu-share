@@ -52,7 +52,8 @@ export const DEMO_LISTINGS = [
   },
   {
     title: "GoPro HERO12 Black med hjälmfäste",
-    description: "Actionkamera som filmar i 5,3K med stabilisering. Minneskort, hjälmfäste och extra batteri ingår.",
+    description:
+      "Actionkamera som filmar i 5,3K med stabilisering. Minneskort, hjälmfäste och extra batteri ingår.",
     category_slug: "kamera",
     city: "Göteborg",
     area: "Majorna",
@@ -74,7 +75,8 @@ export const DEMO_LISTINGS = [
   },
   {
     title: "Bromsad släpvagn 1300 kg med kåpa",
-    description: "Rejäl släpvagn med kåpa, perfekt för flytt och trädgårdsavfall. Reservhjul och spännband ingår.",
+    description:
+      "Rejäl släpvagn med kåpa, perfekt för flytt och trädgårdsavfall. Reservhjul och spännband ingår.",
     category_slug: "slapvagn",
     city: "Malmö",
     area: "Limhamn",
@@ -96,7 +98,8 @@ export const DEMO_LISTINGS = [
   },
   {
     title: "Partytält 4x8 m med bord och stolar",
-    description: "Tält för 40 personer, tio bord och fyrtio stolar. Levereras och monteras mot avgift inom Uppsala.",
+    description:
+      "Tält för 40 personer, tio bord och fyrtio stolar. Levereras och monteras mot avgift inom Uppsala.",
     category_slug: "fest",
     city: "Uppsala",
     area: "Luthagen",
@@ -118,7 +121,8 @@ export const DEMO_LISTINGS = [
   },
   {
     title: "Elcykel Cake Makka för stan",
-    description: "Lätt elcykel med lång räckvidd, hjälm och lås ingår. Hämtas centralt i Stockholm.",
+    description:
+      "Lätt elcykel med lång räckvidd, hjälm och lås ingår. Hämtas centralt i Stockholm.",
     category_slug: "fritid",
     city: "Stockholm",
     area: "Vasastan",

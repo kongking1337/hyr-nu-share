@@ -18,7 +18,9 @@ export function KpiCard({
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 font-display text-2xl font-semibold">{value}</p>
       {delta !== undefined && (
-        <p className={`mt-1 flex items-center gap-1 text-xs ${up ? "text-primary" : "text-destructive"}`}>
+        <p
+          className={`mt-1 flex items-center gap-1 text-xs ${up ? "text-primary" : "text-destructive"}`}
+        >
           {up ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
           {pctLabel(delta)} mot föregående period
         </p>

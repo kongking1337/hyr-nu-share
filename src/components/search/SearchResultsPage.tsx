@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Grid2x2, LayoutList, SlidersHorizontal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -68,14 +74,23 @@ export function SearchResultsPage({
   const visible = groups.slice(0, params.page * PAGE_SIZE);
   const chipCount = activeChips(params).length;
 
-  function submitSearch(next: { q: string; location: string; radius: number; category?: string; sub?: string }) {
+  function submitSearch(next: {
+    q: string;
+    location: string;
+    radius: number;
+    category?: string;
+    sub?: string;
+  }) {
     const intent = interpretQuery(next.q);
     setNotes(intent.notes);
     pushRecentSearch(next.q);
     patch({
       ...intent.patch,
       q: next.q,
-      location: next.location !== params.location ? next.location : (intent.patch.location ?? next.location),
+      location:
+        next.location !== params.location
+          ? next.location
+          : (intent.patch.location ?? next.location),
       radius: next.radius,
       ...(next.category ? { category: next.category, sub: next.sub ?? "all" } : {}),
     });
@@ -94,7 +109,13 @@ export function SearchResultsPage({
       )}
       {intro && <p className="mb-4 max-w-2xl text-sm text-muted-foreground">{intro}</p>}
 
-      <SearchBar q={params.q} location={params.location} radius={params.radius} size="md" onSubmit={submitSearch} />
+      <SearchBar
+        q={params.q}
+        location={params.location}
+        radius={params.radius}
+        size="md"
+        onSubmit={submitSearch}
+      />
 
       {notes.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -127,14 +148,17 @@ export function SearchResultsPage({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <p className="w-full text-sm text-muted-foreground sm:w-auto" aria-live="polite">
-              {internalLoading ? "Söker…" : `${resultCount} ${resultCount === 1 ? "träff" : "träffar"}`}
+              {internalLoading
+                ? "Söker…"
+                : `${resultCount} ${resultCount === 1 ? "träff" : "träffar"}`}
             </p>
 
             <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="shrink-0 rounded-full lg:hidden">
-                    <SlidersHorizontal className="mr-1 h-4 w-4" /> Filter{chipCount ? ` (${chipCount})` : ""}
+                    <SlidersHorizontal className="mr-1 h-4 w-4" /> Filter
+                    {chipCount ? ` (${chipCount})` : ""}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[92vh] rounded-t-3xl p-0">
@@ -161,7 +185,10 @@ export function SearchResultsPage({
                 </SheetContent>
               </Sheet>
 
-              <Select value={params.sort} onValueChange={(v) => patch({ sort: v as SearchParams["sort"] })}>
+              <Select
+                value={params.sort}
+                onValueChange={(v) => patch({ sort: v as SearchParams["sort"] })}
+              >
                 <SelectTrigger
                   aria-label="Sortering"
                   className="h-9 min-w-0 flex-1 rounded-full text-xs sm:w-[170px] sm:flex-none"
@@ -178,10 +205,12 @@ export function SearchResultsPage({
               </Select>
 
               <div className="flex shrink-0 rounded-full border border-border p-0.5">
-                {([
-                  ["grid", Grid2x2, "Rutnät"],
-                  ["list", LayoutList, "Lista"],
-                ] as const).map(([v, Icon, label]) => (
+                {(
+                  [
+                    ["grid", Grid2x2, "Rutnät"],
+                    ["list", LayoutList, "Lista"],
+                  ] as const
+                ).map(([v, Icon, label]) => (
                   <button
                     key={v}
                     type="button"
@@ -202,7 +231,10 @@ export function SearchResultsPage({
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <ActiveFilterChips params={params} onPatch={patch} onClearAll={reset} />
-            <SaveSearchButton label={params.q || "Min sökning"} filters={params as unknown as Record<string, unknown>} />
+            <SaveSearchButton
+              label={params.q || "Min sökning"}
+              filters={params as unknown as Record<string, unknown>}
+            />
           </div>
 
           {failed && (
@@ -223,7 +255,9 @@ export function SearchResultsPage({
                 result={g.primary}
                 layout={params.view === "list" ? "list" : "grid"}
                 distanceKm={
-                  center.wholeRegion ? null : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
+                  center.wholeRegion
+                    ? null
+                    : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
                 }
               />
             ))}
@@ -233,7 +267,11 @@ export function SearchResultsPage({
 
           {visible.length < groups.length && (
             <div className="mt-6 flex justify-center">
-              <Button variant="outline" className="rounded-full" onClick={() => patch({ page: params.page + 1 })}>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => patch({ page: params.page + 1 })}
+              >
                 Visa fler ({groups.length - visible.length} kvar)
               </Button>
             </div>

@@ -35,21 +35,37 @@ function ListingPage() {
   const { user } = useAuth();
 
   const validId = UUID.test(id);
-  const { data: listing, isLoading, isError, refetch } = useQuery({
+  const {
+    data: listing,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["listing", id],
     enabled: validId,
     queryFn: async () => {
-      const { data: row, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
+      const { data: row, error } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
       if (error) throw error;
       return row ? rowToUnified(row) : null;
     },
   });
 
-  if (isLoading) return <div className="mx-auto max-w-5xl p-4"><Skeleton className="h-[520px] rounded-3xl" /></div>;
+  if (isLoading)
+    return (
+      <div className="mx-auto max-w-5xl p-4">
+        <Skeleton className="h-[520px] rounded-3xl" />
+      </div>
+    );
   if (isError) {
     return (
       <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
-        <h1 className="font-display text-2xl font-semibold text-foreground">Annonsen kunde inte hämtas</h1>
+        <h1 className="font-display text-2xl font-semibold text-foreground">
+          Annonsen kunde inte hämtas
+        </h1>
         <p className="mt-2">Något gick fel hos oss eller med anslutningen.</p>
         <Button className="mt-4 rounded-full" onClick={() => void refetch()}>
           Försök igen
@@ -60,7 +76,9 @@ function ListingPage() {
   if (!listing) {
     return (
       <div className="mx-auto max-w-5xl p-10 text-center text-muted-foreground">
-        <h1 className="font-display text-2xl font-semibold text-foreground">Annonsen finns inte längre</h1>
+        <h1 className="font-display text-2xl font-semibold text-foreground">
+          Annonsen finns inte längre
+        </h1>
         <p className="mt-2">Den kan vara pausad eller borttagen.</p>
         <Button asChild variant="outline" className="mt-4 rounded-full">
           <Link to="/sok" search={DEFAULTS}>
@@ -88,17 +106,30 @@ function ListingPage() {
               </div>
             )}
             <div className="flex items-start justify-between gap-3">
-              <h1 className="min-w-0 break-words font-display text-3xl font-semibold">{listing.title}</h1>
-              {!mine && <FavoriteButton listingId={listing.id} className="mt-1 shrink-0 border border-border" />}
+              <h1 className="min-w-0 break-words font-display text-3xl font-semibold">
+                {listing.title}
+              </h1>
+              {!mine && (
+                <FavoriteButton
+                  listingId={listing.id}
+                  className="mt-1 shrink-0 border border-border"
+                />
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" /> {listing.area ? `${listing.area}, ` : ""}{listing.city}
+                <MapPin className="h-4 w-4" /> {listing.area ? `${listing.area}, ` : ""}
+                {listing.city}
               </span>
               <span className="flex items-center gap-1">
-                <User className="h-4 w-4" /> {listing.ownerType === "company" ? "Företag" : "Privatperson"} ·{" "}
+                <User className="h-4 w-4" />{" "}
+                {listing.ownerType === "company" ? "Företag" : "Privatperson"} ·{" "}
                 {listing.ownerId && !listing.example ? (
-                  <Link to="/profil/$id" params={{ id: listing.ownerId }} className="text-primary hover:underline">
+                  <Link
+                    to="/profil/$id"
+                    params={{ id: listing.ownerId }}
+                    className="text-primary hover:underline"
+                  >
                     {listing.ownerName}
                   </Link>
                 ) : (
@@ -111,14 +142,18 @@ function ListingPage() {
             </div>
           </div>
 
-          <p className="whitespace-pre-line leading-relaxed text-muted-foreground">{listing.description}</p>
+          <p className="whitespace-pre-line leading-relaxed text-muted-foreground">
+            {listing.description}
+          </p>
 
           {!sale && (
             <div className="rounded-3xl border border-border p-5">
               <h2 className="font-display text-lg font-semibold">Hyresvillkor</h2>
               <dl className="mt-3 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_1fr]">
                 <dt className="font-medium">Kortaste hyra</dt>
-                <dd className="text-muted-foreground">{listing.minDays === 1 ? "1 dygn" : `${listing.minDays} dygn`}</dd>
+                <dd className="text-muted-foreground">
+                  {listing.minDays === 1 ? "1 dygn" : `${listing.minDays} dygn`}
+                </dd>
                 <dt className="font-medium">Upphämtning</dt>
                 <dd className="text-muted-foreground">
                   {[
@@ -131,7 +166,9 @@ function ListingPage() {
                 </dd>
                 <dt className="font-medium">Deposition</dt>
                 <dd className="text-muted-foreground">
-                  {listing.deposit > 0 ? `${kr(listing.deposit)}, tillbaka när saken lämnas tillbaka` : "Ingen"}
+                  {listing.deposit > 0
+                    ? `${kr(listing.deposit)}, tillbaka när saken lämnas tillbaka`
+                    : "Ingen"}
                 </dd>
                 <dt className="font-medium">Avbokning</dt>
                 <dd className="text-muted-foreground">
@@ -141,13 +178,17 @@ function ListingPage() {
                 {listing.included && (
                   <>
                     <dt className="font-medium">Det här ingår</dt>
-                    <dd className="whitespace-pre-line text-muted-foreground">{listing.included}</dd>
+                    <dd className="whitespace-pre-line text-muted-foreground">
+                      {listing.included}
+                    </dd>
                   </>
                 )}
                 {listing.rentalRules && (
                   <>
                     <dt className="font-medium">Regler</dt>
-                    <dd className="whitespace-pre-line text-muted-foreground">{listing.rentalRules}</dd>
+                    <dd className="whitespace-pre-line text-muted-foreground">
+                      {listing.rentalRules}
+                    </dd>
                   </>
                 )}
               </dl>
@@ -160,11 +201,14 @@ function ListingPage() {
               {sale
                 ? `Hyrkoll tar inga avgifter och förmedlar inga betalningar. Betalning och upphämtning kommer du överens om direkt med ${counterpart}.`
                 : "Skicka en förfrågan med de datum du vill hyra. När uthyraren godkänt är dagarna bokade, och ni bestämmer tid och plats under Meddelanden. Hyrkoll tar inga avgifter och förmedlar inga betalningar: hyran och eventuell deposition betalar ni direkt till varandra, t.ex. med Swish när saken hämtas. Fota gärna skicket vid utlämning och återlämning."}{" "}
-              Träffas gärna på en offentlig plats och betala inte i förskott till någon du inte känner.
+              Träffas gärna på en offentlig plats och betala inte i förskott till någon du inte
+              känner.
             </p>
           </div>
 
-          {!listing.example && <ReportDialog targetType="listing" targetId={listing.id} label="Anmäl annons" />}
+          {!listing.example && (
+            <ReportDialog targetType="listing" targetId={listing.id} label="Anmäl annons" />
+          )}
         </div>
 
         <aside className="h-fit space-y-3 rounded-3xl border border-border bg-card p-5 lg:sticky lg:top-24">
@@ -175,7 +219,8 @@ function ListingPage() {
               {listing.deposit > 0 && <li>Deposition: {kr(listing.deposit)}</li>}
               {listing.deliveryAvailable && (
                 <li className="flex items-center gap-1">
-                  <Truck className="h-4 w-4" /> Leverans {listing.deliveryFee > 0 ? `för ${kr(listing.deliveryFee)}` : "ingår"}
+                  <Truck className="h-4 w-4" /> Leverans{" "}
+                  {listing.deliveryFee > 0 ? `för ${kr(listing.deliveryFee)}` : "ingår"}
                 </li>
               )}
             </ul>

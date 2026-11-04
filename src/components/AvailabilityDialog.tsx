@@ -49,8 +49,12 @@ export function AvailabilityDialog({ listingId, title }: { listingId: string; ti
       // Lämnas saken tillbaka tidigt blir resten av dagarna lediga (som i databasens booked_dates).
       const bookedRanges = (booked.data ?? [])
         .map((b) => {
-          const returned = b.status === "completed" && b.returned_at ? toISODate(new Date(b.returned_at)) : null;
-          return { start_date: b.start_date, end_date: returned && returned < b.end_date ? returned : b.end_date };
+          const returned =
+            b.status === "completed" && b.returned_at ? toISODate(new Date(b.returned_at)) : null;
+          return {
+            start_date: b.start_date,
+            end_date: returned && returned < b.end_date ? returned : b.end_date,
+          };
         })
         .filter((b) => b.end_date >= today);
       return { booked: bookedRanges, blocked: blocked.data ?? [] };
@@ -150,7 +154,12 @@ export function AvailabilityDialog({ listingId, title }: { listingId: string; ti
               className="flex items-center justify-between rounded-2xl border border-border px-3 py-2 text-sm"
             >
               {formatDates(b.start_date, b.end_date)}
-              <Button size="sm" variant="ghost" className="rounded-full" onClick={() => unblock(b.id)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="rounded-full"
+                onClick={() => unblock(b.id)}
+              >
                 <Trash2 className="mr-1 h-4 w-4" /> Ta bort
               </Button>
             </div>

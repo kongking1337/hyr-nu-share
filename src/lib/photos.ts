@@ -39,17 +39,29 @@ type Decoded = { source: CanvasImageSource; width: number; height: number; done:
 async function decodePhoto(file: File): Promise<Decoded> {
   try {
     const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-    return { source: bitmap, width: bitmap.width, height: bitmap.height, done: () => bitmap.close() };
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      done: () => bitmap.close(),
+    };
   } catch {
     const url = URL.createObjectURL(file);
     try {
       const img = new Image();
       img.src = url;
       await img.decode();
-      return { source: img, width: img.naturalWidth, height: img.naturalHeight, done: () => URL.revokeObjectURL(url) };
+      return {
+        source: img,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        done: () => URL.revokeObjectURL(url),
+      };
     } catch {
       URL.revokeObjectURL(url);
-      throw new PhotoError(`${file.name} gick inte att läsa. Prova en bild i JPG- eller PNG-format.`);
+      throw new PhotoError(
+        `${file.name} gick inte att läsa. Prova en bild i JPG- eller PNG-format.`,
+      );
     }
   }
 }

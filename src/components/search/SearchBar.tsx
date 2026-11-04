@@ -2,7 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, MapPin, Search, Tag, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { suggest, type Suggestion } from "@/lib/search/suggest";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { RADIUS_OPTIONS } from "@/lib/search/params";
@@ -28,7 +34,13 @@ export function SearchBar({
   location: string;
   radius: number;
   size?: "lg" | "md";
-  onSubmit: (next: { q: string; location: string; radius: number; category?: string; sub?: string }) => void;
+  onSubmit: (next: {
+    q: string;
+    location: string;
+    radius: number;
+    category?: string;
+    sub?: string;
+  }) => void;
 }) {
   const [text, setText] = useState(q);
   const [debounced, setDebounced] = useState(q);
@@ -175,9 +187,15 @@ export function SearchBar({
                 >
                   <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1 truncate">{s.label}</span>
-                  {s.hint && <span className="shrink-0 text-xs text-muted-foreground">{s.hint}</span>}
-                  {s.kind === "recent" && <span className="shrink-0 text-xs text-muted-foreground">Tidigare</span>}
-                  {s.kind === "popular" && <span className="shrink-0 text-xs text-muted-foreground">Populärt</span>}
+                  {s.hint && (
+                    <span className="shrink-0 text-xs text-muted-foreground">{s.hint}</span>
+                  )}
+                  {s.kind === "recent" && (
+                    <span className="shrink-0 text-xs text-muted-foreground">Tidigare</span>
+                  )}
+                  {s.kind === "popular" && (
+                    <span className="shrink-0 text-xs text-muted-foreground">Populärt</span>
+                  )}
                 </button>
               </li>
             );

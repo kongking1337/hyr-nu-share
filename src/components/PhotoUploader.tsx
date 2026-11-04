@@ -137,8 +137,8 @@ export function PhotoUploader({
         }}
       />
       <p className="text-xs text-muted-foreground">
-        Upp till {MAX_PHOTOS} bilder.{cover && " Den första blir omslagsbild."} Bilderna förminskas och
-        platsinformation tas bort innan de laddas upp.
+        Upp till {MAX_PHOTOS} bilder.{cover && " Den första blir omslagsbild."} Bilderna förminskas
+        och platsinformation tas bort innan de laddas upp.
       </p>
       {value.length === 0 && (
         <Button

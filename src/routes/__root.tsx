@@ -90,7 +90,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "Hyrkoll" },
       { property: "og:title", content: "Hyrkoll – hyr och hyr ut saker i Stockholm" },
-      { property: "og:description", content: "Hyr saker av privatpersoner och företag i Stockholms län." },
+      {
+        property: "og:description",
+        content: "Hyr saker av privatpersoner och företag i Stockholms län.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -163,15 +166,21 @@ function RootComponent() {
           <div className="max-w-xl">
             <Wordmark className="text-xl text-foreground" />
             <p className="mt-2">
-              Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är under
-              utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll tar inga
-              avgifter och förmedlar inga betalningar.
+              Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är
+              under utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll
+              tar inga avgifter och förmedlar inga betalningar.
             </p>
           </div>
           <nav className="flex flex-wrap gap-x-5 gap-y-2 md:flex-col" aria-label="Om Hyrkoll">
-            <Link to="/villkor" className="hover:text-foreground hover:underline">Användarvillkor</Link>
-            <Link to="/integritet" className="hover:text-foreground hover:underline">Integritetspolicy</Link>
-            <Link to="/kontakt" className="hover:text-foreground hover:underline">Kontakt</Link>
+            <Link to="/villkor" className="hover:text-foreground hover:underline">
+              Användarvillkor
+            </Link>
+            <Link to="/integritet" className="hover:text-foreground hover:underline">
+              Integritetspolicy
+            </Link>
+            <Link to="/kontakt" className="hover:text-foreground hover:underline">
+              Kontakt
+            </Link>
           </nav>
         </div>
       </footer>

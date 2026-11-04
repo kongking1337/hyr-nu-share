@@ -50,8 +50,8 @@ function useAdminActions() {
   const queryClient = useQueryClient();
   const refresh = () =>
     Promise.all(
-      ["admin-reports", "admin-listings", "admin-blocked", "admin-report-count", "admin-trust"].map((key) =>
-        queryClient.invalidateQueries({ queryKey: [key] }),
+      ["admin-reports", "admin-listings", "admin-blocked", "admin-report-count", "admin-trust"].map(
+        (key) => queryClient.invalidateQueries({ queryKey: [key] }),
       ),
     );
   const run = async (
@@ -506,7 +506,11 @@ function TrustTab() {
               {u.blocked ? (
                 <span className="font-medium">{u.name}</span>
               ) : (
-                <Link to="/profil/$id" params={{ id: u.user_id }} className="font-medium hover:underline">
+                <Link
+                  to="/profil/$id"
+                  params={{ id: u.user_id }}
+                  className="font-medium hover:underline"
+                >
                   {u.name}
                 </Link>
               )}

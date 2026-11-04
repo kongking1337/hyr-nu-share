@@ -16,9 +16,16 @@ export const Route = createFileRoute("/jamfor")({
   head: () => ({
     meta: [
       { title: "Jämför flera uthyrningar – Hyrkoll" },
-      { name: "description", content: "Ställ upp till fyra alternativ mot varandra och se vilket som är billigast för din period." },
+      {
+        name: "description",
+        content:
+          "Ställ upp till fyra alternativ mot varandra och se vilket som är billigast för din period.",
+      },
       { property: "og:title", content: "Jämför uthyrningar – Hyrkoll" },
-      { property: "og:description", content: "Se vilket alternativ som är billigast för din period." },
+      {
+        property: "og:description",
+        content: "Se vilket alternativ som är billigast för din period.",
+      },
     ],
   }),
   component: ComparePage,
@@ -35,7 +42,11 @@ function ComparePage() {
         <p className="mt-3 text-muted-foreground">
           Lägg till produkter från sökresultaten med jämför-ikonen så visas de här.
         </p>
-        <Button asChild className="mt-6 rounded-full"><Link to="/sok" search={DEFAULTS}>Till sökningen</Link></Button>
+        <Button asChild className="mt-6 rounded-full">
+          <Link to="/sok" search={DEFAULTS}>
+            Till sökningen
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -58,14 +69,20 @@ function ComparePage() {
               className="w-24"
             />
           </div>
-          <Button variant="outline" className="rounded-full" onClick={clear}>Rensa</Button>
+          <Button variant="outline" className="rounded-full" onClick={clear}>
+            Rensa
+          </Button>
         </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {quotes.map(({ item, q }) => (
           <div key={item.id} className="space-y-3 rounded-3xl border border-border bg-card p-4">
-            <img src={item.images[0]} alt={item.title} className="aspect-[4/3] w-full rounded-2xl object-cover" />
+            <img
+              src={item.images[0]}
+              alt={item.title}
+              className="aspect-[4/3] w-full rounded-2xl object-cover"
+            />
             <div className="flex flex-wrap gap-1.5">
               {item.id === cheapest && <Tag>Billigast</Tag>}
               {item.example && <ExampleBadge />}
@@ -84,14 +101,25 @@ function ComparePage() {
             <div className="flex gap-2">
               {item.source.kind === "internal" ? (
                 <Button asChild size="sm" className="flex-1 rounded-full">
-                  <Link to="/annons/$id" params={{ id: item.id }}>Boka</Link>
+                  <Link to="/annons/$id" params={{ id: item.id }}>
+                    Boka
+                  </Link>
                 </Button>
               ) : (
                 <Button asChild size="sm" variant="secondary" className="flex-1 rounded-full">
-                  <a href={item.externalUrl} target="_blank" rel="noopener noreferrer">Visa erbjudande</a>
+                  <a href={item.externalUrl} target="_blank" rel="noopener noreferrer">
+                    Visa erbjudande
+                  </a>
                 </Button>
               )}
-              <Button size="sm" variant="outline" className="rounded-full" onClick={() => toggle(item)}>Ta bort</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => toggle(item)}
+              >
+                Ta bort
+              </Button>
             </div>
           </div>
         ))}
@@ -101,7 +129,9 @@ function ComparePage() {
 }
 
 const Tag = ({ children }: { children: React.ReactNode }) => (
-  <span className="rounded-full bg-foreground px-2.5 py-1 text-[11px] font-semibold text-background">{children}</span>
+  <span className="rounded-full bg-foreground px-2.5 py-1 text-[11px] font-semibold text-background">
+    {children}
+  </span>
 );
 
 const Row = ({ l, v, strong }: { l: string; v: string; strong?: boolean }) => (

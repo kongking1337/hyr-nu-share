@@ -19,9 +19,15 @@ export const Route = createFileRoute("/_authenticated/bud")({
   head: () => ({
     meta: [
       { title: "Mina bud – Hyrkoll" },
-      { name: "description", content: "Se, acceptera, neka eller motbjud på prisförslag för dina uthyrningar och hyror." },
+      {
+        name: "description",
+        content: "Se, acceptera, neka eller motbjud på prisförslag för dina uthyrningar och hyror.",
+      },
       { property: "og:title", content: "Mina bud – Hyrkoll" },
-      { property: "og:description", content: "Aktiva och historiska bud för uthyrare och hyrestagare." },
+      {
+        property: "og:description",
+        content: "Aktiva och historiska bud för uthyrare och hyrestagare.",
+      },
     ],
   }),
   component: OffersPage,
@@ -70,7 +76,11 @@ function OffersPage() {
       toast.error("Åtgärden kunde inte genomföras.");
       return;
     }
-    toast.success(action === "accept" ? "Bud accepterat – bokningen är skapad och datumen blockerade." : "Uppdaterat.");
+    toast.success(
+      action === "accept"
+        ? "Bud accepterat – bokningen är skapad och datumen blockerade."
+        : "Uppdaterat.",
+    );
     refetch();
   }
 
@@ -83,8 +93,8 @@ function OffersPage() {
         <Gavel className="h-7 w-7 text-primary" /> Mina bud
       </h1>
       <p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
-        <ShieldCheck className="mt-0.5 h-4 w-4" /> Budförhandlingar är privata mellan dig och motparten. Dolt minimipris och
-        automatisk acceptgräns visas aldrig för någon annan.
+        <ShieldCheck className="mt-0.5 h-4 w-4" /> Budförhandlingar är privata mellan dig och
+        motparten. Dolt minimipris och automatisk acceptgräns visas aldrig för någon annan.
       </p>
 
       <div className="mt-6 flex gap-2">
@@ -104,20 +114,19 @@ function OffersPage() {
 
       <section className="mt-6 space-y-3">
         <h2 className="font-display text-lg font-semibold">Aktiva ({open.length})</h2>
-        {open.length === 0 && <p className="text-sm text-muted-foreground">Inga aktiva bud just nu.</p>}
+        {open.length === 0 && (
+          <p className="text-sm text-muted-foreground">Inga aktiva bud just nu.</p>
+        )}
         {open.map((o) => (
-          <OfferCard
-            key={o.id}
-            offer={o}
-            role={tab}
-            onAction={(a, amt) => respond(o.id, a, amt)}
-          />
+          <OfferCard key={o.id} offer={o} role={tab} onAction={(a, amt) => respond(o.id, a, amt)} />
         ))}
       </section>
 
       <section className="mt-8 space-y-3">
         <h2 className="font-display text-lg font-semibold">Historik ({history.length})</h2>
-        {history.length === 0 && <p className="text-sm text-muted-foreground">Ingen budhistorik ännu.</p>}
+        {history.length === 0 && (
+          <p className="text-sm text-muted-foreground">Ingen budhistorik ännu.</p>
+        )}
         {history.map((o) => (
           <OfferCard key={o.id} offer={o} role={tab} />
         ))}

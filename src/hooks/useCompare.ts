@@ -31,9 +31,7 @@ export function useCompare() {
     (item: UnifiedResult) => {
       const current = read();
       const exists = current.some((i) => i.id === item.id);
-      const next = exists
-        ? current.filter((i) => i.id !== item.id)
-        : [...current, item].slice(-4);
+      const next = exists ? current.filter((i) => i.id !== item.id) : [...current, item].slice(-4);
       persist(next);
     },
     [persist],

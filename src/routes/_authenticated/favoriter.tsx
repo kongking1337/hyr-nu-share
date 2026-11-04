@@ -30,7 +30,11 @@ function FavoritesPage() {
     queryFn: async () => {
       const [favs, searches] = await Promise.all([
         supabase.from("favorites").select("id, listing_id, listings(*)").eq("user_id", user!.id),
-        supabase.from("saved_searches").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
+        supabase
+          .from("saved_searches")
+          .select("*")
+          .eq("user_id", user!.id)
+          .order("created_at", { ascending: false }),
       ]);
       if (favs.error) throw favs.error;
       if (searches.error) throw searches.error;
@@ -62,7 +66,9 @@ function FavoritesPage() {
       <h1 className="font-display text-3xl font-semibold">Favoriter</h1>
       {isLoading && <p className="mt-4 text-sm text-muted-foreground">Hämtar dina favoriter …</p>}
       {visible.length > 0 && (
-        <p className="mt-2 text-sm text-muted-foreground">Tryck på hjärtat för att ta bort en annons från favoriterna.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Tryck på hjärtat för att ta bort en annons från favoriterna.
+        </p>
       )}
       <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((f) => (
@@ -96,7 +102,10 @@ function FavoritesPage() {
       <h2 className="mt-12 font-display text-2xl font-semibold">Sparade sökningar</h2>
       <div className="mt-4 space-y-3">
         {(data?.searches ?? []).map((s) => (
-          <div key={s.id} className="flex items-center justify-between gap-3 rounded-3xl border border-border p-4">
+          <div
+            key={s.id}
+            className="flex items-center justify-between gap-3 rounded-3xl border border-border p-4"
+          >
             <Link
               to="/sok"
               search={validateSearchParams((s.filters ?? {}) as Record<string, unknown>)}
@@ -118,7 +127,9 @@ function FavoritesPage() {
           </div>
         ))}
         {data?.searches.length === 0 && (
-          <p className="text-muted-foreground">Inga sparade sökningar ännu. Spara en sökning från sökresultaten.</p>
+          <p className="text-muted-foreground">
+            Inga sparade sökningar ännu. Spara en sökning från sökresultaten.
+          </p>
         )}
       </div>
     </div>

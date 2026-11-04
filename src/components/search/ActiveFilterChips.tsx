@@ -3,17 +3,27 @@ import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { DEFAULTS, type SearchParams } from "@/lib/search/params";
 import { formatDates } from "@/lib/bookings";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
-import { CATEGORY_ATTRIBUTES, SUBCATEGORIES, parseAttrFilter, stringifyAttrFilter } from "@/lib/search/attributes";
+import {
+  CATEGORY_ATTRIBUTES,
+  SUBCATEGORIES,
+  parseAttrFilter,
+  stringifyAttrFilter,
+} from "@/lib/search/attributes";
 
 export type Chip = { key: string; label: string; patch: Partial<SearchParams> };
 
 export function activeChips(p: SearchParams): Chip[] {
   const chips: Chip[] = [];
-  const add = (key: string, label: string, patch: Partial<SearchParams>) => chips.push({ key, label, patch });
+  const add = (key: string, label: string, patch: Partial<SearchParams>) =>
+    chips.push({ key, label, patch });
 
   if (p.q) add("q", `”${p.q}”`, { q: "" });
   if (p.category !== "all")
-    add("category", CATEGORY_SYNONYMS[p.category]?.name ?? p.category, { category: "all", sub: "all", attrs: "" });
+    add("category", CATEGORY_SYNONYMS[p.category]?.name ?? p.category, {
+      category: "all",
+      sub: "all",
+      attrs: "",
+    });
   if (p.sub !== "all") {
     const name = SUBCATEGORIES[p.category]?.find((s) => s.slug === p.sub)?.name ?? p.sub;
     add("sub", name, { sub: "all" });
@@ -25,14 +35,17 @@ export function activeChips(p: SearchParams): Chip[] {
   if (p.from && p.to) add("dates", `Ledig ${formatDates(p.from, p.to)}`, { from: "", to: "" });
   if (p.priceMin) add("priceMin", `Från ${p.priceMin} kr`, { priceMin: 0 });
   if (p.priceMax) add("priceMax", `Max ${p.priceMax} kr`, { priceMax: 0 });
-  if (p.owner !== "all") add("owner", p.owner === "private" ? "Privatpersoner" : "Företag", { owner: "all" });
+  if (p.owner !== "all")
+    add("owner", p.owner === "private" ? "Privatpersoner" : "Företag", { owner: "all" });
 
   const attrs = parseAttrFilter(p.attrs);
   Object.entries(attrs).forEach(([k, v]) => {
     const def = (CATEGORY_ATTRIBUTES[p.category] ?? []).find((a) => a.key === k);
     const rest = { ...attrs };
     delete rest[k];
-    add(`attr-${k}`, `${def?.label ?? k}: ${v === "true" ? "Ja" : v}`, { attrs: stringifyAttrFilter(rest) });
+    add(`attr-${k}`, `${def?.label ?? k}: ${v === "true" ? "Ja" : v}`, {
+      attrs: stringifyAttrFilter(rest),
+    });
   });
 
   return chips;

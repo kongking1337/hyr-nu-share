@@ -62,7 +62,10 @@ export function interpretQuery(raw: string): QueryIntent {
   // produktnamn (PS5, partytält …) → underkategori. Inte för en tom sökning: "" är början
   // på alla ord, så tomma sökningar hamnade i den första kategorin (Verktyg).
   const term = n
-    ? TERMS.find((t) => n.includes(normalize(t.label)) || (n.length >= 3 && normalize(t.label).startsWith(n)))
+    ? TERMS.find(
+        (t) =>
+          n.includes(normalize(t.label)) || (n.length >= 3 && normalize(t.label).startsWith(n)),
+      )
     : undefined;
   if (term && !patch.category) {
     patch.category = term.category;

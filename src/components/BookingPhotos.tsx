@@ -130,20 +130,29 @@ function StagePhotos({
           ))}
         </div>
       )}
-      {locked && shown.length === 0 && <p className="text-xs text-muted-foreground">Inga bilder.</p>}
-      {!locked && <PhotoUploader
-        userId={userId}
-        value={current}
-        onChange={(next) => {
-          // Borttagningar sparas i onRemove; här sparas nya bilder och ny ordning.
-          if (next.length >= current.length) save(next);
-        }}
-        onUploaded={() => undefined}
-        onRemove={(path) => save(current.filter((p) => p !== path), [path])}
-        onBusyChange={() => undefined}
-        cover={false}
-        confirmRemove
-      />}
+      {locked && shown.length === 0 && (
+        <p className="text-xs text-muted-foreground">Inga bilder.</p>
+      )}
+      {!locked && (
+        <PhotoUploader
+          userId={userId}
+          value={current}
+          onChange={(next) => {
+            // Borttagningar sparas i onRemove; här sparas nya bilder och ny ordning.
+            if (next.length >= current.length) save(next);
+          }}
+          onUploaded={() => undefined}
+          onRemove={(path) =>
+            save(
+              current.filter((p) => p !== path),
+              [path],
+            )
+          }
+          onBusyChange={() => undefined}
+          cover={false}
+          confirmRemove
+        />
+      )}
     </div>
   );
 }

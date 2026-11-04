@@ -8,7 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/PhotoUploader";
@@ -26,7 +32,10 @@ export const Route = createFileRoute("/_authenticated/ny-annons")({
   head: () => ({
     meta: [
       { title: "Lägg upp annons – Hyrkoll" },
-      { name: "description", content: "Hyr ut något i Stockholm. Bilder, beskrivning, pris och plats på en sida." },
+      {
+        name: "description",
+        content: "Hyr ut något i Stockholm. Bilder, beskrivning, pris och plats på en sida.",
+      },
       { property: "og:title", content: "Lägg upp annons – Hyrkoll" },
       { property: "og:description", content: "Hyr ut något i Stockholm." },
     ],
@@ -88,14 +97,25 @@ function ListingForm() {
 
   // Fråga innan sidan lämnas med osparade ändringar (t.ex. ett tryck i flikraden på mobilen).
   const [baseline, setBaseline] = useState<string | null>(() =>
-    editId ? null : snapshot({ form: EMPTY, pickup: true, delivery: false, policy: "flexible", attrs: {}, photos: [] }),
+    editId
+      ? null
+      : snapshot({
+          form: EMPTY,
+          pickup: true,
+          delivery: false,
+          policy: "flexible",
+          attrs: {},
+          photos: [],
+        }),
   );
   const saved = useRef(false);
-  const dirty = baseline !== null && snapshot({ form, pickup, delivery, policy, attrs, photos }) !== baseline;
+  const dirty =
+    baseline !== null && snapshot({ form, pickup, delivery, policy, attrs, photos }) !== baseline;
   useBlocker({
     shouldBlockFn: () => {
       if (!dirty || saved.current) return false;
-      if (!window.confirm("Du har ändringar som inte är sparade. Vill du lämna sidan ändå?")) return true;
+      if (!window.confirm("Du har ändringar som inte är sparade. Vill du lämna sidan ändå?"))
+        return true;
       // Bilder som laddats upp till en annons som aldrig sparades tas bort.
       const unsaved = [...uploadedNow.current];
       if (unsaved.length) void supabase.storage.from(PHOTO_BUCKET).remove(unsaved);
@@ -111,7 +131,11 @@ function ListingForm() {
     queryKey: ["edit-listing", editId],
     enabled: !!editId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("listings").select("*").eq("id", editId!).maybeSingle();
+      const { data, error } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("id", editId!)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -163,15 +187,19 @@ function ListingForm() {
       return "Hyrespriset får vara högst 1 000 000 kr.";
     }
     if ((kronor(form.deposit) ?? 0) > 1_000_000) return "Depositionen får vara högst 1 000 000 kr.";
-    if (form.price_week && kronor(form.price_week) == null) return "Veckopriset måste vara ett belopp i kronor.";
-    if (form.deposit && kronor(form.deposit) == null) return "Depositionen måste vara ett belopp i kronor.";
+    if (form.price_week && kronor(form.price_week) == null)
+      return "Veckopriset måste vara ett belopp i kronor.";
+    if (form.deposit && kronor(form.deposit) == null)
+      return "Depositionen måste vara ett belopp i kronor.";
     const minDays = Number(form.min_days);
-    if (!Number.isInteger(minDays) || minDays < 1 || minDays > 30) return "Kortaste hyra ska vara 1–30 dygn.";
+    if (!Number.isInteger(minDays) || minDays < 1 || minDays > 30)
+      return "Kortaste hyra ska vara 1–30 dygn.";
     if (!pickup && !delivery) return "Välj upphämtning, leverans eller båda.";
     if (delivery && form.delivery_fee && kronor(form.delivery_fee) == null) {
       return "Leveransavgiften måste vara ett belopp i kronor.";
     }
-    if (delivery && (kronor(form.delivery_fee) ?? 0) > 100_000) return "Leveransavgiften får vara högst 100 000 kr.";
+    if (delivery && (kronor(form.delivery_fee) ?? 0) > 100_000)
+      return "Leveransavgiften får vara högst 100 000 kr.";
     if (form.included.length > 1000) return "”Det här ingår” får vara högst 1 000 tecken.";
     if (form.rental_rules.length > 1000) return "Reglerna får vara högst 1 000 tecken.";
     return null;
@@ -179,7 +207,10 @@ function ListingForm() {
 
   async function save(status?: "published" | "draft") {
     const problem = validate();
-    if (problem) { toast.error(problem); return; }
+    if (problem) {
+      toast.error(problem);
+      return;
+    }
     setBusy(true);
     const city = CITIES.find((c) => c.name === form.city) ?? CITIES[0]!;
     const payload = {
@@ -210,10 +241,20 @@ function ListingForm() {
     };
 
     if (editId) {
-      const { data: updated, error } = await supabase.from("listings").update(payload).eq("id", editId).select("id");
+      const { data: updated, error } = await supabase
+        .from("listings")
+        .update(payload)
+        .eq("id", editId)
+        .select("id");
       setBusy(false);
-      if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
-      if (!updated?.length) { toast.error("Annonsen finns inte längre."); return; }
+      if (error) {
+        toast.error(userMessage(error, "Kunde inte spara annonsen."));
+        return;
+      }
+      if (!updated?.length) {
+        toast.error("Annonsen finns inte längre.");
+        return;
+      }
       void removeUnusedPhotos(user!.id, removedSaved.current);
       toast.success("Annonsen är uppdaterad.");
       saved.current = true;
@@ -227,7 +268,10 @@ function ListingForm() {
       .select("id")
       .single();
     setBusy(false);
-    if (error) { toast.error(userMessage(error, "Kunde inte spara annonsen.")); return; }
+    if (error) {
+      toast.error(userMessage(error, "Kunde inte spara annonsen."));
+      return;
+    }
     saved.current = true;
     if (status === "draft") {
       toast.success("Utkast sparat.");
@@ -252,23 +296,27 @@ function ListingForm() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
-      <h1 className="font-display text-3xl font-semibold">{editId ? "Redigera annons" : "Lägg upp annons"}</h1>
+      <h1 className="font-display text-3xl font-semibold">
+        {editId ? "Redigera annons" : "Lägg upp annons"}
+      </h1>
 
       <F label="Bilder">
-        {user && <PhotoUploader
-          userId={user.id}
-          value={photos}
-          onChange={setPhotos}
-          onUploaded={(path) => uploadedNow.current.add(path)}
-          onRemove={(path) => {
-            if (uploadedNow.current.has(path)) {
-              void supabase.storage.from(PHOTO_BUCKET).remove([path]);
-            } else {
-              removedSaved.current.push(path);
-            }
-          }}
-          onBusyChange={setUploading}
-        />}
+        {user && (
+          <PhotoUploader
+            userId={user.id}
+            value={photos}
+            onChange={setPhotos}
+            onUploaded={(path) => uploadedNow.current.add(path)}
+            onRemove={(path) => {
+              if (uploadedNow.current.has(path)) {
+                void supabase.storage.from(PHOTO_BUCKET).remove([path]);
+              } else {
+                removedSaved.current.push(path);
+              }
+            }}
+            onBusyChange={setUploading}
+          />
+        )}
       </F>
 
       <F label="Rubrik" htmlFor="listing-title">
@@ -293,11 +341,21 @@ function ListingForm() {
       </F>
 
       <F label="Kategori" htmlFor="listing-category">
-        <Select value={form.category_slug} onValueChange={(v) => { set("category_slug", v); setAttrs({}); }}>
-          <SelectTrigger id="listing-category"><SelectValue /></SelectTrigger>
+        <Select
+          value={form.category_slug}
+          onValueChange={(v) => {
+            set("category_slug", v);
+            setAttrs({});
+          }}
+        >
+          <SelectTrigger id="listing-category">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {ACTIVE_CATEGORIES.map((c) => (
-              <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
+              <SelectItem key={c.slug} value={c.slug}>
+                {c.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -305,13 +363,28 @@ function ListingForm() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <F label="Pris per dygn (kr)" htmlFor="listing-price-day">
-          <Input id="listing-price-day" inputMode="numeric" value={form.price_day} onChange={(e) => set("price_day", e.target.value)} />
+          <Input
+            id="listing-price-day"
+            inputMode="numeric"
+            value={form.price_day}
+            onChange={(e) => set("price_day", e.target.value)}
+          />
         </F>
         <F label="Pris per vecka (valfritt)" htmlFor="listing-price-week">
-          <Input id="listing-price-week" inputMode="numeric" value={form.price_week} onChange={(e) => set("price_week", e.target.value)} />
+          <Input
+            id="listing-price-week"
+            inputMode="numeric"
+            value={form.price_week}
+            onChange={(e) => set("price_week", e.target.value)}
+          />
         </F>
         <F label="Deposition (valfritt)" htmlFor="listing-deposit">
-          <Input id="listing-deposit" inputMode="numeric" value={form.deposit} onChange={(e) => set("deposit", e.target.value)} />
+          <Input
+            id="listing-deposit"
+            inputMode="numeric"
+            value={form.deposit}
+            onChange={(e) => set("deposit", e.target.value)}
+          />
         </F>
       </div>
 
@@ -331,7 +404,9 @@ function ListingForm() {
           </F>
           <F label="Avbokning" htmlFor="listing-policy">
             <Select value={policy} onValueChange={(v) => setPolicy(asPolicy(v))}>
-              <SelectTrigger id="listing-policy"><SelectValue /></SelectTrigger>
+              <SelectTrigger id="listing-policy">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {(Object.keys(CANCELLATION_POLICIES) as CancellationPolicy[]).map((p) => (
                   <SelectItem key={p} value={p}>
@@ -345,11 +420,19 @@ function ListingForm() {
         <div className="space-y-2">
           <div className="flex items-center gap-2.5">
             <Checkbox id="pickup" checked={pickup} onCheckedChange={(v) => setPickup(v === true)} />
-            <Label htmlFor="pickup" className="cursor-pointer font-normal">Upphämtning hos mig</Label>
+            <Label htmlFor="pickup" className="cursor-pointer font-normal">
+              Upphämtning hos mig
+            </Label>
           </div>
           <div className="flex items-center gap-2.5">
-            <Checkbox id="delivery" checked={delivery} onCheckedChange={(v) => setDelivery(v === true)} />
-            <Label htmlFor="delivery" className="cursor-pointer font-normal">Jag kan leverera</Label>
+            <Checkbox
+              id="delivery"
+              checked={delivery}
+              onCheckedChange={(v) => setDelivery(v === true)}
+            />
+            <Label htmlFor="delivery" className="cursor-pointer font-normal">
+              Jag kan leverera
+            </Label>
           </div>
         </div>
         {delivery && (
@@ -388,29 +471,54 @@ function ListingForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <F label="Kommun" htmlFor="listing-city">
           <Select value={form.city} onValueChange={(v) => set("city", v)}>
-            <SelectTrigger id="listing-city"><SelectValue /></SelectTrigger>
+            <SelectTrigger id="listing-city">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {CITIES.map((c) => <SelectItem key={c.slug} value={c.name}>{c.name}</SelectItem>)}
+              {CITIES.map((c) => (
+                <SelectItem key={c.slug} value={c.name}>
+                  {c.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </F>
         <F label="Område (valfritt)" htmlFor="listing-area">
-          <Input id="listing-area" value={form.area} maxLength={60} placeholder="T.ex. Södermalm" onChange={(e) => set("area", e.target.value)} />
+          <Input
+            id="listing-area"
+            value={form.area}
+            maxLength={60}
+            placeholder="T.ex. Södermalm"
+            onChange={(e) => set("area", e.target.value)}
+          />
         </F>
       </div>
 
       {attrDefs.length > 0 && (
         <details className="rounded-3xl border border-border p-5">
-          <summary className="cursor-pointer font-display text-base font-semibold">Fler detaljer (valfritt)</summary>
+          <summary className="cursor-pointer font-display text-base font-semibold">
+            Fler detaljer (valfritt)
+          </summary>
           <div className="mt-4 space-y-3">
             {attrDefs.map((d) => (
               <div key={d.key} className="space-y-1.5">
-                <Label htmlFor={`attr-${d.key}`} className="text-sm">{d.label}</Label>
+                <Label htmlFor={`attr-${d.key}`} className="text-sm">
+                  {d.label}
+                </Label>
                 {d.type === "select" ? (
-                  <Select value={attrs[d.key] ?? ""} onValueChange={(v) => setAttrs((a) => ({ ...a, [d.key]: v }))}>
-                    <SelectTrigger id={`attr-${d.key}`}><SelectValue placeholder="Välj" /></SelectTrigger>
+                  <Select
+                    value={attrs[d.key] ?? ""}
+                    onValueChange={(v) => setAttrs((a) => ({ ...a, [d.key]: v }))}
+                  >
+                    <SelectTrigger id={`attr-${d.key}`}>
+                      <SelectValue placeholder="Välj" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {(d.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                      {(d.options ?? []).map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 ) : d.type === "bool" ? (
@@ -440,19 +548,39 @@ function ListingForm() {
       <div className="flex flex-wrap gap-2">
         {editId ? (
           <>
-            <Button className="flex-1 rounded-full" onClick={() => save()} disabled={busy || uploading}>Spara ändringar</Button>
+            <Button
+              className="flex-1 rounded-full"
+              onClick={() => save()}
+              disabled={busy || uploading}
+            >
+              Spara ändringar
+            </Button>
             {existing?.status === "draft" && (
-              <Button variant="outline" className="rounded-full" onClick={() => save("published")} disabled={busy || uploading}>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => save("published")}
+                disabled={busy || uploading}
+              >
                 Publicera
               </Button>
             )}
           </>
         ) : (
           <>
-            <Button className="flex-1 rounded-full" onClick={() => save("published")} disabled={busy || uploading}>
+            <Button
+              className="flex-1 rounded-full"
+              onClick={() => save("published")}
+              disabled={busy || uploading}
+            >
               Publicera
             </Button>
-            <Button variant="outline" className="rounded-full" onClick={() => save("draft")} disabled={busy || uploading}>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => save("draft")}
+              disabled={busy || uploading}
+            >
               Spara som utkast
             </Button>
           </>
@@ -462,7 +590,15 @@ function ListingForm() {
   );
 }
 
-const F = ({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) => (
+const F = ({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) => (
   <div className="space-y-1.5">
     <Label htmlFor={htmlFor}>{label}</Label>
     {children}

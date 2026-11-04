@@ -36,7 +36,10 @@ function CityCategoryPage() {
   const search = Route.useSearch();
   const city = cityBySlug(stad);
   const params = { ...search, category: kategori, location: city?.slug ?? search.location };
-  const { patch, reset } = useUrlSearchState(params, { category: kategori, location: params.location });
+  const { patch, reset } = useUrlSearchState(params, {
+    category: kategori,
+    location: params.location,
+  });
   const name = CATEGORY_SYNONYMS[kategori]?.name ?? kategori;
   return (
     <SearchResultsPage
