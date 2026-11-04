@@ -193,21 +193,31 @@ test("admins can read all profiles (admin page)", async () => {
 
 // --- Companies -----------------------------------------------------------------
 
-test("companies cannot verify themselves", async () => {
-  const [c] = await as(
-    u.bob,
-    "INSERT INTO public.companies (owner_id, name, verified) VALUES ($1, 'Bobs Bygg AB', true) RETURNING id, verified",
+test("users cannot create companies or verify them (company profiles are hidden)", async () => {
+  // A made-up company would show as the seller name on the user's listings.
+  await rejects(
+    u.mallory,
+    "INSERT INTO public.companies (owner_id, name) VALUES ($1, 'Hyrkoll Kundtjänst')",
+    [u.mallory.id],
+  );
+  const [c] = await platform(
+    "INSERT INTO public.companies (owner_id, name) VALUES ($1, 'Bobs Bygg AB') RETURNING id",
     [u.bob.id],
   );
-  assert.equal(c.verified, false);
   u.bob.companyId = c.id;
-  await as(u.bob, "UPDATE public.companies SET verified = true WHERE id = $1", [c.id]);
-  const [after] = await platform("SELECT verified FROM public.companies WHERE id = $1", [c.id]);
-  assert.equal(after.verified, false);
+  await rejects(u.bob, "UPDATE public.companies SET verified = true WHERE id = $1", [c.id]);
+  await rejects(u.bob, "UPDATE public.companies SET name = 'Hyrkoll AB' WHERE id = $1", [c.id]);
+  await rejects(u.bob, "DELETE FROM public.companies WHERE id = $1", [c.id]);
+  const [after] = await platform("SELECT name, verified FROM public.companies WHERE id = $1", [c.id]);
+  assert.deepEqual(after, { name: "Bobs Bygg AB", verified: false });
 });
 
-test("users cannot see who administers other companies", async () => {
-  await as(u.bob, "INSERT INTO public.company_admins (company_id, user_id) VALUES ($1, $2)", [
+test("users cannot see who administers other companies, or add administrators", async () => {
+  await rejects(u.bob, "INSERT INTO public.company_admins (company_id, user_id) VALUES ($1, $2)", [
+    u.bob.companyId,
+    u.mallory.id,
+  ]);
+  await platform("INSERT INTO public.company_admins (company_id, user_id) VALUES ($1, $2)", [
     u.bob.companyId,
     u.bob.id,
   ]);
@@ -327,8 +337,7 @@ test("the seller name follows profile changes", async () => {
 });
 
 test("listings can be published under the user's own company", async () => {
-  const [c] = await as(
-    u.alice,
+  const [c] = await platform(
     "INSERT INTO public.companies (owner_id, name) VALUES ($1, 'Alices Verktyg AB') RETURNING id",
     [u.alice.id],
   );
@@ -778,7 +787,7 @@ test("bidding is switched off: offers can't be created or answered", async () =>
 
 // --- Conversations and messages --------------------------------------------------
 
-const startConversation = (who, listingId, renterId, ownerId) =>
+const insertConversation = (who, listingId, renterId, ownerId) =>
   as(
     who,
     "INSERT INTO public.conversations (listing_id, renter_id, owner_id) VALUES ($1, $2, $3) RETURNING id",
@@ -786,18 +795,22 @@ const startConversation = (who, listingId, renterId, ownerId) =>
   );
 
 test("buyers can start a conversation with the listing's owner", async () => {
-  const [c] = await startConversation(u.bob, u.alice.listingId, u.bob.id, u.alice.id);
+  const [c] = await as(u.bob, "SELECT public.start_conversation($1, 'Hej!') AS id", [
+    u.alice.listingId,
+  ]);
   u.bob.conversationId = c.id;
+  const [row] = await platform("SELECT renter_id, owner_id FROM public.conversations WHERE id = $1", [
+    c.id,
+  ]);
+  assert.deepEqual(row, { renter_id: u.bob.id, owner_id: u.alice.id });
 });
 
-test("conversations cannot be started in someone else's name or with the wrong owner", async () => {
-  await rejects(
-    u.bob,
-    "INSERT INTO public.conversations (listing_id, renter_id, owner_id) VALUES ($1, $2, $3)",
-    [u.alice.listingId, u.alice.id, u.bob.id],
-  );
-  await assert.rejects(startConversation(u.bob, u.alice.listingId, u.bob.id, u.mallory.id));
-  await assert.rejects(startConversation(u.alice, u.alice.listingId, u.alice.id, u.alice.id));
+test("conversations are only started through the functions, never inserted directly", async () => {
+  // Not even a correct-looking one: the functions check blocks, spam limits and the first message.
+  await assert.rejects(insertConversation(u.mallory, u.alice.listingId, u.mallory.id, u.alice.id));
+  await assert.rejects(insertConversation(u.bob, u.alice.listingId, u.alice.id, u.bob.id));
+  await assert.rejects(insertConversation(u.bob, u.alice.listingId, u.bob.id, u.mallory.id));
+  await assert.rejects(insertConversation(u.alice, u.alice.listingId, u.alice.id, u.alice.id));
 });
 
 test("only the two parties can read and write messages", async () => {
@@ -812,7 +825,7 @@ test("only the two parties can read and write messages", async () => {
         u.bob.conversationId,
       ])
     ).length,
-    1,
+    2,
   );
   assert.deepEqual(await as(u.mallory, "SELECT id FROM public.messages"), []);
   await rejects(
@@ -1695,4 +1708,82 @@ test("response time needs three conversations; reports in conversations count ag
     [u.una.id, conv.id],
   );
   assert.deepEqual([await scoreOf(u.tor), await scoreOf(u.una)], [tor - 5, una]);
+});
+
+// --- Review fixes (2026-11-04) -----------------------------------------------------------
+
+test("listings, saved searches and reports have size limits", async () => {
+  await createUser("kim", "Kim Krok");
+  const huge = JSON.stringify({ x: "x".repeat(2100) });
+  await rejects(
+    u.kim,
+    `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day, attributes)
+     VALUES ($1, 'Stor annons', 'verktyg', 'Solna', 100, $2::jsonb)`,
+    [u.kim.id, huge],
+  );
+  await rejects(
+    u.kim,
+    `INSERT INTO public.listings (owner_id, title, category_slug, city, price_day)
+     VALUES ($1, 'Lång ort', 'verktyg', $2, 100)`,
+    [u.kim.id, "x".repeat(61)],
+  );
+  const id = (await listingFor(u.kim, "Vanlig annons"))[0].id;
+  await rejects(u.kim, "UPDATE public.listings SET vehicle = $2::jsonb WHERE id = $1", [id, huge]);
+
+  const save = (label, filters = "{}") =>
+    as(u.kim, "INSERT INTO public.saved_searches (user_id, label, filters) VALUES ($1, $2, $3::jsonb)", [
+      u.kim.id,
+      label,
+      filters,
+    ]);
+  await assert.rejects(save("x".repeat(201)));
+  await assert.rejects(save("Stor", huge.repeat(2)));
+  for (let i = 1; i <= 50; i++) await save(`Sökning ${i}`);
+  await assert.rejects(save("Sökning 51"));
+
+  await rejects(u.kim, reportSql, [u.kim.id, "user", "x".repeat(101), "Spam"]);
+});
+
+test("owners can't block days that are already over", async () => {
+  const id = (await listingFor(u.kim, "Kalenderannons"))[0].id;
+  const block = "INSERT INTO public.listing_blocked_dates (listing_id, start_date, end_date) VALUES ($1, $2, $3)";
+  await rejects(u.kim, block, [id, day(-10), day(-5)]);
+  await as(u.kim, block, [id, day(1), day(2)]);
+});
+
+test("accounts can't be deleted until 14 days after a finished rental", async () => {
+  await createUser("lena", "Lena Lind");
+  await createUser("max", "Max Mild");
+  const bookingId = await finishedRental(u.lena, u.max, "Stege");
+  await review(u.max, bookingId, 5, "Bra stege");
+  // The booking, the agreement and the condition photos would go with either account.
+  await rejects(u.max, "SELECT public.delete_my_account()");
+  await rejects(u.lena, "SELECT public.delete_my_account()");
+  await platform(
+    `UPDATE public.bookings SET start_date = start_date - 20, end_date = end_date - 20,
+            returned_at = returned_at - interval '20 days' WHERE id = $1`,
+    [bookingId],
+  );
+});
+
+test("deleting an account removes the name on reviews the user wrote", async () => {
+  await as(u.max, "SELECT public.delete_my_account()");
+  // The booking goes with the account; the review about Lena stays, without Max's name.
+  const rows = await platform("SELECT author_id, author_name FROM public.reviews WHERE subject_id = $1", [
+    u.lena.id,
+  ]);
+  assert.deepEqual(rows, [{ author_id: null, author_name: "Raderat konto" }]);
+});
+
+test("a draft gets today's date when it is published; pausing keeps the date", async () => {
+  const [{ id }] = await listingFor(u.kim, "Gammalt utkast");
+  await platform("UPDATE public.listings SET published_at = now() - interval '20 days' WHERE id = $1", [id]);
+  const publishedAt = async () =>
+    (await platform("SELECT published_at > now() - interval '1 minute' AS fresh FROM public.listings WHERE id = $1", [id]))[0].fresh;
+  await as(u.kim, "UPDATE public.listings SET status = 'published' WHERE id = $1", [id]);
+  assert.equal(await publishedAt(), true);
+  await platform("UPDATE public.listings SET published_at = now() - interval '20 days' WHERE id = $1", [id]);
+  await as(u.kim, "UPDATE public.listings SET status = 'paused' WHERE id = $1", [id]);
+  await as(u.kim, "UPDATE public.listings SET status = 'published' WHERE id = $1", [id]);
+  assert.equal(await publishedAt(), false);
 });
