@@ -97,6 +97,14 @@ lower in search.
 
 ## Open before inviting users
 
+- **Review 2026-11-04:** run `supabase/migrations/20261104120000_review_fixes.sql` in the SQL
+  Editor (the site already works without it, but the security fixes in it only apply once it
+  has run). Delete the old Lovable Supabase project (`iorgzgobyhhhqfhhetro`) or check that it
+  holds no real data: its key is in the public git history and its first rules let anyone read
+  profiles with phone numbers. Remove the test listing "Lamborghini"
+  (`/annons/b4a01608-9bf6-4336-a3cf-38487f10690c`) and fix demo listings whose photos don't
+  match (Kärcher K5 shows a living room, Nilfisk an excavator, Elcykel Cake a road bike).
+  In Supabase → Authentication, turn on "Secure password change" and leaked-password protection.
 - **Email (blocks signups):** Supabase's built-in sender only reaches the Supabase team,
   so ordinary users get no confirmation or password-reset email. Set up SMTP per
   `docs/email-setup.md` (Gmail for a closed beta, or a domain + Resend). Marcus
@@ -127,6 +135,20 @@ lower in search.
 
 ## Later (after the first version)
 
+- **From the review on 2026-11-04** (not done yet):
+  - Listing pages rendered on the server, so shared links show title, price and photo
+    (also listed under phase 5).
+  - Keep conversations and bookings for the other person when an account is deleted
+    (anonymised as "Raderat konto") instead of deleting them; today they are deleted for both,
+    as the privacy policy says. Account deletion is blocked during and 14 days after a rental.
+  - Pickup ("utlämnad") can be marked by either side, so an owner could fake a rental alone.
+    Have the renter confirm pickup once payments go through the site.
+  - The brand orange with white text has 3.5:1 contrast (WCAG AA wants 4.5:1 for normal text):
+    a design decision.
+  - Condition photos are in the public bucket (unguessable links); a private bucket with signed
+    links would be safer.
+  - Accessibility: search suggestions as a proper combobox, stronger focus rings; logged-in
+    pages opened directly log a hydration warning (`ssr: false` + redirect).
 - **Phase 3, email alerts (needs a domain):** emails for booking requests and answers,
   reminders the day before pickup and return, and alerts for saved searches.
 - **Phase 4, money (needs the company):** payment through the site (e.g. Stripe: pay when
