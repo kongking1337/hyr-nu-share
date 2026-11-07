@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Lock } from "lucide-react";
@@ -67,6 +67,18 @@ function kronor(v: string): number | null {
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
 }
 
+/** Det som jämförs för att se om något är ändrat och inte sparat. */
+function snapshot(v: {
+  form: typeof EMPTY;
+  pickup: boolean;
+  delivery: boolean;
+  policy: CancellationPolicy;
+  attrs: Record<string, string>;
+  photos: string[];
+}): string {
+  return JSON.stringify([v.form, v.pickup, v.delivery, v.policy, v.attrs, v.photos]);
+}
+
 function ListingForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -85,40 +97,90 @@ function ListingForm() {
   const removedSaved = useRef<string[]>([]);
   const set = (k: keyof typeof EMPTY, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Fråga innan sidan lämnas med osparade ändringar (t.ex. ett tryck i flikraden på mobilen).
+  const [baseline, setBaseline] = useState<string | null>(() =>
+    editId
+      ? null
+      : snapshot({
+          form: EMPTY,
+          pickup: true,
+          delivery: false,
+          policy: "flexible",
+          attrs: {},
+          photos: [],
+        }),
+  );
+  const saved = useRef(false);
+  const dirty =
+    baseline !== null && snapshot({ form, pickup, delivery, policy, attrs, photos }) !== baseline;
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!dirty || saved.current) return false;
+      if (!window.confirm("Du har ändringar som inte är sparade. Vill du lämna sidan ändå?"))
+        return true;
+      // Bilder som laddats upp till en annons som aldrig sparades tas bort.
+      const unsaved = [...uploadedNow.current];
+      if (unsaved.length) void supabase.storage.from(PHOTO_BUCKET).remove(unsaved);
+      return false;
+    },
+    enableBeforeUnload: () => dirty && !saved.current,
+  });
+
   const attrDefs = CATEGORY_ATTRIBUTES[form.category_slug] ?? [];
 
   /* Redigeringsläge: hämta befintlig annons */
-  const { data: existing, isLoading: loadingExisting } = useQuery({
+  const {
+    data: existing,
+    isLoading: loadingExisting,
+    isError: loadFailed,
+  } = useQuery({
     queryKey: ["edit-listing", editId],
     enabled: !!editId,
-    queryFn: async () =>
-      (await supabase.from("listings").select("*").eq("id", editId!).maybeSingle()).data,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("id", editId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
   });
   const notOwner = !!existing && existing.owner_id !== user?.id;
+  const notFound = !!editId && existing === null;
 
   useEffect(() => {
     if (!existing) return;
     // En gammal "säljes"-annons blir en uthyrningsannons när den sparas (den har inget dygnspris än).
-    setForm({
-      title: existing.title,
-      description: existing.description ?? "",
-      category_slug: existing.category_slug,
-      city: existing.city,
-      area: existing.area ?? "",
-      price_day: existing.price_day != null ? String(existing.price_day) : "",
-      price_week: existing.price_week != null ? String(existing.price_week) : "",
-      deposit: existing.deposit ? String(existing.deposit) : "",
-      min_days: String(existing.min_days ?? 1),
-      delivery_fee: existing.delivery_fee ? String(existing.delivery_fee) : "",
-      included: existing.included ?? "",
-      rental_rules: existing.rental_rules ?? "",
-    });
-    setPickup(existing.pickup_available);
-    setDelivery(existing.delivery_available);
-    setPolicy(asPolicy(existing.cancellation_policy));
-    setPhotos(existing.images ?? []);
     const a = (existing.attributes as Record<string, unknown>) ?? {};
-    setAttrs(Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v)])));
+    const loaded = {
+      form: {
+        title: existing.title,
+        description: existing.description ?? "",
+        category_slug: existing.category_slug,
+        city: existing.city,
+        area: existing.area ?? "",
+        price_day: existing.price_day != null ? String(existing.price_day) : "",
+        price_week: existing.price_week != null ? String(existing.price_week) : "",
+        deposit: existing.deposit ? String(existing.deposit) : "",
+        min_days: String(existing.min_days ?? 1),
+        delivery_fee: existing.delivery_fee ? String(existing.delivery_fee) : "",
+        included: existing.included ?? "",
+        rental_rules: existing.rental_rules ?? "",
+      },
+      pickup: existing.pickup_available,
+      delivery: existing.delivery_available,
+      policy: asPolicy(existing.cancellation_policy),
+      attrs: Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v)])),
+      photos: existing.images ?? [],
+    };
+    setForm(loaded.form);
+    setPickup(loaded.pickup);
+    setDelivery(loaded.delivery);
+    setPolicy(loaded.policy);
+    setPhotos(loaded.photos);
+    setAttrs(loaded.attrs);
+    setBaseline(snapshot(loaded));
   }, [existing]);
 
   function validate(): string | null {
@@ -185,14 +247,23 @@ function ListingForm() {
     };
 
     if (editId) {
-      const { error } = await supabase.from("listings").update(payload).eq("id", editId);
+      const { data: updated, error } = await supabase
+        .from("listings")
+        .update(payload)
+        .eq("id", editId)
+        .select("id");
       setBusy(false);
       if (error) {
         toast.error(userMessage(error, "Kunde inte spara annonsen."));
         return;
       }
+      if (!updated?.length) {
+        toast.error("Annonsen finns inte längre.");
+        return;
+      }
       void removeUnusedPhotos(user!.id, removedSaved.current);
       toast.success("Annonsen är uppdaterad.");
+      saved.current = true;
       navigate({ to: "/mina-annonser" });
       return;
     }
@@ -207,6 +278,7 @@ function ListingForm() {
       toast.error(userMessage(error, "Kunde inte spara annonsen."));
       return;
     }
+    saved.current = true;
     if (status === "draft") {
       toast.success("Utkast sparat.");
       navigate({ to: "/mina-annonser" });
@@ -216,12 +288,18 @@ function ListingForm() {
     }
   }
 
-  if (notOwner) {
+  if (notOwner || notFound || loadFailed) {
     return (
       <Page width="text">
         <EmptyState
           icon={Lock}
-          title="Du kan bara redigera dina egna annonser"
+          title={
+            notOwner
+              ? "Du kan bara redigera dina egna annonser."
+              : notFound
+                ? "Annonsen finns inte längre."
+                : "Annonsen kunde inte hämtas. Ladda om sidan och försök igen."
+          }
           action={
             <Button asChild>
               <Link to="/mina-annonser">Till mina annonser</Link>

@@ -101,6 +101,7 @@ function BookingsPage() {
   const {
     data: bookings = [],
     isLoading,
+    isError,
     refetch,
   } = useQuery({
     queryKey: ["my-bookings", user?.id],
@@ -233,6 +234,15 @@ function BookingsPage() {
 
       {isLoading ? (
         <LoadingRows rows={3} />
+      ) : isError ? (
+        <EmptyState
+          title="Bokningarna kunde inte hämtas."
+          action={
+            <Button variant="outline" onClick={() => void refetch()}>
+              Försök igen
+            </Button>
+          }
+        />
       ) : bookings.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
@@ -486,9 +496,19 @@ function BookingCard({
             <Button size="sm" disabled={busy} onClick={() => onAction("accept")}>
               <Check aria-hidden /> Godkänn
             </Button>
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => onAction("decline")}>
-              <X aria-hidden /> Neka
-            </Button>
+            <ConfirmButton
+              variant="outline"
+              disabled={busy}
+              label={
+                <>
+                  <X aria-hidden /> Neka
+                </>
+              }
+              title={`Neka förfrågan för ${formatDates(b.start_date, b.end_date)}?`}
+              description={`${b.counterpart_name} får ett meddelande om att förfrågan är nekad. Det går inte att ångra.`}
+              confirmLabel="Neka"
+              onConfirm={() => onAction("decline")}
+            />
           </>
         )}
         {status === "requested" && !b.i_am_owner && (
@@ -497,14 +517,32 @@ function BookingCard({
           </Button>
         )}
         {confirmed && !b.picked_up_at && b.start_date <= addDays(today, 1) && (
-          <Button size="sm" disabled={busy} onClick={() => onAction("picked_up")}>
-            <PackageOpen aria-hidden /> Markera som utlämnad
-          </Button>
+          <ConfirmButton
+            disabled={busy}
+            label={
+              <>
+                <PackageOpen aria-hidden /> Markera som utlämnad
+              </>
+            }
+            title="Markera som utlämnad?"
+            description="Gör det när saken har lämnats över. Fota gärna skicket först (längre ner på kortet). Det går inte att ångra, och bokningen kan inte avbokas efteråt."
+            confirmLabel="Markera som utlämnad"
+            onConfirm={() => onAction("picked_up")}
+          />
         )}
         {confirmed && b.picked_up_at && b.i_am_owner && (
-          <Button size="sm" disabled={busy} onClick={() => onAction("returned")}>
-            <PackageCheck aria-hidden /> Markera som återlämnad
-          </Button>
+          <ConfirmButton
+            disabled={busy}
+            label={
+              <>
+                <PackageCheck aria-hidden /> Markera som återlämnad
+              </>
+            }
+            title="Markera som återlämnad?"
+            description="Gör det när du har fått tillbaka saken och sett efter att den är hel. Fota gärna skicket. Hyran avslutas och det går inte att ångra."
+            confirmLabel="Markera som återlämnad"
+            onConfirm={() => onAction("returned")}
+          />
         )}
         {reviewOpen && myRating === null && <ReviewDialog b={b} onDone={onReviewed} />}
         {(confirmed || status === "completed") && (
@@ -546,9 +584,11 @@ function BookingCard({
               <AlertDialogHeader>
                 <AlertDialogTitle>Avboka {formatDates(b.start_date, b.end_date)}?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {lateCancellation(policy, b.start_date)
-                    ? `Det är senare än uthyrarens regel: ${CANCELLATION_POLICIES[policy].text} Avboka bara om det verkligen behövs, och förklara gärna varför i konversationen.`
-                    : `${b.counterpart_name} får ett meddelande om att bokningen är avbokad.`}
+                  {b.i_am_owner
+                    ? `${b.counterpart_name} får ett meddelande om att bokningen är avbokad. Förklara gärna varför i konversationen.`
+                    : lateCancellation(policy, b.start_date)
+                      ? `Det är senare än uthyrarens regel: ${CANCELLATION_POLICIES[policy].text} Avboka bara om det verkligen behövs, och förklara gärna varför i konversationen.`
+                      : `${b.counterpart_name} får ett meddelande om att bokningen är avbokad.`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -579,12 +619,52 @@ function BookingCard({
               pickupPhotos={b.pickup_photos ?? []}
               returnPhotos={b.return_photos ?? []}
               showReturn={!!b.picked_up_at}
+              returnedAt={b.returned_at}
               onSaved={onPhotosSaved}
             />
           </div>
         </details>
       )}
     </article>
+  );
+}
+
+/** Knapp som frågar först, för steg som inte går att ångra. */
+function ConfirmButton({
+  label,
+  title,
+  description,
+  confirmLabel,
+  onConfirm,
+  disabled,
+  variant = "default",
+}: {
+  label: React.ReactNode;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  disabled?: boolean;
+  variant?: "default" | "outline";
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button size="sm" variant={variant} className="rounded-full" disabled={disabled}>
+          {label}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Avbryt</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

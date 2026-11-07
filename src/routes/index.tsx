@@ -17,6 +17,7 @@ import { useState } from "react";
 import { EmptyState } from "@/components/layout";
 import { ListingRow } from "@/components/ListingRow";
 import { supabase } from "@/integrations/supabase/client";
+import { photoUrl } from "@/lib/photos";
 import { rowToUnified } from "@/lib/providers/internal";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
@@ -85,10 +86,14 @@ function Index() {
   const [location, setLocation] = useState(REGION.slug);
   const [when, setWhen] = useState<When>("");
 
-  const { data: latest, isPending: latestPending } = useQuery({
+  const {
+    data: latest,
+    isPending: latestPending,
+    isError: latestFailed,
+  } = useQuery({
     queryKey: ["home-latest"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("listings")
         .select("*")
         .eq("status", "published")
@@ -99,6 +104,7 @@ function Index() {
         )
         .order("published_at", { ascending: false })
         .limit(8);
+      if (error) throw error;
       return (data ?? []).map(rowToUnified);
     },
   });
@@ -120,7 +126,12 @@ function Index() {
         .limit(1000);
       const byCategory = new Map<string, { count: number; image: string | undefined }>();
       for (const row of data ?? []) {
-        const c = byCategory.get(row.category_slug) ?? { count: 0, image: row.images?.[0] };
+        // images innehåller sökvägar i Storage för egna annonser, inte färdiga adresser.
+        const first = row.images?.[0];
+        const c = byCategory.get(row.category_slug) ?? {
+          count: 0,
+          image: first ? photoUrl(first) : undefined,
+        };
         c.count += 1;
         byCategory.set(row.category_slug, c);
       }
@@ -139,7 +150,8 @@ function Index() {
         ...intent.patch,
         q: next.q,
         location: loc !== REGION.slug ? loc : (intent.patch.location ?? loc),
-        ...(next.location ? dateRange(when) : {}),
+        // "när som helst" ska inte sudda ut datum som står i sökningen ("i helgen").
+        ...(next.location && when ? dateRange(when) : {}),
         ...(next.category ? { category: next.category, sub: "all" } : {}),
       }) as never,
     });
@@ -296,6 +308,10 @@ function Index() {
               </li>
             ))}
           </ul>
+        ) : latestFailed ? (
+          <p className="mt-4 rounded-2xl border border-dashed border-border px-6 py-12 text-center text-sm text-muted-foreground">
+            Annonserna kunde inte hämtas just nu. Ladda om sidan om en stund.
+          </p>
         ) : latest?.length ? (
           <ul className="mt-4 grid gap-x-6 gap-y-2 md:grid-cols-2">
             {latest.map((r) => (

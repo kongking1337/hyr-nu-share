@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Gavel, ShieldCheck } from "lucide-react";
@@ -13,6 +13,10 @@ import { cn } from "@/lib/utils";
 import { photoUrl } from "@/lib/photos";
 
 export const Route = createFileRoute("/_authenticated/bud")({
+  // Budgivningen är avstängd i databasen (se 20261101150000_rental_flow.sql); bokningar ersätter den.
+  beforeLoad: () => {
+    throw redirect({ to: "/bokningar" });
+  },
   head: () => ({
     meta: [
       { title: "Mina bud – Hyrkoll" },

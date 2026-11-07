@@ -16,11 +16,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { MIN_PASSWORD_LENGTH, authErrorMessage } from "@/lib/auth-errors";
 import { cn } from "@/lib/utils";
 
-/** Bara sökvägar inom sajten, så att länken inte kan skicka vidare någon annanstans. */
+/**
+ * Bara sökvägar inom sajten, så att länken inte kan skicka vidare någon annanstans.
+ * Webbläsare läser "/\\" som "//", så bakstreck och styrtecken stoppas också.
+ */
 function safeRedirect(value: unknown): string | undefined {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
-    ? value
-    : undefined;
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//"))
+    return undefined;
+  if (value.includes("\\") || [...value].some((c) => c.charCodeAt(0) < 32)) return undefined;
+  return value;
 }
 
 export const Route = createFileRoute("/auth")({
@@ -74,6 +78,8 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  // Adressen dit bekräftelselänken gick, efter registrering (eller inloggning före bekräftelsen).
+  const [confirmSentTo, setConfirmSentTo] = useState<string | null>(null);
   // Captcha-token gäller ett försök; nyckeln ritar om rutan efter varje försök.
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaKey, setCaptchaKey] = useState(0);
@@ -104,10 +110,35 @@ function AuthPage() {
     });
     setBusy(false);
     if (error) {
+      if (error.code === "email_not_confirmed") {
+        setConfirmSentTo(email.trim());
+        return;
+      }
       toast.error(authErrorMessage(error));
       return;
     }
     goBack();
+  }
+
+  async function resendConfirmation() {
+    if (!confirmSentTo) return;
+    const captchaToken = takeCaptcha();
+    if (captchaToken === false) return;
+    setBusy(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: confirmSentTo,
+      options: {
+        emailRedirectTo: window.location.origin + (redirect ?? ""),
+        ...(captchaToken ? { captchaToken } : {}),
+      },
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(authErrorMessage(error));
+      return;
+    }
+    toast.success("Vi har skickat mejlet igen.");
   }
 
   async function signUp(e: FormEvent) {
@@ -138,7 +169,7 @@ function AuthPage() {
       return;
     }
     if (!data.session) {
-      toast.success("Nästan klart! Klicka på länken i mejlet vi skickade för att bekräfta kontot.");
+      setConfirmSentTo(email.trim());
       return;
     }
     goBack();
@@ -177,6 +208,44 @@ function AuthPage() {
           Fortsätt
         </Button>
       </AuthShell>
+    );
+  }
+
+  if (confirmSentTo) {
+    return (
+      <div className="mx-auto max-w-md space-y-4 px-4 py-14">
+        <h1 className="font-display text-3xl font-semibold">Bekräfta din e-post</h1>
+        <p className="text-sm text-muted-foreground">
+          Vi har skickat en länk till{" "}
+          <span className="font-medium text-foreground">{confirmSentTo}</span>. Klicka på den för
+          att bekräfta kontot, så är du inloggad. Kolla skräpposten om mejlet inte har kommit inom
+          några minuter.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Har du redan ett konto med den adressen kommer inget nytt mejl. Logga in i stället, eller
+          välj "Glömt lösenordet?" om du inte minns lösenordet.
+        </p>
+        {captcha}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            className="rounded-full"
+            disabled={busy}
+            onClick={() => void resendConfirmation()}
+          >
+            Skicka mejlet igen
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => {
+              setConfirmSentTo(null);
+              setMode("signin");
+            }}
+          >
+            Till inloggning
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -307,6 +376,7 @@ function AuthPage() {
               value={name}
               onChange={setName}
               autoComplete={accountType === "company" ? "organization" : "name"}
+              maxLength={80}
             />
             <Field
               id="signup-email"
@@ -431,6 +501,7 @@ function Field({
   autoComplete,
   hint,
   aside,
+  maxLength,
 }: {
   id: string;
   label: string;
@@ -442,6 +513,7 @@ function Field({
   hint?: string;
   /** Till exempel en länk till höger om etiketten. */
   aside?: ReactNode;
+  maxLength?: number;
 }) {
   return (
     <div className="space-y-1.5">
@@ -456,6 +528,7 @@ function Field({
         required
         autoComplete={autoComplete}
         aria-describedby={hint ? `${id}-hint` : undefined}
+        maxLength={maxLength}
         onChange={(e) => onChange(e.target.value)}
       />
       {hint && (

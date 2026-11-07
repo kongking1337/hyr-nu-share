@@ -99,6 +99,7 @@ export const internalProvider: RentalProvider = {
       .select("*")
       .eq("status", "published")
       .eq("listing_type", "rent")
+      .order("published_at", { ascending: false })
       .limit(200);
     if (q.category) query = query.eq("category_slug", q.category);
     const { data, error } = await query;

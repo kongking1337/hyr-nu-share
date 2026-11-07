@@ -17,6 +17,7 @@ export function PhotoUploader({
   onUploaded,
   onBusyChange,
   cover = true,
+  confirmRemove = false,
 }: {
   userId: string;
   value: string[];
@@ -25,13 +26,18 @@ export function PhotoUploader({
   onUploaded: (path: string) => void;
   onBusyChange: (busy: boolean) => void;
   cover?: boolean;
+  /** Fråga först (för bilder som tas bort direkt och inte går att få tillbaka). */
+  confirmRemove?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  // En omgång i taget: en ny omgång medan den förra laddas upp skulle skriva över listan.
+  const uploading = useRef(false);
   const room = MAX_PHOTOS - value.length;
 
   async function addFiles(files: File[]) {
-    if (!files.length) return;
+    if (!files.length || uploading.current) return;
+    uploading.current = true;
     if (files.length > room)
       toast.info(`Högst ${MAX_PHOTOS} bilder. De ${files.length - room} sista hoppas över.`);
     const queue = files.slice(0, room);
@@ -51,9 +57,11 @@ export function PhotoUploader({
     }
     setProgress(null);
     onBusyChange(false);
+    uploading.current = false;
   }
 
   const remove = (index: number) => {
+    if (confirmRemove && !window.confirm("Ta bort bilden? Det går inte att ångra.")) return;
     onRemove(value[index]!);
     onChange(value.filter((_, i) => i !== index));
   };
@@ -61,7 +69,7 @@ export function PhotoUploader({
     onChange([value[index]!, ...value.filter((_, i) => i !== index)]);
 
   const control =
-    "grid h-8 w-8 place-items-center rounded-full bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+    "grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
   return (
     <div className="space-y-3">

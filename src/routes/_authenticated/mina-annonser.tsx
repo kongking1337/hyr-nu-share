@@ -71,15 +71,16 @@ function MyListings() {
   const { user } = useAuth();
   const [tab, setTab] = useState("all");
 
-  const { data, refetch, isLoading } = useQuery({
+  const { data, refetch, isLoading, isError } = useQuery({
     queryKey: ["my-listings", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data: listings } = await supabase
+      const { data: listings, error } = await supabase
         .from("listings")
         .select("*")
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
+      if (error) throw error;
       return { listings: listings ?? [] };
     },
   });
@@ -92,7 +93,7 @@ function MyListings() {
   async function setStatus(id: string, status: string) {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
     if (error) {
-      toast.error("Kunde inte uppdatera status.");
+      toast.error(userMessage(error, "Kunde inte uppdatera status."));
       return;
     }
     toast.success(STATUS_TOAST[status] ?? "Status uppdaterad.");
@@ -104,11 +105,14 @@ function MyListings() {
     void id;
     void created_at;
     void published_at;
-    const { error } = await supabase
-      .from("listings")
-      .insert({ ...rest, title: `${l.title} (kopia)`, status: "draft", booking_count: 0 });
+    const { error } = await supabase.from("listings").insert({
+      ...rest,
+      title: `${l.title.slice(0, 92).trim()} (kopia)`,
+      status: "draft",
+      booking_count: 0,
+    });
     if (error) {
-      toast.error("Kunde inte duplicera annonsen.");
+      toast.error(userMessage(error, "Kunde inte duplicera annonsen."));
       return;
     }
     toast.success("Kopia skapad som utkast.");
@@ -161,6 +165,15 @@ function MyListings() {
 
       {isLoading ? (
         <LoadingRows rows={3} />
+      ) : isError ? (
+        <EmptyState
+          title="Annonserna kunde inte hämtas."
+          action={
+            <Button variant="outline" onClick={() => void refetch()}>
+              Försök igen
+            </Button>
+          }
+        />
       ) : listings.length === 0 ? (
         <EmptyState
           icon={Package}
@@ -308,37 +321,43 @@ function MyListings() {
                             <ExternalLink aria-hidden /> Visa annons
                           </Link>
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => duplicate(l)}>
-                          <Copy aria-hidden /> Duplicera
-                        </Button>
+                        {/* En annons som moderatorerna har dolt ska inte kunna läggas upp igen som kopia. */}
+                        {l.status !== "removed" && (
+                          <Button size="sm" variant="ghost" onClick={() => duplicate(l)}>
+                            <Copy aria-hidden /> Duplicera
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" onClick={() => share(l.id, l.title)}>
                           <Share2 aria-hidden /> Dela
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-destructive hover:bg-destructive/10 hover:text-destructive sm:ml-auto"
-                            >
-                              <Trash2 aria-hidden /> Ta bort
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Ta bort annonsen?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                ”{l.title}” tas bort permanent.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => remove(l.id)}>
-                                Ta bort
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        {/* Annonser som moderatorerna har dolt ligger kvar (databasen stoppar borttagningen). */}
+                        {l.status !== "removed" && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive sm:ml-auto"
+                              >
+                                <Trash2 aria-hidden /> Ta bort
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Ta bort annonsen?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  ”{l.title}” tas bort permanent.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => remove(l.id)}>
+                                  Ta bort
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </article>
                   </li>

@@ -7,15 +7,21 @@ import {
   HeadContent,
   Scripts,
   useRouterState,
+  ScriptOnce,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { BottomTabs } from "@/components/BottomTabs";
 import { Header, Wordmark } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
+  useEffect(() => {
+    document.title = "Sidan finns inte – Hyrkoll";
+  }, []);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -37,7 +43,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
 
@@ -108,10 +114,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// Mörkt läge sätts innan sidan ritas, så att den inte blinkar ljus först (samma regel som useTheme).
+const THEME_SCRIPT = `try{var t=localStorage.getItem("hyrkoll-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark")}catch(e){}`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="sv">
+    <html lang="sv" suppressHydrationWarning>
       <head>
+        <ScriptOnce>{THEME_SCRIPT}</ScriptOnce>
         <HeadContent />
       </head>
       <body>
@@ -129,12 +139,32 @@ function RootComponent() {
     select: (s) =>
       s.location.pathname === "/meddelanden" && !!(s.location.search as { c?: string }).c,
   });
+  const router = useRouter();
+
+  // Vid utloggning (även i en annan flik eller när inloggningen gått ut) glöms allt som
+  // hämtats, så att nästa person vid samma dator inte ser det, och sidor som kräver
+  // inloggning skickar vidare till inloggningen.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      queryClient.clear();
+      // Inte direkt i callbacken: Supabase låser sessionen medan den körs.
+      setTimeout(() => void router.invalidate(), 0);
+    });
+    return () => data.subscription.unsubscribe();
+  }, [queryClient, router]);
 
   return (
     <QueryClientProvider client={queryClient}>
+      <a
+        href="#innehall"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg"
+      >
+        Hoppa till innehållet
+      </a>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Header />
-      <main className="min-h-[70vh]">
+      <main id="innehall" className="min-h-[70vh]">
         <Outlet />
       </main>
       <footer

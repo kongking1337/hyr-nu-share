@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Grid2x2, LayoutList, Plus, SearchX, SlidersHorizontal, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,7 +24,7 @@ import { FilterPanel } from "@/components/search/FilterPanel";
 import { ActiveFilterChips, activeChips } from "@/components/search/ActiveFilterChips";
 import { ListingCard } from "@/components/ListingCard";
 import { SaveSearchButton } from "@/components/SaveSearchButton";
-import { distanceKm } from "@/lib/geo";
+import { REGION, distanceKm } from "@/lib/geo";
 import { dedupe } from "@/lib/search/dedupe";
 import { filterResults, sortResults } from "@/lib/search/filter-sort";
 import { DEFAULTS, SORT_OPTIONS, type SearchParams } from "@/lib/search/params";
@@ -59,9 +60,16 @@ export function SearchResultsPage({
 
   useEffect(() => {
     if (params.location !== "nara-mig" || myPos || typeof navigator === "undefined") return;
-    navigator.geolocation?.getCurrentPosition((pos) =>
-      setMyPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setMyPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        // Utan position kan "Nära mig" inte användas; säg det i stället för att tyst visa allt.
+        toast.info("Vi fick inte veta var du är. Sök i hela Stockholm eller välj en kommun.");
+        patch({ location: REGION.slug });
+      },
     );
+    // patch ändras vid varje rendering; positionen ska bara frågas efter när platsen ändras.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.location, myPos]);
 
   const center = resolveCenter(params.location, myPos);
@@ -105,7 +113,9 @@ export function SearchResultsPage({
   const resultCount = groups.length;
   const list = params.view === "list";
   const loading = internalLoading || (externalLoading && !visible.length);
-  const empty = !internalLoading && !externalLoading && groups.length === 0;
+  const failed = sources.some((s) => s.status === "error");
+  const draftChanged = JSON.stringify(draft) !== JSON.stringify(params);
+  const empty = !internalLoading && !externalLoading && !failed && groups.length === 0;
   const wideArea = !pinned.includes("location") && params.location !== DEFAULTS.location;
 
   return (
@@ -204,7 +214,7 @@ export function SearchResultsPage({
                         setMobileOpen(false);
                       }}
                     >
-                      Visa träffar
+                      {draftChanged ? "Visa resultat" : `Visa ${resultCount} resultat`}
                     </Button>
                   </div>
                 </SheetContent>
@@ -266,7 +276,7 @@ export function SearchResultsPage({
             />
           </div>
 
-          {sources.some((s) => s.status === "error") && (
+          {failed && (
             <p
               role="alert"
               className="mt-4 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive"

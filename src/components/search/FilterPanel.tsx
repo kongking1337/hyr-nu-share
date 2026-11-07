@@ -1,3 +1,4 @@
+import { useId } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -31,13 +32,22 @@ import { REGION } from "@/lib/geo";
 
 type Patch = (p: Partial<SearchParams>) => void;
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  children: React.ReactNode;
+}) {
   return (
-    // Etiketten omsluter fältet så att den hör ihop med det för skärmläsare.
-    <label className="block space-y-1.5">
-      <span className="block text-xs font-medium text-muted-foreground">{label}</span>
+    <div className="space-y-1.5">
+      <Label htmlFor={htmlFor} className="text-xs text-muted-foreground">
+        {label}
+      </Label>
       {children}
-    </label>
+    </div>
   );
 }
 
@@ -96,6 +106,8 @@ const TRIGGER =
   "rounded-md py-3.5 text-sm font-semibold hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function FilterPanel({ params, patch }: { params: SearchParams; patch: Patch }) {
+  // Panelen kan finnas två gånger på sidan (sidokolumnen och mobilens filterpanel).
+  const uid = useId();
   const subs = SUBCATEGORIES[params.category] ?? [];
   const attrDefs = CATEGORY_ATTRIBUTES[params.category] ?? [];
   const attrs = parseAttrFilter(params.attrs);
@@ -161,15 +173,15 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
               a.type === "bool" ? (
                 <Check
                   key={a.key}
-                  id={`attr-${a.key}`}
+                  id={`${uid}-attr-${a.key}`}
                   label={a.label}
                   checked={attrs[a.key] === "true"}
                   onChange={(v) => setAttr(a.key, v ? "true" : "")}
                 />
               ) : a.type === "select" ? (
-                <Row key={a.key} label={a.label}>
+                <Row key={a.key} label={a.label} htmlFor={`${uid}-attr-${a.key}`}>
                   <Select value={attrs[a.key] ?? "all"} onValueChange={(v) => setAttr(a.key, v)}>
-                    <SelectTrigger>
+                    <SelectTrigger id={`${uid}-attr-${a.key}`}>
                       <SelectValue placeholder="Alla" />
                     </SelectTrigger>
                     <SelectContent>
@@ -183,8 +195,9 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
                   </Select>
                 </Row>
               ) : (
-                <Row key={a.key} label={`${a.label} (minst)`}>
+                <Row key={a.key} label={`${a.label} (minst)`} htmlFor={`${uid}-attr-${a.key}`}>
                   <Input
+                    id={`${uid}-attr-${a.key}`}
                     type="number"
                     inputMode="numeric"
                     min={a.min}
@@ -222,6 +235,7 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
                 key={r}
                 selected={params.radius === r}
                 disabled={params.location === REGION.slug}
+                aria-pressed={params.radius === r}
                 onClick={() => patch({ radius: r })}
               >
                 {r} km
@@ -238,8 +252,9 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
         <AccordionTrigger className={TRIGGER}>Datum</AccordionTrigger>
         <AccordionContent className="space-y-3 px-0.5 pb-4">
           <div className="grid grid-cols-2 gap-2">
-            <Row label="Från">
+            <Row label="Från" htmlFor={`${uid}-from`}>
               <Input
+                id={`${uid}-from`}
                 type="date"
                 min={todayISO()}
                 value={params.from}
@@ -252,8 +267,9 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
                 }}
               />
             </Row>
-            <Row label="Till">
+            <Row label="Till" htmlFor={`${uid}-to`}>
               <Input
+                id={`${uid}-to`}
                 type="date"
                 min={params.from || todayISO()}
                 value={params.to}
@@ -278,8 +294,9 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
         <AccordionContent className="space-y-3 px-0.5 pb-4">
           <p className="text-xs text-muted-foreground">Pris per dygn.</p>
           <div className="grid grid-cols-2 gap-2">
-            <Row label="Min (kr)">
+            <Row label="Min (kr)" htmlFor={`${uid}-price-min`}>
               <Input
+                id={`${uid}-price-min`}
                 type="number"
                 inputMode="numeric"
                 value={params.priceMin || ""}
@@ -287,8 +304,9 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
                 placeholder="0"
               />
             </Row>
-            <Row label="Max (kr)">
+            <Row label="Max (kr)" htmlFor={`${uid}-price-max`}>
               <Input
+                id={`${uid}-price-max`}
                 type="number"
                 inputMode="numeric"
                 value={params.priceMax || ""}
@@ -303,12 +321,12 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
       <AccordionItem value="uthyrare">
         <AccordionTrigger className={TRIGGER}>Uthyrare</AccordionTrigger>
         <AccordionContent className="space-y-3 px-0.5 pb-4">
-          <Row label="Visa annonser från">
+          <Row label="Visa annonser från" htmlFor={`${uid}-owner`}>
             <Select
               value={params.owner}
               onValueChange={(v) => patch({ owner: v as SearchParams["owner"] })}
             >
-              <SelectTrigger aria-label="Visa annonser från">
+              <SelectTrigger id={`${uid}-owner`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

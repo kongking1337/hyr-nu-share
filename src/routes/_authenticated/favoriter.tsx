@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Bookmark, Heart, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,24 +25,44 @@ export const Route = createFileRoute("/_authenticated/favoriter")({
 
 function FavoritesPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const { data, refetch, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["favorites", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const [{ data: favs }, { data: searches }] = await Promise.all([
+      const [favs, searches] = await Promise.all([
         supabase.from("favorites").select("id, listing_id, listings(*)").eq("user_id", user!.id),
-        supabase.from("saved_searches").select("*").eq("user_id", user!.id),
+        supabase
+          .from("saved_searches")
+          .select("*")
+          .eq("user_id", user!.id)
+          .order("created_at", { ascending: false }),
       ]);
-      return { favs: favs ?? [], searches: searches ?? [] };
+      if (favs.error) throw favs.error;
+      if (searches.error) throw searches.error;
+      return { favs: favs.data ?? [], searches: searches.data ?? [] };
     },
   });
 
-  // Favoriter vars annons har tagits bort hoppas över.
-  const favorites = (data?.favs ?? []).flatMap((f) => {
+  // Pausade eller borttagna annonser går inte att läsa längre; de visas inte men kan rensas bort.
+  const favs = data?.favs ?? [];
+  const favorites = favs.flatMap((f) => {
     const row = (f as { listings: Record<string, unknown> | null }).listings;
     return row ? [{ id: f.id, result: rowToUnified(row) }] : [];
   });
+  const gone = favs.filter((f) => !(f as { listings: unknown }).listings).map((f) => f.id);
+
+  async function removeRows(table: "favorites" | "saved_searches", ids: string[], done: string) {
+    const { error } = await supabase.from(table).delete().in("id", ids);
+    if (error) {
+      toast.error("Det gick inte att ta bort. Försök igen.");
+      return;
+    }
+    toast.success(done);
+    void refetch();
+    void queryClient.invalidateQueries({ queryKey: ["favorite-ids"] });
+  }
 
   const findSomething = (
     <Button asChild>
@@ -53,7 +74,10 @@ function FavoritesPage() {
 
   return (
     <Page width="wide">
-      <PageHeader title="Favoriter" description="Annonser och sökningar du har sparat." />
+      <PageHeader
+        title="Favoriter"
+        description="Annonser och sökningar du har sparat. Tryck på hjärtat för att ta bort en annons från favoriterna."
+      />
 
       <section aria-labelledby="sparade-annonser">
         <h2 id="sparade-annonser" className="font-display text-2xl font-bold">
@@ -67,7 +91,7 @@ function FavoritesPage() {
         <div className="mt-5">
           {isLoading ? (
             <LoadingCards count={3} />
-          ) : favorites.length === 0 ? (
+          ) : favs.length === 0 ? (
             <EmptyState icon={Heart} title="Inga sparade annonser än" action={findSomething}>
               Tryck på hjärtat på en annons så hittar du den här.
             </EmptyState>
@@ -79,6 +103,20 @@ function FavoritesPage() {
                 </li>
               ))}
             </ul>
+          )}
+          {gone.length > 0 && (
+            <p className="mt-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {gone.length === 1
+                ? "1 sparad annons finns inte längre (pausad eller borttagen)."
+                : `${gone.length} sparade annonser finns inte längre (pausade eller borttagna).`}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void removeRows("favorites", gone, "Borttaget från favoriter.")}
+              >
+                Rensa bort
+              </Button>
+            </p>
           )}
         </div>
       </section>
@@ -135,10 +173,9 @@ function FavoritesPage() {
                     variant="ghost"
                     size="sm"
                     aria-label={`Ta bort sparad sökning ${s.label}`}
-                    onClick={async () => {
-                      await supabase.from("saved_searches").delete().eq("id", s.id);
-                      refetch();
-                    }}
+                    onClick={() =>
+                      void removeRows("saved_searches", [s.id], "Sökningen är borttagen.")
+                    }
                   >
                     Ta bort
                   </Button>

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { EmptyState, LoadingRows, Page, PageHeader } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { addDays, todayISO } from "@/lib/bookings";
 import { MAX_MESSAGE_LENGTH, sendMessage } from "@/lib/messages";
 import { photoUrl } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
@@ -63,17 +64,31 @@ function formatDay(iso: string): string {
     ...(d.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}),
   });
 }
+/** Enter skickar bara med riktigt tangentbord; på mobilen ger Enter ny rad. */
+const enterSends = () =>
+  typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches;
 
 function MessagesPage() {
   const { user } = useAuth();
   const { c: active } = Route.useSearch();
   const navigate = useNavigate({ from: "/meddelanden" });
   const queryClient = useQueryClient();
-  const [text, setText] = useState("");
+  // Ett utkast per konversation, så att en halvskriven text inte följer med till någon annan.
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const text = active ? (drafts[active] ?? "") : "";
+  const setText = (value: string) => {
+    if (active) setDrafts((d) => ({ ...d, [active]: value }));
+  };
   const [sending, setSending] = useState(false);
-  const scroller = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
+  const thread = useRef<HTMLDivElement>(null);
 
-  const { data: conversations, isLoading } = useQuery({
+  const {
+    data: conversations,
+    isLoading,
+    isError: conversationsFailed,
+    refetch: refetchConversations,
+  } = useQuery({
     queryKey: ["conversations", user?.id],
     enabled: !!user,
     refetchInterval: 30_000,
@@ -106,7 +121,30 @@ function MessagesPage() {
     : null;
   const { data: iBlocked } = useIsBlocked(counterpartId);
 
-  const { data: messages, refetch } = useQuery({
+  // Under en pågående hyra (till en vecka efter sista dagen) går det att skriva även efter en
+  // blockering, så att saken kan lämnas tillbaka. Samma regel som i databasen.
+  const { data: ongoingRental } = useQuery({
+    queryKey: ["ongoing-rental", user?.id, counterpartId],
+    enabled: !!iBlocked && !!user && !!counterpartId,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "confirmed")
+        .gte("end_date", addDays(todayISO(), -7))
+        .in("owner_id", [user!.id, counterpartId!])
+        .in("renter_id", [user!.id, counterpartId!]);
+      if (error) throw error;
+      return (count ?? 0) > 0;
+    },
+  });
+  const canWrite = !iBlocked || !!ongoingRental;
+
+  const {
+    data: messages,
+    refetch,
+    isError: messagesFailed,
+  } = useQuery({
     queryKey: ["messages", active],
     enabled: !!active,
     refetchInterval: 10_000,
@@ -131,23 +169,35 @@ function MessagesPage() {
     });
   }, [active, lastMessageId, queryClient]);
 
-  // Rulla tråden (inte hela sidan) till senaste meddelandet.
+  // Rulla bara i tråden (inte hela sidan): till botten när en konversation öppnas, och när
+  // ett nytt meddelande kommer om man redan läser längst ner.
+  const nearBottom = useRef(true);
+  const shownConversation = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const el = scroller.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [lastMessageId, active]);
+    const el = thread.current;
+    if (!el || !lastMessageId) return;
+    if (shownConversation.current !== active || nearBottom.current) el.scrollTop = el.scrollHeight;
+    shownConversation.current = active;
+  }, [active, lastMessageId]);
 
   async function send() {
-    if (!text.trim() || !active || !user) return;
+    const body = text;
+    const conversation = active;
+    if (!body.trim() || !conversation || !user || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
+    setDrafts((d) => ({ ...d, [conversation]: "" }));
+    nearBottom.current = true;
     try {
-      await sendMessage(active, user.id, text);
-      setText("");
+      await sendMessage(conversation, user.id, body);
       await refetch();
       void queryClient.invalidateQueries({ queryKey: ["conversations"] });
     } catch (e) {
+      // Texten kommer tillbaka så att inget behöver skrivas om.
+      setDrafts((d) => ({ ...d, [conversation]: d[conversation] || body }));
       toast.error(userMessage(e, "Meddelandet kunde inte skickas. Försök igen."));
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -200,6 +250,16 @@ function MessagesPage() {
           >
             {isLoading ? (
               <LoadingRows rows={4} className="p-3" />
+            ) : conversationsFailed ? (
+              <p className="px-5 py-6 text-sm text-muted-foreground">
+                Konversationerna kunde inte hämtas.{" "}
+                <button
+                  className="text-primary hover:underline"
+                  onClick={() => void refetchConversations()}
+                >
+                  Försök igen
+                </button>
+              </p>
             ) : conversations?.length === 0 ? (
               <p className="px-5 py-6 text-sm text-muted-foreground">
                 Inga andra konversationer än.
@@ -358,8 +418,25 @@ function MessagesPage() {
                   </div>
                 </header>
 
-                <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5">
-                  {!messages ? (
+                <div
+                  ref={thread}
+                  onScroll={(e) => {
+                    const el = e.currentTarget;
+                    nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+                  }}
+                  className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5"
+                >
+                  {messagesFailed && !messages ? (
+                    <p className="py-10 text-center text-sm text-muted-foreground">
+                      Meddelandena kunde inte hämtas.{" "}
+                      <button
+                        className="text-primary hover:underline"
+                        onClick={() => void refetch()}
+                      >
+                        Försök igen
+                      </button>
+                    </p>
+                  ) : !messages ? (
                     <div className="space-y-3" aria-busy="true" aria-label="Laddar">
                       <Skeleton className="h-12 w-2/3 rounded-2xl" />
                       <Skeleton className="ml-auto h-12 w-1/2 rounded-2xl" />
@@ -434,12 +511,14 @@ function MessagesPage() {
 
                 {iBlocked && (
                   <p className="shrink-0 border-t border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
-                    Du har blockerat {current?.counterpart_name ?? "den här personen"}. Ta bort
-                    blockeringen för att skriva igen.
+                    Du har blockerat {current?.counterpart_name ?? "den här personen"}.{" "}
+                    {ongoingRental
+                      ? "Ni kan skriva till varandra tills den pågående hyran är avslutad."
+                      : "Ta bort blockeringen för att skriva igen."}
                   </p>
                 )}
 
-                {!iBlocked && (
+                {canWrite && (
                   <form
                     className="shrink-0 border-t border-border bg-card p-2 sm:p-3"
                     onSubmit={(e) => {
@@ -454,7 +533,12 @@ function MessagesPage() {
                         maxLength={MAX_MESSAGE_LENGTH}
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
+                          if (
+                            e.key === "Enter" &&
+                            !e.shiftKey &&
+                            !e.nativeEvent.isComposing &&
+                            enterSends()
+                          ) {
                             e.preventDefault();
                             void send();
                           }

@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLoginPrompt } from "@/hooks/useLoginPrompt";
 import { notifyNewReport } from "@/lib/notify.functions";
 import { userMessage } from "@/lib/db-errors";
 
@@ -51,6 +52,7 @@ export function ReportDialog({
   compact?: boolean;
 }) {
   const { user } = useAuth();
+  const loginPrompt = useLoginPrompt();
   const [open, setOpen] = useState(false);
   const reasons = targetType === "user" ? USER_REASONS : REASONS;
   const [reason, setReason] = useState(reasons[0]!);
@@ -101,7 +103,7 @@ export function ReportDialog({
 
   if (!user) {
     return (
-      <Button {...trigger} onClick={() => toast.info("Logga in för att anmäla.")}>
+      <Button {...trigger} onClick={() => loginPrompt("Logga in för att anmäla.")}>
         {content}
       </Button>
     );

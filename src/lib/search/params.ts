@@ -96,9 +96,15 @@ const oneOf = <T extends string>(v: unknown, allowed: readonly T[], d: T): T =>
 const bool = (v: unknown, d: boolean) =>
   v === true || v === "true" ? true : v === false || v === "false" ? false : d;
 
+/** "ÅÅÅÅ-MM-DD" som är ett riktigt datum, annars tomt (handskrivna länkar gav "NaN undefined"). */
+const isoDate = (v: unknown): string =>
+  typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) ? v : "";
+
 export function validateSearchParams(
   search: Partial<Record<keyof SearchParams, unknown>>,
 ): SearchParams {
+  const from = isoDate(search["from"]);
+  const to = isoDate(search["to"]);
   return {
     q: str(search["q"], DEFAULTS.q),
     // Okända platser (t.ex. gamla länkar till Göteborg) blir hela Stockholm.
@@ -106,8 +112,9 @@ export function validateSearchParams(
     radius: num(search["radius"], DEFAULTS.radius),
     category: str(search["category"], DEFAULTS.category),
     sub: str(search["sub"], DEFAULTS.sub),
-    from: str(search["from"], DEFAULTS.from),
-    to: str(search["to"], DEFAULTS.to),
+    // Bara hela perioder: ett datum ensamt eller ett slut före starten används inte.
+    from: from && to && to >= from ? from : DEFAULTS.from,
+    to: from && to && to >= from ? to : DEFAULTS.to,
     priceMin: num(search["priceMin"], DEFAULTS.priceMin),
     priceMax: num(search["priceMax"], DEFAULTS.priceMax),
     priceBase: str(search["priceBase"], DEFAULTS.priceBase) as PriceBase,

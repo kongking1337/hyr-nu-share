@@ -9,6 +9,7 @@ import { ContactSeller } from "@/components/ContactSeller";
 import { ExampleBadge } from "@/components/ExampleBadge";
 import { EmptyState, Page } from "@/components/layout";
 import { PriceTag } from "@/components/ListingRow";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { ReportDialog } from "@/components/ReportDialog";
 import { Stars } from "@/components/Stars";
@@ -19,6 +20,8 @@ import { rowToUnified } from "@/lib/providers/internal";
 import { kr, priceLabel } from "@/lib/pricing";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { DEFAULTS } from "@/lib/search/params";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/annons/$id")({
   head: () => ({
@@ -36,8 +39,15 @@ function ListingPage() {
   const { id } = Route.useParams();
   const { user } = useAuth();
 
-  const { data: listing, isLoading } = useQuery({
+  const validId = UUID.test(id);
+  const {
+    data: listing,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["listing", id],
+    enabled: validId,
     queryFn: async () => {
       const { data: row, error } = await supabase
         .from("listings")
@@ -62,6 +72,19 @@ function ListingPage() {
   });
 
   if (isLoading) return <ListingSkeleton />;
+  if (isError) {
+    return (
+      <Page width="text">
+        <EmptyState
+          icon={PackageX}
+          title="Annonsen kunde inte hämtas"
+          action={<Button onClick={() => void refetch()}>Försök igen</Button>}
+        >
+          Något gick fel hos oss eller med anslutningen.
+        </EmptyState>
+      </Page>
+    );
+  }
   if (!listing) {
     return (
       <Page width="text">
@@ -126,9 +149,17 @@ function ListingPage() {
 
           <header className="mt-6 space-y-3">
             {listing.example && <ExampleBadge />}
-            <h1 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-              {listing.title}
-            </h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="min-w-0 break-words font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                {listing.title}
+              </h1>
+              {!mine && (
+                <FavoriteButton
+                  listingId={listing.id}
+                  className="mt-1 shrink-0 border border-border"
+                />
+              )}
+            </div>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin aria-hidden className="h-4 w-4" />
@@ -212,7 +243,7 @@ function ListingPage() {
                   {[
                     listing.pickupAvailable && "Hämtas hos uthyraren",
                     listing.deliveryAvailable &&
-                      `Leverans ${listing.deliveryFee > 0 ? `för ${kr(listing.deliveryFee)}` : "ingår"}`,
+                      `${listing.pickupAvailable ? "leverans" : "Leverans"} ${listing.deliveryFee > 0 ? `för ${kr(listing.deliveryFee)}` : "ingår"}`,
                   ]
                     .filter(Boolean)
                     .join(" eller ")}

@@ -44,18 +44,39 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Säkerhetshuvuden på allt som servern svarar med: sajten får inte visas i en ram på någon
+// annan sajt (klickkapning), webbläsaren gissar inte filtyper, andra sajter ser bara vår
+// domän som avsändare, och webbläsaren använder alltid https.
+const SECURITY_HEADERS: Record<string, string> = {
+  "content-security-policy": "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+  "x-frame-options": "DENY",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000",
+};
+
+function withSecurityHeaders(response: Response): Response {
+  const secured = new Response(response.body, response);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    if (!secured.headers.has(name)) secured.headers.set(name, value);
+  }
+  return secured;
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return withSecurityHeaders(
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
     }
   },
 };

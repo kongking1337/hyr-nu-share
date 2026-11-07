@@ -9,12 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/integrations/supabase/client";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import { useTheme } from "@/hooks/useTheme";
 import { DEFAULTS, cleanParams } from "@/lib/search/params";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
+import { signOut } from "@/lib/sign-out";
 import { cn } from "@/lib/utils";
 
 /** Ordmärket "hyrkoll." */
@@ -72,6 +72,8 @@ function HeaderSearch() {
 
 function AccountMenu() {
   const navigate = useNavigate();
+  const href = useRouterState({ select: (s) => s.location.href });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { dark, toggle } = useTheme();
   const { user, isAdmin, unread, pendingBookings, openReports } = useNotificationCounts();
   const total = unread + pendingBookings + openReports;
@@ -81,7 +83,8 @@ function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         className="relative flex h-10 items-center gap-2 rounded-full border border-border bg-card pl-3 pr-1 text-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label={total ? `Kontomeny, ${total} saker att se` : "Kontomeny"}
+        // Namnet börjar med den synliga texten, så att röststyrning ("Logga in") hittar knappen.
+        aria-label={`${user ? "Konto" : "Logga in"}${total ? `, ${total} saker att se` : ""}`}
       >
         <span className="hidden sm:inline">{user ? "Konto" : "Logga in"}</span>
         <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
@@ -128,7 +131,9 @@ function AccountMenu() {
         ) : (
           <>
             <DropdownMenuItem asChild>
-              <Link to="/auth">Logga in eller skapa konto</Link>
+              <Link to="/auth" search={pathname === "/auth" ? {} : { redirect: href }}>
+                Logga in eller skapa konto
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/favoriter">Favoriter</Link>
@@ -148,7 +153,7 @@ function AccountMenu() {
         {user && (
           <DropdownMenuItem
             onSelect={async () => {
-              await supabase.auth.signOut();
+              await signOut();
               void navigate({ to: "/" });
             }}
           >

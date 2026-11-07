@@ -1,5 +1,5 @@
 import { DEFAULTS } from "@/lib/search/params";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,10 @@ import { useCompare } from "@/hooks/useCompare";
 import { kr, quote } from "@/lib/pricing";
 
 export const Route = createFileRoute("/jamfor")({
+  // Jämförelsen är dold (den räknar priser på det gamla sättet och nås inte från sökningen).
+  beforeLoad: () => {
+    throw redirect({ to: "/sok", search: DEFAULTS });
+  },
   head: () => ({
     meta: [
       { title: "Jämför flera uthyrningar – Hyrkoll" },

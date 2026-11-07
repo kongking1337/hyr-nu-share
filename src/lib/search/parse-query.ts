@@ -3,7 +3,7 @@
  * Bygger vidare på `parseSearch` med pris, "nära mig", kapacitet och produktnamn.
  */
 import { normalize } from "@/lib/geo";
-import { parseSearch } from "@/lib/search-parse";
+import { CATEGORY_SYNONYMS, parseSearch } from "@/lib/search-parse";
 import { TERMS } from "./suggest";
 import { SUBCATEGORIES } from "./attributes";
 import type { SearchParams, SortKey } from "./params";
@@ -16,13 +16,18 @@ export type QueryIntent = {
 export function interpretQuery(raw: string): QueryIntent {
   const base = parseSearch(raw);
   const n = normalize(raw);
-  // Datum och betyg används inte i första versionen, så de visas inte som tolkning.
+  // Betyg används inte i första versionen, så det visas inte som tolkning.
   const notes = base.notes
-    .filter((note) => !/^Period:|bäst betyg/.test(note))
+    .filter((note) => !/bäst betyg/.test(note))
     .map((note) => (note === "Sortering: lägsta totalpris" ? "Sortering: lägst pris" : note));
   const patch: Partial<SearchParams> = {};
 
   if (base.category) patch.category = base.category;
+  // "i helgen", "i morgon", "på lördag" → bara saker som är lediga de dagarna.
+  if (base.startDate && base.endDate) {
+    patch.from = base.startDate;
+    patch.to = base.endDate;
+  }
   if (base.cityName) patch.location = normalize(base.cityName).replace(/ /g, "-");
   if (base.radiusKm) patch.radius = base.radiusKm;
   if (base.sort) {
@@ -54,13 +59,17 @@ export function interpretQuery(raw: string): QueryIntent {
   const cap = n.match(/(?:for|till)\s+(\d{1,4})\s*(personer|pers|gaster)/);
   if (cap) notes.push(`Kapacitet: ${cap[1]} personer`);
 
-  // produktnamn (PS5, partytält …) → underkategori
-  const term = TERMS.find(
-    (t) => n.includes(normalize(t.label)) || normalize(t.label).startsWith(n),
-  );
+  // produktnamn (PS5, partytält …) → underkategori. Inte för en tom sökning: "" är början
+  // på alla ord, så tomma sökningar hamnade i den första kategorin (Verktyg).
+  const term = n
+    ? TERMS.find(
+        (t) =>
+          n.includes(normalize(t.label)) || (n.length >= 3 && normalize(t.label).startsWith(n)),
+      )
+    : undefined;
   if (term && !patch.category) {
     patch.category = term.category;
-    notes.push(`Kategori: ${term.category}`);
+    notes.push(`Kategori: ${CATEGORY_SYNONYMS[term.category]?.name ?? term.category}`);
   }
   const cat = patch.category;
   if (cat && SUBCATEGORIES[cat]) {

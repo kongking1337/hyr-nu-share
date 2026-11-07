@@ -72,6 +72,12 @@ export function recentSearches(): string[] {
   }
 }
 
+/** Vid utloggning, så att nästa person vid samma dator inte ser vad som sökts. */
+export function clearRecentSearches() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(RECENT_KEY);
+}
+
 export function pushRecentSearch(q: string) {
   if (typeof window === "undefined") return;
   const clean = q.trim();

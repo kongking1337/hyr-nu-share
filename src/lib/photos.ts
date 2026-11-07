@@ -29,6 +29,43 @@ export function photoUrl(value: string | null | undefined): string {
 
 export type ShrunkPhoto = { blob: Blob; ext: "webp" | "jpg" };
 
+type Decoded = { source: CanvasImageSource; width: number; height: number; done: () => void };
+
+/**
+ * Läser bilden rättvänd. createImageBitmap med "from-image" kräver Safari 16 / Chrome 112;
+ * äldre webbläsare (t.ex. iPhone med iOS 15) får gå via ett vanligt <img>, som också
+ * vänder bilden enligt EXIF.
+ */
+async function decodePhoto(file: File): Promise<Decoded> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      done: () => bitmap.close(),
+    };
+  } catch {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      return {
+        source: img,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        done: () => URL.revokeObjectURL(url),
+      };
+    } catch {
+      URL.revokeObjectURL(url);
+      throw new PhotoError(
+        `${file.name} gick inte att läsa. Prova en bild i JPG- eller PNG-format.`,
+      );
+    }
+  }
+}
+
 const encode = (canvas: HTMLCanvasElement, type: string, quality: number) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
 
@@ -42,22 +79,17 @@ export async function shrinkPhoto(file: File): Promise<ShrunkPhoto> {
   }
   if (file.size > MAX_INPUT_BYTES) throw new PhotoError(`${file.name} är för stor (max 25 MB).`);
 
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  } catch {
-    throw new PhotoError(`${file.name} gick inte att läsa. Prova en bild i JPG- eller PNG-format.`);
-  }
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const image = await decodePhoto(file);
+  const scale = Math.min(1, MAX_SIDE / Math.max(image.width, image.height));
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
+  canvas.width = Math.round(image.width * scale);
+  canvas.height = Math.round(image.height * scale);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new PhotoError("Bilden kunde inte bearbetas.");
   ctx.fillStyle = "#fff"; // genomskinliga PNG-bilder får vit bakgrund i stället för svart
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
+  ctx.drawImage(image.source, 0, 0, canvas.width, canvas.height);
+  image.done();
 
   // Webbläsare som inte kan skapa WebP lämnar tillbaka PNG, så kontrollera typen.
   const webp = await encode(canvas, "image/webp", WEBP_QUALITY);

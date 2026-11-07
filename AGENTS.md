@@ -56,5 +56,11 @@
   written in Swedish and shown via `userMessage()` in `src/lib/db-errors.ts`. Site
   operator and contact details for the legal pages are in `src/lib/site.ts`. Manual
   setup (captcha, backups, logs, admins): `docs/operations.md`.
+- Security review 2026-11-04 (`supabase/migrations/20261104120000_review_fixes.sql`): the
+  browser may only insert the content columns of `messages` and `reports` (timestamps, read
+  and moderation state come from the database), can't write `companies`, and starts
+  conversations only through `start_conversation` and the booking functions. Condition
+  photos can't be deleted during a rental and 14 days after it. Security headers (no
+  framing etc.) are set in `src/server.ts`.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just
   the Vite config package and stays. Background: `docs/migration-plan.md`.

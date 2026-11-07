@@ -1,11 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { Heart, MapPin } from "lucide-react";
-import { toast } from "sonner";
+import { MapPin } from "lucide-react";
 import { ExampleBadge } from "@/components/ExampleBadge";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { PriceTag } from "@/components/ListingRow";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import type { UnifiedResult } from "@/lib/providers/types";
 import { cn } from "@/lib/utils";
 
@@ -22,35 +19,6 @@ export function ListingCard({
   distanceKm?: number | null;
   layout?: "grid" | "list";
 }) {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  // Sparar annonsen, eller tar bort den om den redan är sparad.
-  async function favorite() {
-    if (!user) {
-      toast.info("Logga in för att spara favoriter.");
-      return;
-    }
-    const { error } = await supabase
-      .from("favorites")
-      .insert({ user_id: user.id, listing_id: r.id });
-    if (error?.code === "23505") {
-      const { error: removeError } = await supabase
-        .from("favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("listing_id", r.id);
-      toast[removeError ? "error" : "success"](
-        removeError ? "Kunde inte ta bort favoriten" : "Borttagen från favoriter",
-      );
-    } else {
-      toast[error ? "error" : "success"](
-        error ? "Kunde inte spara favoriten" : "Sparad i favoriter",
-      );
-    }
-    void queryClient.invalidateQueries({ queryKey: ["favorites"] });
-  }
-
   const list = layout === "list";
 
   return (
@@ -81,11 +49,12 @@ export function ListingCard({
       </div>
 
       <div className={cn("flex min-w-0 flex-1 flex-col", list ? "py-1 pr-10" : "mt-3 px-0.5")}>
+        {/* Hela kortet går att trycka på: länken täcker kortet (hjärtat ligger ovanpå). */}
         <h3 className="line-clamp-2 font-sans text-[15px] font-semibold leading-snug tracking-normal">
           <Link
             to="/annons/$id"
             params={{ id: r.id }}
-            className="outline-none after:absolute after:inset-0 after:rounded-2xl"
+            className="outline-none after:absolute after:inset-0 after:rounded-2xl after:content-['']"
           >
             {r.title}
           </Link>
@@ -106,14 +75,7 @@ export function ListingCard({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={favorite}
-        aria-label={`Spara eller ta bort ${r.title} som favorit`}
-        className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-background/90 backdrop-blur transition-colors hover:bg-background hover:text-primary"
-      >
-        <Heart className="h-4 w-4" />
-      </button>
+      <FavoriteButton listingId={r.id} className="absolute right-3 top-3 z-10" />
     </article>
   );
 }
