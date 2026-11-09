@@ -151,9 +151,9 @@ lower in search.
     pages opened directly log a hydration warning (`ssr: false` + redirect).
 - **Phase 3, email alerts (needs a domain):** emails for booking requests and answers,
   reminders the day before pickup and return, and alerts for saved searches.
-- **Phase 4, money (needs the company):** payment through the site (e.g. Stripe: pay when
-  accepted, owner paid after return, deposit held), damage protection through an insurance
-  partner, BankID.
+- **Phase 4, money (needs the company):** see `docs/monetization-plan.md` (2026-11-09):
+  payment through Stripe Connect with a service fee, deposit, then damage protection through
+  an insurance partner, company plans and boosted listings. Also BankID.
 - **Phase 5, growth:** link previews when a listing is shared (see server-rendered listing
   pages below), rental companies with many items, map view in search, "Önskas hyra"
   (post what you want to rent), suggested price when posting.

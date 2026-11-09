@@ -62,5 +62,7 @@
   conversations only through `start_conversation` and the booking functions. Condition
   photos can't be deleted during a rental and 14 days after it. Security headers (no
   framing etc.) are set in `src/server.ts`.
+- Making money (commission, payments through Stripe Connect, company plans): the plan is in
+  `docs/monetization-plan.md`; nothing of it is built yet.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just
   the Vite config package and stays. Background: `docs/migration-plan.md`.
