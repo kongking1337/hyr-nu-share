@@ -5,9 +5,12 @@ Email is covered in [`email-setup.md`](email-setup.md).
 
 ## Before inviting users
 
-1. **Site details** in `src/lib/site.ts`: who runs the site (`operator`) and a contact
-   email (`contactEmail`). Until both are set, the terms, privacy policy and contact
-   page show an "Utkast" notice. Update them when the company exists.
+1. **Site details** in `src/lib/site.ts`: who runs the site (`operator`), a postal
+   address (`address`, required by the e-commerce act; a c/o address is fine), a contact
+   email (`contactEmail`) and, once there is a company, `orgNumber`. Until operator,
+   address and email are set, the terms, privacy policy and contact page show an
+   "Utkast" notice. Bump `updated` whenever the terms or privacy policy change, and email
+   users 30 days ahead of changes that affect them (the terms promise that).
 2. **Email (SMTP)**, see `email-setup.md`. Without it nobody can confirm an account.
 3. **Captcha** (below).
 4. **Backups** (below).
@@ -75,12 +78,30 @@ Supabase also limits sign-ups and emails per hour (Authentication → Rate Limit
 - **Database and login**: Supabase → Logs.
 - Errors in visitors' browsers are not collected yet. Sentry (free tier) is a good next step.
 
+## Moderation duties the terms promise
+
+The terms (`/villkor`, sections 12–15) follow the EU Digital Services Act. In practice:
+
+- Hiding a listing: always write a reason; the owner sees it under Mina annonser.
+- Blocking an account or deleting a review: the site doesn't tell the user why, so email
+  them yourself: what was decided, why, which rule or law, and that they can appeal to the
+  contact email within six months.
+- Appeals by email: let someone other than the one who made the decision look at it, if
+  possible, and answer with reasons.
+- Reports by email from people without an account: confirm you got them and answer with
+  the decision.
+- Warn before blocking someone for repeated clearly illegal content or clearly unfounded
+  reports.
+- Suspected crimes that threaten someone's life or safety: tell the police (114 14, or 112).
+
 ## Admins
 
 Make someone an admin in the Supabase SQL Editor:
+
 ```sql
 INSERT INTO public.user_roles (user_id, role)
 SELECT id, 'admin' FROM auth.users WHERE email = 'their@email.se'
 ON CONFLICT (user_id, role) DO NOTHING;
 ```
+
 They then see "Moderering" in the menu after logging in again.
