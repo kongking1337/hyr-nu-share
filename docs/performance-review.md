@@ -409,6 +409,24 @@ Sökningen "borr" ger 0 träffar, fast "Slagborrmaskin Bosch Professional" finns
   finns i annonsens text. Borrmaskinen hamnar därför troligen i en annan underkategori.
 - **Status:** inte utrett vidare.
 
+## Genomförandeplan i steg
+
+Varje steg blir en egen leverans till `main`. Mät före och efter med skripten nedan. Databassteg:
+migrationen körs i SQL Editor först, och koden fungerar även innan den har körts (main driftsätts
+direkt).
+
+| Steg                 | Innehåll (punkter i tabellen ovan)                                                                                                                                                                                                                         | Insats                                                               | Vem gör vad                                           | Klart när                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 1. Snabba vinster    | Rätt storlek på exempelbilderna med `srcset`, huvudbilden laddas först (#1, första delen). Förladdade typsnitt (#5). Data färsk i 30–60 s (#6). Kalendern laddas först när den behövs (#12)                                                                | Liten. Bara frontend                                                 | Claude                                                | Bilder på `/` under 300 kB, CLS på `/villkor` under 0,1, inga omhämtningar vid flikbyte            |
+| 2. Databaspaket      | 10 index, snabbare `unavailable_listings` och olästräknare (#3). Kategorisiffror via en databasfunktion (#7)                                                                                                                                               | Liten. En migration plus test i `npm run test:db`                    | Claude skriver, Marcus kör SQL:en                     | `EXPLAIN` visar index i SQL Editor; startsidan hämtar 8 rader i stället för 1000                   |
+| 3. Data från servern | Startsidan, annonssidan och profilen hämtar sin data på servern. Förladdning när man pekar på länkar. Rätt titel och bild per annons (#2)                                                                                                                  | Medel. Annonssidan först som pilot, sedan startsida och profil       | Claude                                                | `measure.mjs` på mobil 4G: innehållet syns ungefär när sidan börjar ritas; CLS 0 på annonssidan    |
+| 4. Ny sökning        | Databasfunktionen `search_listings` med text, plats, datum, pris, sortering och sidor. Söksidan och kategorisidorna hämtar från servern och ritas om mindre (#4, #10). Rätta "borr"-buggen (avsnitt 8)                                                     | Stor. Migration plus omskrivning av hur sökresultat hämtas och visas | Claude skriver, Marcus kör SQL:en                     | Rätt träffar med 20 000 annonser i PGlite; svaret är en sida kort; `/sok` på mobil 4G som i steg 3 |
+| 5. Inloggade sidor   | Meddelanden hämtar bara nya (#8). Bokningar med gräns och motpartens id (#9). Radreglerna läser användaren en gång per fråga (#11). Gemensam inloggningskontext (#13). Parallell uppladdning (#14). Små kopior av egna uppladdade bilder (#1, andra delen) | Medel. En migration plus flera små ändringar                         | Claude skriver, Marcus kör SQL:en och testar inloggad | Mindre svar per meddelandehämtning, bokningssidan gör en fråga, `test:db` går igenom               |
+
+Ordning: steg 1 och 2 är oberoende och kan göras i valfri ordning. Steg 3 före 4, så att
+mönstret för datahämtning på servern är på plats när sökningen byggs om. Steg 4 bör vara klart
+innan någon kategori har runt 200 annonser. Steg 5 bör vara klart innan riktiga användare bjuds in.
+
 ## Så mäter du före och efter
 
 ```sh
