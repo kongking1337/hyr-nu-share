@@ -13,6 +13,10 @@ C "Hyrlapp"; Marcus picked C). All three variants are kept on the local git bran
   Instrument Sans for everything else. Both are self-hosted through Fontsource.
 - **Shapes:** buttons are pills (`rounded-full`), photos and tiles `rounded-2xl`, big bands `rounded-3xl`.
 
+- **Tab icon** (`public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png`): the wordmark's "h." in
+  Bricolage Grotesque (white h, orange dot) on an ink-grey rounded square. The letters are paths, not
+  text. Bump the `?v=` in `src/routes/__root.tsx` when the icon changes, since browsers cache it hard.
+
 ## Building blocks
 
 - `Header`: the `hyrkoll.` wordmark, a compact search field (not on `/` and `/sok`), a dark "Hyr ut"
