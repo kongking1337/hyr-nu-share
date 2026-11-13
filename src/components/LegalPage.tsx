@@ -11,11 +11,14 @@ import { cn } from "@/lib/utils";
 export function LegalPage({
   title,
   intro,
+  sections,
   children,
 }: {
   title: string;
   /** Valfri ingress under rubriken, före själva texten. */
   intro?: ReactNode;
+  /** Innehållsförteckning för långa sidor. `id` ska finnas på motsvarande h2. */
+  sections?: { id: string; title: string }[];
   children: ReactNode;
 }) {
   return (
@@ -36,10 +39,28 @@ export function LegalPage({
           >
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <p>
-              <span className="font-semibold">Utkast:</span> uppgifter om vem som driver Hyrkoll och
-              hur du når oss fylls i före lansering.
+              <span className="font-semibold">Utkast:</span> uppgifter om vem som driver Hyrkoll,
+              adress och hur du når oss fylls i före lansering.
             </p>
           </div>
+        )}
+
+        {sections && (
+          <nav aria-label="Innehåll" className="mt-6 rounded-2xl bg-muted p-5 text-sm">
+            <p className="font-semibold">Innehåll</p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-foreground/85 marker:text-muted-foreground sm:columns-2 sm:gap-8">
+              {sections.map((s) => (
+                <li key={s.id} className="break-inside-avoid pl-1">
+                  <a
+                    href={`#${s.id}`}
+                    className="rounded-sm underline decoration-border decoration-2 underline-offset-4 hover:decoration-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {s.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
         )}
 
         <div className={cn("mt-2 leading-relaxed", PROSE)}>{children}</div>
