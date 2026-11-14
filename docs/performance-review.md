@@ -423,6 +423,28 @@ direkt).
 | 4. Ny sökning        | Databasfunktionen `search_listings` med text, plats, datum, pris, sortering och sidor. Söksidan och kategorisidorna hämtar från servern och ritas om mindre (#4, #10). Rätta "borr"-buggen (avsnitt 8)                                                     | Stor. Migration plus omskrivning av hur sökresultat hämtas och visas | Claude skriver, Marcus kör SQL:en                     | Rätt träffar med 20 000 annonser i PGlite; svaret är en sida kort; `/sok` på mobil 4G som i steg 3 |
 | 5. Inloggade sidor   | Meddelanden hämtar bara nya (#8). Bokningar med gräns och motpartens id (#9). Radreglerna läser användaren en gång per fråga (#11). Gemensam inloggningskontext (#13). Parallell uppladdning (#14). Små kopior av egna uppladdade bilder (#1, andra delen) | Medel. En migration plus flera små ändringar                         | Claude skriver, Marcus kör SQL:en och testar inloggad | Mindre svar per meddelandehämtning, bokningssidan gör en fråga, `test:db` går igenom               |
 
+**Status 2026-11-14:**
+
+- **Steg 1 är klart.** Mätt med `measure.mjs` mot den byggda sajten, före och efter, tom cache:
+
+  | Mätning                                    | Före            | Efter   |
+  | ------------------------------------------ | --------------- | ------- |
+  | Bilder på `/`, dator                       | 1 926 kB        | 191 kB  |
+  | Bilder på `/`, mobil 4G                    | 1 926 kB        | 425 kB  |
+  | Bilder på `/sok`, dator                    | 1 926 kB        | 230 kB  |
+  | Bilder på `/annons/…`, dator               | 406 kB          | 97 kB   |
+  | JS på `/annons/…`                          | 303 kB          | 280 kB  |
+  | Första bild på `/`, svagt 4G               | 17,5 s          | 11,7 s  |
+  | LCP på `/sok`, svagt 4G                    | 17,8 s          | 13,1 s  |
+  | CLS på `/villkor` och `/integritet`, dator | 0,156 och 0,167 | 0 och 0 |
+
+  Övriga tider varierade för mycket på den delade testservern för att jämföras. Annonssidans
+  layouthopp på mobil (0,128) är kvar; det försvinner i steg 3.
+
+- **Steg 2: koden är klar.** Migrationen `20261114120000_performance.sql` ska köras i SQL Editor.
+  Tills dess använder startsidan reservvägen (de 1000 senaste annonserna), och webbläsarens
+  konsol visar ett 404-fel för `listing_category_summary`.
+
 Ordning: steg 1 och 2 är oberoende och kan göras i valfri ordning. Steg 3 före 4, så att
 mönstret för datahämtning på servern är på plats när sökningen byggs om. Steg 4 bör vara klart
 innan någon kategori har runt 200 annonser. Steg 5 bör vara klart innan riktiga användare bjuds in.
