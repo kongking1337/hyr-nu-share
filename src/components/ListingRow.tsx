@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { MapPin } from "lucide-react";
 import { ExampleBadge } from "@/components/ExampleBadge";
+import { photoSources } from "@/lib/photos";
 import type { UnifiedResult } from "@/lib/providers/types";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +41,7 @@ export function ListingRow({ result: r }: { result: UnifiedResult }) {
     >
       <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted sm:h-28 sm:w-32">
         <img
-          src={r.images[0]}
+          {...photoSources(r.images[0]!, [200, 400], "(min-width: 640px) 128px, 96px")}
           alt=""
           loading="lazy"
           decoding="async"

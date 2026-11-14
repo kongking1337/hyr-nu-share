@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react";
 import { ExampleBadge } from "@/components/ExampleBadge";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { PriceTag } from "@/components/ListingRow";
+import { photoSources } from "@/lib/photos";
 import type { UnifiedResult } from "@/lib/providers/types";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +36,13 @@ export function ListingCard({
         )}
       >
         <img
-          src={r.images[0]}
+          {...photoSources(
+            r.images[0]!,
+            [400, 600, 800],
+            list
+              ? "(min-width: 640px) 192px, 112px"
+              : "(min-width: 1280px) 260px, (min-width: 640px) 50vw, 100vw",
+          )}
           alt=""
           loading="lazy"
           decoding="async"

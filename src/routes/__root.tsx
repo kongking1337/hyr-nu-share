@@ -12,6 +12,8 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import bricolageLatin from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
+import instrumentLatin from "@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2?url";
 import appCss from "../styles.css?url";
 import { BottomTabs } from "@/components/BottomTabs";
 import { Header, Wordmark } from "@/components/Header";
@@ -122,6 +124,19 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="sv" suppressHydrationWarning>
       <head>
         <ScriptOnce>{THEME_SCRIPT}</ScriptOnce>
+        {/* Typsnitten (latin, som täcker å, ä och ö) hämtas direkt i stället för när CSS:en har
+            lästs, så att texten inte hoppar när de byts in efter första ritningen. De står före
+            HeadContent, som annars lägger dem efter alla JavaScript-filer. */}
+        {[bricolageLatin, instrumentLatin].map((href) => (
+          <link
+            key={href}
+            rel="preload"
+            href={href}
+            as="font"
+            type="font/woff2"
+            crossOrigin="anonymous"
+          />
+        ))}
         <HeadContent />
       </head>
       <body>

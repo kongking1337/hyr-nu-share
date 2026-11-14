@@ -48,7 +48,8 @@ new PerformanceObserver(l => { for (const e of l.getEntries()) if (e.name === 'f
     const im = ${img};
     if (!__p.img && im && im.complete && im.naturalWidth > 0 && !im.src.startsWith('data:')) __p.img = performance.now();
   } catch (e) {}
-  if (!__p.content || (!__p.img && ${img} !== null)) requestAnimationFrame(poll);
+  // Fortsätt tills både innehållet och (på sidor med bild) första bilden har synts.
+  if (!__p.content || (${img !== "null"} && !__p.img)) requestAnimationFrame(poll);
 })();
 `;
 

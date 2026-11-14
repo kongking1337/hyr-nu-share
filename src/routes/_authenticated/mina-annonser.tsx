@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Copy,
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { invalidateListings } from "@/lib/listing-cache";
 import { photoUrl, removeUnusedPhotos } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
 import { priceLabel } from "@/lib/pricing";
@@ -69,6 +70,7 @@ const STATUS_TOAST: Record<string, string> = {
 
 function MyListings() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState("all");
 
   const { data, refetch, isLoading, isError } = useQuery({
@@ -97,7 +99,7 @@ function MyListings() {
       return;
     }
     toast.success(STATUS_TOAST[status] ?? "Status uppdaterad.");
-    refetch();
+    void invalidateListings(queryClient);
   }
 
   async function duplicate(l: (typeof listings)[number]) {
@@ -116,7 +118,7 @@ function MyListings() {
       return;
     }
     toast.success("Kopia skapad som utkast.");
-    refetch();
+    void invalidateListings(queryClient);
   }
 
   async function remove(id: string) {
@@ -128,7 +130,7 @@ function MyListings() {
     }
     void removeUnusedPhotos(user!.id, images);
     toast.success("Annonsen är borttagen.");
-    refetch();
+    void invalidateListings(queryClient);
   }
 
   async function share(id: string, title: string) {

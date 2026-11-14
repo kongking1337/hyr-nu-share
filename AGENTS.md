@@ -62,6 +62,11 @@
   conversations only through `start_conversation` and the booking functions. Condition
   photos can't be deleted during a rental and 14 days after it. Security headers (no
   framing etc.) are set in `src/server.ts`.
+- Performance (review and step plan: `docs/performance-review.md`; measure before and after
+  with `scripts/perf/`). Public listing queries (home, search, listing, profile) stay fresh for
+  `PUBLIC_STALE_TIME` (60 s, `src/lib/listing-cache.ts`), so code that creates, changes or hides
+  listings must call `invalidateListings(queryClient)`. Listing photos go through
+  `photoSources()` in `src/lib/photos.ts` (right width and `srcset`).
 - Making money (commission, payments through Stripe Connect, company plans): the plan is in
   `docs/monetization-plan.md`; nothing of it is built yet.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just

@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
+import { photoSources } from "@/lib/photos";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,9 +30,11 @@ export function PhotoGallery({ images, title }: { images: string[]; title: strin
   return (
     <div className="space-y-3" onKeyDown={onKeyDown}>
       <div className="relative aspect-[4/3] max-h-[520px] w-full overflow-hidden rounded-2xl bg-muted">
+        {/* Sidans största bild: hämtas före allt annat som inte behövs för att rita sidan. */}
         <img
-          src={images[index]}
+          {...photoSources(images[index]!, [640, 960, 1200], "(min-width: 1024px) 744px, 100vw")}
           alt={count > 1 ? `${title} – bild ${index + 1} av ${count}` : title}
+          fetchPriority="high"
           className="h-full w-full object-contain"
         />
         {count > 1 && (
@@ -76,7 +79,7 @@ export function PhotoGallery({ images, title }: { images: string[]; title: strin
                 )}
               >
                 <img
-                  src={src}
+                  {...photoSources(src, [160, 240], "80px")}
                   alt=""
                   loading="lazy"
                   decoding="async"

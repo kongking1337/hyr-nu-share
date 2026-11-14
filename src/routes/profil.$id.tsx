@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
 import { rowToUnified } from "@/lib/providers/internal";
 import { DEFAULTS } from "@/lib/search/params";
 
@@ -61,6 +62,7 @@ function ProfilePage() {
   } = useQuery({
     queryKey: ["public-profile", id],
     enabled: validId,
+    staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("public_profile", { _user_id: id });
       if (error) throw error;
@@ -71,6 +73,7 @@ function ProfilePage() {
   const { data: reviews = [], isPending: reviewsPending } = useQuery({
     queryKey: ["public-reviews", id],
     enabled: !!profile,
+    staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("public_reviews", { _user_id: id });
       if (error) throw error;
@@ -81,6 +84,7 @@ function ProfilePage() {
   const { data: listings = [], isPending: listingsPending } = useQuery({
     queryKey: ["profile-listings", id],
     enabled: !!profile,
+    staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")

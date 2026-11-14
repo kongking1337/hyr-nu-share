@@ -27,6 +27,33 @@ export function photoUrl(value: string | null | undefined): string {
   return supabase.storage.from(PHOTO_BUCKET).getPublicUrl(value).data.publicUrl;
 }
 
+/**
+ * Samma bild i en viss bredd. Exempelannonsernas bilder (Unsplash) kan hämtas i valfri bredd och i
+ * WebP/AVIF; uppladdade bilder finns bara i full storlek och returneras oförändrade.
+ */
+export function sizedPhotoUrl(url: string, width: number): string {
+  if (!url.startsWith("https://images.unsplash.com/")) return url;
+  const u = new URL(url);
+  u.searchParams.set("w", String(width));
+  u.searchParams.set("auto", "format");
+  u.searchParams.set("q", "70");
+  return u.toString();
+}
+
+/**
+ * src, srcSet och sizes för en <img>, så att webbläsaren hämtar en bild som passar rutan
+ * (och skärmens upplösning) i stället för originalet. `sizes` beskriver hur bred rutan är.
+ */
+export function photoSources(url: string, widths: number[], sizes: string) {
+  const resized = widths.map((w) => sizedPhotoUrl(url, w));
+  if (resized[0] === url) return { src: url };
+  return {
+    src: resized[resized.length - 1],
+    srcSet: resized.map((src, i) => `${src} ${widths[i]}w`).join(", "),
+    sizes,
+  };
+}
+
 export type ShrunkPhoto = { blob: Blob; ext: "webp" | "jpg" };
 
 type Decoded = { source: CanvasImageSource; width: number; height: number; done: () => void };

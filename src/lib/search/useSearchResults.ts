@@ -1,4 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
+import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
 import { providers } from "@/lib/providers";
 import type { UnifiedResult } from "@/lib/providers/types";
 import type { SearchParams } from "./params";
@@ -64,7 +65,7 @@ export function useSearchResults(params: SearchParams, center: Center) {
           startDate: params.from || null,
           endDate: params.to || null,
         }),
-      staleTime: 60_000,
+      staleTime: PUBLIC_STALE_TIME,
       retry: 1,
     })),
   });

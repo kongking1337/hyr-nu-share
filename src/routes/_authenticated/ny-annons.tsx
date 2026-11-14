@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { EmptyState, LoadingRows, Page, PageHeader } from "@/components/layout";
+import { invalidateListings } from "@/lib/listing-cache";
 import { PHOTO_BUCKET, removeUnusedPhotos } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
@@ -82,6 +83,7 @@ function snapshot(v: {
 function ListingForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { id: editId } = Route.useSearch();
 
   const [form, setForm] = useState(EMPTY);
@@ -262,6 +264,7 @@ function ListingForm() {
         return;
       }
       void removeUnusedPhotos(user!.id, removedSaved.current);
+      void invalidateListings(queryClient);
       toast.success("Annonsen är uppdaterad.");
       saved.current = true;
       navigate({ to: "/mina-annonser" });
@@ -279,6 +282,7 @@ function ListingForm() {
       return;
     }
     saved.current = true;
+    void invalidateListings(queryClient);
     if (status === "draft") {
       toast.success("Utkast sparat.");
       navigate({ to: "/mina-annonser" });

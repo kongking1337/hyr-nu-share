@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationCounts } from "@/hooks/useNotificationCounts";
 import type { Database } from "@/integrations/supabase/types";
+import { invalidateListings } from "@/lib/listing-cache";
 import { cn } from "@/lib/utils";
 
 type Report = Database["public"]["Functions"]["admin_reports"]["Returns"][number];
@@ -65,11 +66,17 @@ const STATUS_LABEL: Record<string, string> = {
 function useAdminActions() {
   const queryClient = useQueryClient();
   const refresh = () =>
-    Promise.all(
-      ["admin-reports", "admin-listings", "admin-blocked", "admin-report-count", "admin-trust"].map(
-        (key) => queryClient.invalidateQueries({ queryKey: [key] }),
-      ),
-    );
+    Promise.all([
+      ...[
+        "admin-reports",
+        "admin-listings",
+        "admin-blocked",
+        "admin-report-count",
+        "admin-trust",
+      ].map((key) => queryClient.invalidateQueries({ queryKey: [key] })),
+      // Dolda annonser (och spärrade användares annonser) ska försvinna från sajten direkt.
+      invalidateListings(queryClient),
+    ]);
   const run = async (
     action: PromiseLike<{ error: { message: string } | null }>,
     success: string,

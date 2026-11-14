@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Info, MapPin, PackageX, ShieldCheck, Truck } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookingRequest } from "@/components/BookingRequest";
 import { ContactSeller } from "@/components/ContactSeller";
 import { ExampleBadge } from "@/components/ExampleBadge";
 import { EmptyState, Page } from "@/components/layout";
@@ -16,10 +15,17 @@ import { Stars } from "@/components/Stars";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CANCELLATION_POLICIES } from "@/lib/bookings";
+import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
 import { rowToUnified } from "@/lib/providers/internal";
 import { kr, priceLabel } from "@/lib/pricing";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { DEFAULTS } from "@/lib/search/params";
+
+// Bokningskortet med kalendern laddas först när det visas: exempelannonser och egna annonser
+// behöver det inte, och då slipper resten av sidan vänta på kalenderkoden.
+const BookingRequest = lazy(() =>
+  import("@/components/BookingRequest").then((m) => ({ default: m.BookingRequest })),
+);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -48,6 +54,7 @@ function ListingPage() {
   } = useQuery({
     queryKey: ["listing", id],
     enabled: validId,
+    staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
       const { data: row, error } = await supabase
         .from("listings")
@@ -64,6 +71,7 @@ function ListingPage() {
   const { data: owner } = useQuery({
     queryKey: ["public-profile", ownerId],
     enabled: !!ownerId,
+    staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("public_profile", { _user_id: ownerId! });
       if (error) throw error;
@@ -327,7 +335,9 @@ function ListingPage() {
               <ContactSeller listing={listing} />
             ) : (
               <>
-                <BookingRequest listing={listing} />
+                <Suspense fallback={<Skeleton className="h-[26rem] rounded-2xl" />}>
+                  <BookingRequest listing={listing} />
+                </Suspense>
                 <details className="group mt-5 border-t border-border pt-4">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
                     Har du en fråga först? Skicka ett meddelande

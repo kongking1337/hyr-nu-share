@@ -17,7 +17,8 @@ import { useState } from "react";
 import { EmptyState } from "@/components/layout";
 import { ListingRow } from "@/components/ListingRow";
 import { supabase } from "@/integrations/supabase/client";
-import { photoUrl } from "@/lib/photos";
+import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
+import { photoSources, photoUrl } from "@/lib/photos";
 import { rowToUnified } from "@/lib/providers/internal";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
@@ -92,6 +93,7 @@ function Index() {
     isError: latestFailed,
   } = useQuery({
     queryKey: ["home-latest"],
+    staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
@@ -112,6 +114,7 @@ function Index() {
   // Antal annonser och en bild per kategori till kategorirutorna.
   const { data: categories, isPending: categoriesPending } = useQuery({
     queryKey: ["home-categories"],
+    staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
@@ -248,7 +251,11 @@ function Index() {
                   {info?.image ? (
                     <>
                       <img
-                        src={info.image}
+                        {...photoSources(
+                          info.image,
+                          [300, 600],
+                          "(min-width: 1152px) 270px, (min-width: 640px) 25vw, 50vw",
+                        )}
                         alt=""
                         loading="lazy"
                         decoding="async"
