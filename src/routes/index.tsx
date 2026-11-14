@@ -111,25 +111,35 @@ function Index() {
     },
   });
 
-  // Antal annonser och en bild per kategori till kategorirutorna.
+  // Antal annonser och en bild per kategori till kategorirutorna. Databasen räknar
+  // (listing_category_summary, 20261114120000_performance.sql); innan den migrationen har körts
+  // räknas de 1000 senaste annonserna här i stället.
   const { data: categories, isPending: categoriesPending } = useQuery({
     queryKey: ["home-categories"],
     staleTime: PUBLIC_STALE_TIME,
     queryFn: async () => {
+      const cities = CITIES.map((c) => c.name);
+      const byCategory = new Map<string, { count: number; image: string | undefined }>();
+      // images innehåller sökvägar i Storage för egna annonser, inte färdiga adresser.
+      const summary = await supabase.rpc("listing_category_summary", { _cities: cities });
+      if (!summary.error) {
+        for (const row of summary.data ?? []) {
+          byCategory.set(row.category_slug, {
+            count: row.listing_count,
+            image: row.image ? photoUrl(row.image) : undefined,
+          });
+        }
+        return byCategory;
+      }
       const { data } = await supabase
         .from("listings")
         .select("category_slug, images")
         .eq("status", "published")
         .eq("listing_type", "rent")
-        .in(
-          "city",
-          CITIES.map((c) => c.name),
-        )
+        .in("city", cities)
         .order("published_at", { ascending: false })
         .limit(1000);
-      const byCategory = new Map<string, { count: number; image: string | undefined }>();
       for (const row of data ?? []) {
-        // images innehåller sökvägar i Storage för egna annonser, inte färdiga adresser.
         const first = row.images?.[0];
         const c = byCategory.get(row.category_slug) ?? {
           count: 0,

@@ -66,7 +66,8 @@
   with `scripts/perf/`). Public listing queries (home, search, listing, profile) stay fresh for
   `PUBLIC_STALE_TIME` (60 s, `src/lib/listing-cache.ts`), so code that creates, changes or hides
   listings must call `invalidateListings(queryClient)`. Listing photos go through
-  `photoSources()` in `src/lib/photos.ts` (right width and `srcset`).
+  `photoSources()` in `src/lib/photos.ts` (right width and `srcset`). The home page's
+  category counts come from `listing_category_summary`.
 - Making money (commission, payments through Stripe Connect, company plans): the plan is in
   `docs/monetization-plan.md`; nothing of it is built yet.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just

@@ -1118,6 +1118,10 @@ export type Database = {
         Args: { _end: string; _start: string };
         Returns: string[];
       };
+      listing_category_summary: {
+        Args: { _cities: string[] };
+        Returns: { category_slug: string; listing_count: number; image: string | null }[];
+      };
       start_conversation: {
         Args: { _body: string; _listing_id: string };
         Returns: string;

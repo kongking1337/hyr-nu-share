@@ -2037,3 +2037,66 @@ test("accounts can't be deleted while a handed-over item isn't marked as returne
   );
   await as(u.ulf, "SELECT public.delete_my_account()");
 });
+
+// --- Performance package (20261114120000_performance.sql) ----------------------------------
+
+test("category summary counts what visitors can see, with the newest photo", async () => {
+  await createUser("vera", "Vera Vik");
+  const cities = ["Stockholm", "Solna", "Nacka"];
+  const summary = () => as(null, "SELECT * FROM public.listing_category_summary($1)", [cities]);
+  const festBefore = (await summary()).find((r) => r.category_slug === "fest")?.listing_count ?? 0;
+  const add = async (title, status, city, images) =>
+    (
+      await as(
+        u.vera,
+        `INSERT INTO public.listings (owner_id, owner_name, title, description, category_slug, city,
+                                      price_day, status, images)
+         VALUES ($1, 'Vera', $2, 'Beskrivning', 'fest', $3, 100, $4, $5) RETURNING id`,
+        [u.vera.id, title, city, status, images],
+      )
+    )[0].id;
+  const newest = photo(u.vera);
+  await add("Partytält", "published", "Solna", [photo(u.vera)]);
+  await add("Ljudanläggning", "published", "Stockholm", [newest]);
+  await add("Discokula", "published", "Nacka", []);
+  await add("Pausad fotobox", "paused", "Stockholm", [photo(u.vera)]);
+  await add("Tält i Göteborg", "published", "Göteborg", [photo(u.vera)]);
+  const after = await summary();
+  const fest = after.find((r) => r.category_slug === "fest");
+  // The paused listing and the one outside the area don't count, and the newest listing without
+  // photos is skipped when choosing the photo.
+  assert.deepEqual([fest.listing_count - festBefore, fest.image], [3, newest]);
+
+  // The same numbers as counting the listings themselves (what the home page did before).
+  const rows = await as(
+    null,
+    `SELECT category_slug, count(*)::int AS n FROM public.listings
+      WHERE status = 'published' AND listing_type = 'rent' AND city = ANY ($1)
+      GROUP BY category_slug ORDER BY category_slug`,
+    [cities],
+  );
+  assert.deepEqual(
+    after
+      .map((r) => ({ category_slug: r.category_slug, n: r.listing_count }))
+      .sort((a, b) => a.category_slug.localeCompare(b.category_slug)),
+    rows,
+  );
+});
+
+test("the unread count matches the inbox, and empty conversations don't count", async () => {
+  const unreadInInbox = async (who) => (await inbox(who)).filter((c) => c.unread).length;
+  const count = async (who) =>
+    (await as(who, "SELECT public.unread_conversation_count() AS n"))[0].n;
+  for (const who of [u.alice, u.bob, u.mallory, u.admin]) {
+    assert.equal(await count(who), await unreadInInbox(who));
+  }
+  const before = await count(u.alice);
+  const listing = await createListing(u.alice, "Stege");
+  await platform(
+    "INSERT INTO public.conversations (listing_id, renter_id, owner_id) VALUES ($1, $2, $3)",
+    [listing, u.mallory.id, u.alice.id],
+  );
+  assert.equal(await count(u.alice), before);
+  assert.equal(await count(u.alice), await unreadInInbox(u.alice));
+  await assert.rejects(as(null, "SELECT public.unread_conversation_count()"));
+});
