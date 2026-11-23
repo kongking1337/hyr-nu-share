@@ -3,10 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { CITIES, normalize } from "@/lib/geo";
 import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
 import { PLACEHOLDER_PHOTO, photoUrl } from "@/lib/photos";
-import { BRAND, internalProvider } from "@/lib/providers/internal";
+import { BRAND } from "@/lib/providers/internal";
 import type { UnifiedResult } from "@/lib/providers/types";
 import { SUBCATEGORIES, matchesAttrFilter, parseAttrFilter } from "./attributes";
-import { filterResults, sortResults } from "./filter-sort";
 import type { SearchParams } from "./params";
 import { resolveCenter, type Center } from "./useSearchResults";
 
@@ -83,23 +82,6 @@ function rowToResult(r: SearchRow): UnifiedResult {
 }
 
 /**
- * Den gamla sökningen (de 200 senaste annonserna, filtrerade här). Används bara tills
- * migrationen 20261123120000_search.sql har körts och search_listings finns.
- */
-async function legacySearch(params: SearchParams, center: Center): Promise<SearchPage> {
-  const results = await internalProvider.search({
-    text: params.q,
-    category: params.category === "all" ? null : params.category,
-    city: center.wholeRegion ? null : center.label,
-    ...(center.wholeRegion ? {} : { lat: center.lat, lng: center.lng, radiusKm: params.radius }),
-    startDate: params.from || null,
-    endDate: params.to || null,
-  });
-  const sorted = sortResults(filterResults(results, params, center), params, center);
-  return { results: sorted.slice(0, params.page * PAGE_SIZE), total: sorted.length };
-}
-
-/**
  * Sökresultaten för /sok och /hyra/…: databasen söker, sorterar och delar upp i sidor
  * (search_listings). Loadern hämtar dem redan på servern; sidan läser samma fråga.
  */
@@ -151,11 +133,7 @@ export const searchQuery = (params: SearchParams, center: Center) => {
         _limit: withAttrs ? ATTR_CANDIDATES : wanted,
         _with_description: withAttrs,
       });
-      if (error) {
-        // PGRST202: funktionen finns inte än (migrationen har inte körts).
-        if (error.code === "PGRST202") return legacySearch(params, center);
-        throw error;
-      }
+      if (error) throw error;
       const rows = (data ?? []) as SearchRow[];
       const results = rows.map(rowToResult);
       if (!withAttrs) return { results, total: rows[0]?.total_count ?? 0 };

@@ -111,18 +111,8 @@ function BookingsPage() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("my_bookings", { _limit: BOOKINGS_SHOWN });
-      if (!error) return data ?? [];
-      // PGRST202: databasen har den gamla my_bookings (utan _limit och counterpart_id), tills
-      // migrationen 20261123130000_my_bookings.sql har körts. Då hämtas motparternas id separat.
-      if (error.code !== "PGRST202") throw error;
-      const old = await supabase.rpc("my_bookings");
-      if (old.error) throw old.error;
-      const parties = await supabase.from("bookings").select("id, owner_id, renter_id");
-      if (parties.error) throw parties.error;
-      const other = new Map(
-        (parties.data ?? []).map((r) => [r.id, r.owner_id === user!.id ? r.renter_id : r.owner_id]),
-      );
-      return (old.data ?? []).map((b) => ({ ...b, counterpart_id: other.get(b.id) ?? null }));
+      if (error) throw error;
+      return data ?? [];
     },
   });
 

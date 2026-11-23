@@ -446,10 +446,11 @@ direkt).
 **Status 2026-11-23:**
 
 - **Steg 2** är kört i databasen; `listing_category_summary` svarar.
-- **Steg 3–5: koden är klar**, med tre nya migrationer som ska köras i SQL Editor:
-  `20261123120000_search.sql`, `20261123130000_my_bookings.sql` och
-  `20261123140000_rls_fast_policies.sql`. Tills de har körts använder sökningen och
-  bokningssidan de gamla frågorna.
+- **Steg 3–5: koden är klar.** De tre migrationerna `20261123120000_search.sql`,
+  `20261123130000_my_bookings.sql` och `20261123140000_rls_fast_policies.sql` kördes i
+  databasen samma kväll. Alla 19 migrationer är nu registrerade som körda, så nya kan läggas in
+  med databasverktyget när de har nått `main`. Reservvägarna till den gamla sökningen och
+  bokningsfrågan är borttagna.
 - **Mätt med `measure.mjs`, före (steg 1–2) och efter (steg 3–5), mobil 4G, tom cache.**
   Sökningen gick här via den gamla frågan, eftersom migrationen inte var körd.
 
