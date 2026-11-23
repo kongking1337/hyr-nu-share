@@ -13,6 +13,46 @@
 --
 -- Safe to run more than once. Tested locally with supabase/tests/permissions.test.mjs
 
+-- Stop before changing anything if a policy is missing (for example removed in the dashboard):
+-- this file would otherwise bring it back.
+DO $$
+DECLARE
+  missing text;
+BEGIN
+  SELECT string_agg(e.tbl || '.' || e.pol, ', ') INTO missing
+    FROM (VALUES
+    ('bookings', 'bookings_party_read'),
+    ('bookings', 'bookings_party_update'),
+    ('bookings', 'bookings_renter_insert'),
+    ('companies', 'companies_owner_write'),
+    ('company_admins', 'company_admins_owner_write'),
+    ('company_admins', 'company_admins_read'),
+    ('conversations', 'conversations_party_read'),
+    ('favorites', 'favorites_self'),
+    ('listing_blocked_dates', 'blocked_dates_owner'),
+    ('listing_offer_settings', 'offer_settings_owner_all'),
+    ('listings', 'listings_owner_read'),
+    ('listings', 'listings_owner_write'),
+    ('messages', 'messages_party_insert'),
+    ('messages', 'messages_party_read'),
+    ('offers', 'offers_party_read'),
+    ('profiles', 'profiles_admin_read'),
+    ('profiles', 'profiles_self_read'),
+    ('profiles', 'profiles_self_update'),
+    ('reports', 'reports_insert'),
+    ('reports', 'reports_self_read'),
+    ('reviews', 'reviews_own_read'),
+    ('saved_searches', 'saved_searches_self'),
+    ('user_blocks', 'user_blocks_own'),
+    ('user_roles', 'roles_self_read')
+    ) AS e(tbl, pol)
+   WHERE NOT EXISTS (SELECT 1 FROM pg_policies p
+                      WHERE p.schemaname = 'public' AND p.tablename = e.tbl AND p.policyname = e.pol);
+  IF missing IS NOT NULL THEN
+    RAISE EXCEPTION 'Ingenting ändrades. De här reglerna finns inte i databasen: %', missing;
+  END IF;
+END $$;
+
 -- bookings ---------------------------------------------------------------------------------------
 
 DROP POLICY IF EXISTS "bookings_party_read" ON public.bookings;
