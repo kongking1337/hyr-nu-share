@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, dehydrate, hydrate, type DehydratedState } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
@@ -21,7 +21,15 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // Koden och datan för nästa sida börjar hämtas när man pekar på eller trycker på en länk.
+    defaultPreload: "intent",
+    // React Query avgör om datan är färsk; routern kör alltid rutternas loaders.
     defaultPreloadStaleTime: 0,
+    // Det som loaders hämtade på servern följer med sidan, så att webbläsaren inte hämtar det igen.
+    dehydrate: () => ({ queryClientState: dehydrate(queryClient) as never }),
+    hydrate: (dehydrated: { queryClientState: DehydratedState }) => {
+      hydrate(queryClient, dehydrated.queryClientState);
+    },
   });
 
   return router;

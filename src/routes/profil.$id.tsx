@@ -21,11 +21,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
-import { rowToUnified } from "@/lib/providers/internal";
+import { profileListingsQuery, publicProfileQuery, publicReviewsQuery } from "@/lib/public-queries";
 import { DEFAULTS } from "@/lib/search/params";
 
 export const Route = createFileRoute("/profil/$id")({
+  // Profilen, omdömena och annonserna hämtas samtidigt, redan på servern.
+  loader: async ({ params, context: { queryClient } }) => {
+    if (!UUID.test(params.id)) return;
+    await Promise.all([
+      queryClient.prefetchQuery(publicProfileQuery(params.id)),
+      queryClient.prefetchQuery(publicReviewsQuery(params.id)),
+      queryClient.prefetchQuery(profileListingsQuery(params.id)),
+    ]);
+  },
   head: () => ({
     meta: [{ title: "Profil – Hyrkoll" }, { name: "robots", content: "noindex" }],
   }),
@@ -36,7 +44,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** "november 2026" */
 const monthYear = (iso: string) =>
-  new Date(iso).toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
+  new Date(iso).toLocaleDateString("sv-SE", {
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/Stockholm",
+  });
 
 function responseLabel(hours: number): string {
   if (hours < 1) return "Svarar oftast inom en timme";
@@ -59,43 +71,15 @@ function ProfilePage() {
     isLoading,
     isError,
     refetch,
-  } = useQuery({
-    queryKey: ["public-profile", id],
-    enabled: validId,
-    staleTime: PUBLIC_STALE_TIME,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("public_profile", { _user_id: id });
-      if (error) throw error;
-      return data?.[0] ?? null;
-    },
-  });
-
+  } = useQuery({ ...publicProfileQuery(id), enabled: validId });
+  // Omdömen och annonser hämtas samtidigt som profilen (id:t är redan känt), inte efter den.
   const { data: reviews = [], isPending: reviewsPending } = useQuery({
-    queryKey: ["public-reviews", id],
-    enabled: !!profile,
-    staleTime: PUBLIC_STALE_TIME,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("public_reviews", { _user_id: id });
-      if (error) throw error;
-      return data ?? [];
-    },
+    ...publicReviewsQuery(id),
+    enabled: validId,
   });
-
   const { data: listings = [], isPending: listingsPending } = useQuery({
-    queryKey: ["profile-listings", id],
-    enabled: !!profile,
-    staleTime: PUBLIC_STALE_TIME,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("owner_id", id)
-        .eq("status", "published")
-        .eq("listing_type", "rent")
-        .order("published_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map(rowToUnified);
-    },
+    ...profileListingsQuery(id),
+    enabled: validId,
   });
 
   async function deleteReview(reviewId: string) {

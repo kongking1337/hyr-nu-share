@@ -16,15 +16,13 @@ import {
 import { useState } from "react";
 import { EmptyState } from "@/components/layout";
 import { ListingRow } from "@/components/ListingRow";
-import { supabase } from "@/integrations/supabase/client";
-import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
-import { photoSources, photoUrl } from "@/lib/photos";
-import { rowToUnified } from "@/lib/providers/internal";
+import { photoSources } from "@/lib/photos";
+import { homeCategoriesQuery, homeLatestQuery } from "@/lib/public-queries";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
 import { LOCATIONS } from "@/lib/search/useSearchResults";
 import { DEFAULTS, cleanParams } from "@/lib/search/params";
-import { CITIES, REGION } from "@/lib/geo";
+import { REGION } from "@/lib/geo";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/")({
@@ -43,6 +41,13 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
+  // Senast upplagt och kategorierna hämtas redan på servern och följer med sidan. Misslyckas det
+  // visar sidan felet eller hämtar igen i webbläsaren i stället för att hela sidan går sönder.
+  loader: ({ context: { queryClient } }) =>
+    Promise.all([
+      queryClient.prefetchQuery(homeLatestQuery()),
+      queryClient.prefetchQuery(homeCategoriesQuery()),
+    ]),
   component: Index,
 });
 
@@ -91,66 +96,9 @@ function Index() {
     data: latest,
     isPending: latestPending,
     isError: latestFailed,
-  } = useQuery({
-    queryKey: ["home-latest"],
-    staleTime: PUBLIC_STALE_TIME,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("status", "published")
-        .eq("listing_type", "rent")
-        .in(
-          "city",
-          CITIES.map((c) => c.name),
-        )
-        .order("published_at", { ascending: false })
-        .limit(8);
-      if (error) throw error;
-      return (data ?? []).map(rowToUnified);
-    },
-  });
-
-  // Antal annonser och en bild per kategori till kategorirutorna. Databasen räknar
-  // (listing_category_summary, 20261114120000_performance.sql); innan den migrationen har körts
-  // räknas de 1000 senaste annonserna här i stället.
-  const { data: categories, isPending: categoriesPending } = useQuery({
-    queryKey: ["home-categories"],
-    staleTime: PUBLIC_STALE_TIME,
-    queryFn: async () => {
-      const cities = CITIES.map((c) => c.name);
-      const byCategory = new Map<string, { count: number; image: string | undefined }>();
-      // images innehåller sökvägar i Storage för egna annonser, inte färdiga adresser.
-      const summary = await supabase.rpc("listing_category_summary", { _cities: cities });
-      if (!summary.error) {
-        for (const row of summary.data ?? []) {
-          byCategory.set(row.category_slug, {
-            count: row.listing_count,
-            image: row.image ? photoUrl(row.image) : undefined,
-          });
-        }
-        return byCategory;
-      }
-      const { data } = await supabase
-        .from("listings")
-        .select("category_slug, images")
-        .eq("status", "published")
-        .eq("listing_type", "rent")
-        .in("city", cities)
-        .order("published_at", { ascending: false })
-        .limit(1000);
-      for (const row of data ?? []) {
-        const first = row.images?.[0];
-        const c = byCategory.get(row.category_slug) ?? {
-          count: 0,
-          image: first ? photoUrl(first) : undefined,
-        };
-        c.count += 1;
-        byCategory.set(row.category_slug, c);
-      }
-      return byCategory;
-    },
-  });
+  } = useQuery(homeLatestQuery());
+  // Antal annonser och en bild per kategori till kategorirutorna.
+  const { data: categories, isPending: categoriesPending } = useQuery(homeCategoriesQuery());
 
   function search(next: { q: string; location?: string; category?: string }) {
     const intent = interpretQuery(next.q);
@@ -249,7 +197,7 @@ function Index() {
         </h2>
         <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {ACTIVE_CATEGORIES.map(({ slug, name }) => {
-            const info = categories?.get(slug);
+            const info = categories?.[slug];
             const Icon = CATEGORY_ICONS[slug] ?? Package;
             return (
               <li key={slug}>

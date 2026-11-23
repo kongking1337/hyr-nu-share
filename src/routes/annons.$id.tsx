@@ -12,11 +12,10 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { ReportDialog } from "@/components/ReportDialog";
 import { Stars } from "@/components/Stars";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CANCELLATION_POLICIES } from "@/lib/bookings";
-import { PUBLIC_STALE_TIME } from "@/lib/listing-cache";
-import { rowToUnified } from "@/lib/providers/internal";
+import { sizedPhotoUrl } from "@/lib/photos";
+import { listingQuery, publicProfileQuery } from "@/lib/public-queries";
 import { kr, priceLabel } from "@/lib/pricing";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { DEFAULTS } from "@/lib/search/params";
@@ -30,14 +29,41 @@ const BookingRequest = lazy(() =>
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/annons/$id")({
-  head: () => ({
-    meta: [
-      { title: "Annons – Hyrkoll" },
-      { name: "description", content: "Se bilder, pris, plats och beskrivning på Hyrkoll." },
-      { property: "og:title", content: "Annons – Hyrkoll" },
-      { property: "og:description", content: "Hyr och hyr ut saker i Stockholm." },
-    ],
-  }),
+  // Annonsen (och uthyrarens betyg) hämtas redan på servern: sidan kommer färdig med innehållet,
+  // utan grått skelett, och sökmotorer och delade länkar får annonsens titel, text och bild.
+  loader: async ({ params, context: { queryClient } }) => {
+    if (!UUID.test(params.id)) return { listing: null };
+    await queryClient.prefetchQuery(listingQuery(params.id));
+    const listing = queryClient.getQueryData(listingQuery(params.id).queryKey) ?? null;
+    if (listing?.ownerId && !listing.example) {
+      await queryClient.prefetchQuery(publicProfileQuery(listing.ownerId));
+    }
+    return {
+      listing: listing && {
+        title: listing.title,
+        description: listing.description,
+        city: listing.city,
+        image: listing.images[0],
+      },
+    };
+  },
+  head: ({ loaderData }) => {
+    const l = loaderData?.listing;
+    const title = l ? `${l.title} – hyr i ${l.city} | Hyrkoll` : "Annons – Hyrkoll";
+    const description = l
+      ? l.description.replace(/\s+/g, " ").trim().slice(0, 155)
+      : "Se bilder, pris, plats och beskrivning på Hyrkoll.";
+    const image = l?.image && /^https?:/.test(l.image) ? sizedPhotoUrl(l.image, 1200) : null;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        ...(image ? [{ property: "og:image", content: image }] : []),
+      ],
+    };
+  },
   component: ListingPage,
 });
 
@@ -51,33 +77,11 @@ function ListingPage() {
     isLoading,
     isError,
     refetch,
-  } = useQuery({
-    queryKey: ["listing", id],
-    enabled: validId,
-    staleTime: PUBLIC_STALE_TIME,
-    queryFn: async () => {
-      const { data: row, error } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return row ? rowToUnified(row) : null;
-    },
-  });
+  } = useQuery({ ...listingQuery(id), enabled: validId });
 
   // Uthyrarens betyg kommer från den offentliga profilen (annonsens egna betygsfält används inte).
   const ownerId = listing && !listing.example ? listing.ownerId : null;
-  const { data: owner } = useQuery({
-    queryKey: ["public-profile", ownerId],
-    enabled: !!ownerId,
-    staleTime: PUBLIC_STALE_TIME,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("public_profile", { _user_id: ownerId! });
-      if (error) throw error;
-      return data?.[0] ?? null;
-    },
-  });
+  const { data: owner } = useQuery({ ...publicProfileQuery(ownerId ?? ""), enabled: !!ownerId });
 
   if (isLoading) return <ListingSkeleton />;
   if (isError) {
@@ -181,6 +185,7 @@ function ListingPage() {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
+                    timeZone: "Europe/Stockholm",
                   })}
                 </span>
               )}
