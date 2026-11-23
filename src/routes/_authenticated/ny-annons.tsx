@@ -21,7 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { EmptyState, LoadingRows, Page, PageHeader } from "@/components/layout";
 import { invalidateListings } from "@/lib/listing-cache";
-import { PHOTO_BUCKET, removeUnusedPhotos } from "@/lib/photos";
+import { PHOTO_BUCKET, removeUnusedPhotos, thumbPath } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
 import { ACTIVE_CATEGORIES } from "@/lib/categories";
 import { CITIES } from "@/lib/geo";
@@ -122,7 +122,9 @@ function ListingForm() {
         return true;
       // Bilder som laddats upp till en annons som aldrig sparades tas bort.
       const unsaved = [...uploadedNow.current];
-      if (unsaved.length) void supabase.storage.from(PHOTO_BUCKET).remove(unsaved);
+      if (unsaved.length) {
+        void supabase.storage.from(PHOTO_BUCKET).remove(unsaved.flatMap((p) => [p, thumbPath(p)]));
+      }
       return false;
     },
     enableBeforeUnload: () => dirty && !saved.current,
@@ -349,7 +351,7 @@ function ListingForm() {
                 onUploaded={(path) => uploadedNow.current.add(path)}
                 onRemove={(path) => {
                   if (uploadedNow.current.has(path)) {
-                    void supabase.storage.from(PHOTO_BUCKET).remove([path]);
+                    void supabase.storage.from(PHOTO_BUCKET).remove([path, thumbPath(path)]);
                   } else {
                     removedSaved.current.push(path);
                   }

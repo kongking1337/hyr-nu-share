@@ -63,11 +63,24 @@
   photos can't be deleted during a rental and 14 days after it. Security headers (no
   framing etc.) are set in `src/server.ts`.
 - Performance (review and step plan: `docs/performance-review.md`; measure before and after
-  with `scripts/perf/`). Public listing queries (home, search, listing, profile) stay fresh for
-  `PUBLIC_STALE_TIME` (60 s, `src/lib/listing-cache.ts`), so code that creates, changes or hides
-  listings must call `invalidateListings(queryClient)`. Listing photos go through
-  `photoSources()` in `src/lib/photos.ts` (right width and `srcset`). The home page's
-  category counts come from `listing_category_summary`.
+  with `scripts/perf/`).
+  - Public pages (home, search/category, listing, profile) prefetch their data in route
+    `loader`s during server rendering. The router dehydrates the React Query cache into the HTML
+    (`src/router.tsx`). Loaders and components share the query definitions in
+    `src/lib/public-queries.ts` and `src/lib/search/search-listings.ts`.
+  - Anything rendered on the server must print the same in the browser (dates use
+    `timeZone: "Europe/Stockholm"`).
+  - Public listing queries stay fresh for `PUBLIC_STALE_TIME` (60 s,
+    `src/lib/listing-cache.ts`). Code that creates, changes or hides listings must call
+    `invalidateListings(queryClient)`.
+  - Search runs in the database: `search_listings` (text with a pg_trgm index, filters,
+    sorting, paging). Attribute filters run in the browser over up to 500 hits.
+  - The home page's category counts come from `listing_category_summary`.
+  - Photos go through `photoSources()` in `src/lib/photos.ts` (right width and `srcset`).
+    Uploads also store a 480 px copy (`thumbPath`).
+  - Login state comes from one `AuthProvider` (`src/hooks/useAuth.tsx`).
+  - RLS policies use `(select auth.uid())` and `(select private.is_admin())`; keep that form
+    in new policies.
 - Making money (commission, payments through Stripe Connect, company plans): the plan is in
   `docs/monetization-plan.md`; nothing of it is built yet.
 - The project no longer uses Lovable. `@lovable.dev/vite-tanstack-config` is just

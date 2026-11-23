@@ -445,6 +445,27 @@ direkt).
   Tills dess använder startsidan reservvägen (de 1000 senaste annonserna), och webbläsarens
   konsol visar ett 404-fel för `listing_category_summary`.
 
+**Status 2026-11-23:**
+
+- **Steg 2** är kört i databasen; `listing_category_summary` svarar.
+- **Steg 3–5: koden är klar**, med tre nya migrationer som ska köras i SQL Editor:
+  `20261123120000_search.sql`, `20261123130000_my_bookings.sql` och
+  `20261123140000_rls_fast_policies.sql`. Tills de har körts använder sökningen och
+  bokningssidan de gamla frågorna.
+- **Mätt med `measure.mjs`, före (steg 1–2) och efter (steg 3–5), mobil 4G, tom cache.**
+  Sökningen gick här via den gamla frågan, eftersom migrationen inte var körd.
+
+  | Sida            | Innehåll syns före | efter | LCP före   | efter      | CLS före | efter |
+  | --------------- | ------------------ | ----- | ---------- | ---------- | -------- | ----- |
+  | `/`             | 3,7 s              | 1,4 s | (rubriken) | (rubriken) | 0        | 0     |
+  | `/sok`          | 6,1 s              | 1,2 s | 6,9 s      | 2,0 s      | 0        | 0     |
+  | `/hyra/verktyg` | 5,6 s              | 1,8 s | 6,0 s      | 2,2 s      | 0        | 0     |
+  | `/annons/…`     | 5,5 s              | 1,3 s | 6,1 s      | 1,6 s      | 0,128    | 0     |
+
+  Webbläsaren gör inga anrop till Supabase när sidorna laddas, eftersom datan kommer med HTML:en.
+  Sökfiltrens dragspel började på höjden 0 i serverns HTML och hoppade ut; det är rättat i
+  `src/components/ui/accordion.tsx`.
+
 Ordning: steg 1 och 2 är oberoende och kan göras i valfri ordning. Steg 3 före 4, så att
 mönstret för datahämtning på servern är på plats när sökningen byggs om. Steg 4 bör vara klart
 innan någon kategori har runt 200 annonser. Steg 5 bör vara klart innan riktiga användare bjuds in.

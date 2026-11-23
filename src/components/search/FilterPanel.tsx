@@ -107,18 +107,21 @@ const TRIGGER =
 
 /**
  * Prisfält: varje ändring blir en ny sökning i databasen, så värdet skickas först när man slutat
- * skriva en halv sekund, inte vid varje tangent.
+ * skriva en halv sekund (eller lämnar fältet), inte vid varje tangent.
  */
 function PriceInput({
   id,
   value,
   placeholder,
   onCommit,
+  immediate = false,
 }: {
   id: string;
   value: number;
   placeholder: string;
   onCommit: (value: number) => void;
+  /** Mobilens filterark ändrar bara ett utkast; där skickas värdet direkt. */
+  immediate?: boolean;
 }) {
   const [text, setText] = useState(value ? String(value) : "");
   const commit = useRef(onCommit);
@@ -128,9 +131,13 @@ function PriceInput({
   useEffect(() => {
     const next = Number(text) || 0;
     if (next === value) return;
+    if (immediate) {
+      commit.current(next);
+      return;
+    }
     const t = setTimeout(() => commit.current(next), 500);
     return () => clearTimeout(t);
-  }, [text, value]);
+  }, [text, value, immediate]);
 
   return (
     <Input
@@ -139,12 +146,26 @@ function PriceInput({
       inputMode="numeric"
       value={text}
       onChange={(e) => setText(e.target.value)}
+      // Lämnar man fältet skickas värdet direkt, utan att vänta.
+      onBlur={() => {
+        const next = Number(text) || 0;
+        if (next !== value) commit.current(next);
+      }}
       placeholder={placeholder}
     />
   );
 }
 
-export function FilterPanel({ params, patch }: { params: SearchParams; patch: Patch }) {
+export function FilterPanel({
+  params,
+  patch,
+  immediate = false,
+}: {
+  params: SearchParams;
+  patch: Patch;
+  /** Prisfälten skickar direkt (mobilens filterark, som bara ändrar ett utkast). */
+  immediate?: boolean;
+}) {
   // Panelen kan finnas två gånger på sidan (sidokolumnen och mobilens filterpanel).
   const uid = useId();
   const subs = SUBCATEGORIES[params.category] ?? [];
@@ -338,6 +359,7 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
                 id={`${uid}-price-min`}
                 value={params.priceMin}
                 onCommit={(v) => patch({ priceMin: v })}
+                immediate={immediate}
                 placeholder="0"
               />
             </Row>
@@ -346,6 +368,7 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
                 id={`${uid}-price-max`}
                 value={params.priceMax}
                 onCommit={(v) => patch({ priceMax: v })}
+                immediate={immediate}
                 placeholder="Valfritt"
               />
             </Row>

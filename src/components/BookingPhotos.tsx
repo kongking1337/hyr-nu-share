@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { PhotoUploader } from "@/components/PhotoUploader";
 import { supabase } from "@/integrations/supabase/client";
 import { userMessage } from "@/lib/db-errors";
-import { PHOTO_BUCKET, photoUrl } from "@/lib/photos";
+import { PHOTO_BUCKET, photoUrl, thumbPath } from "@/lib/photos";
 
 type Stage = "pickup" | "return";
 
@@ -105,7 +105,9 @@ function StagePhotos({
       setValue(null);
       return;
     }
-    if (removed.length) void supabase.storage.from(PHOTO_BUCKET).remove(removed);
+    if (removed.length) {
+      void supabase.storage.from(PHOTO_BUCKET).remove(removed.flatMap((p) => [p, thumbPath(p)]));
+    }
     onSaved();
   }
 

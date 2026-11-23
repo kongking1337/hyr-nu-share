@@ -2189,3 +2189,94 @@ test("my bookings name the other person's id, and can be limited", async () => {
   assert.deepEqual(one, all.slice(0, 1));
   await assert.rejects(as(null, "SELECT * FROM public.my_bookings()"));
 });
+
+test("search: first matching subcategory, only rentals in the area, safe words, owner type", async () => {
+  const add = (title, category, city, extra = {}) =>
+    as(
+      u.wilma,
+      `INSERT INTO public.listings (owner_id, owner_name, title, description, category_slug, city,
+                                    price_day, owner_type, min_days, status, images)
+       VALUES ($1, 'Wilma', $2, 'Beskrivning', $3, $4, 100, 'private', $5, 'published', '{}')
+       RETURNING id`,
+      [u.wilma.id, title, category, city, extra.minDays ?? 1],
+    ).then((r) => r[0].id);
+  const unbraked = await add("Obromsad yakvagn", "slapvagn", "Stockholm");
+  const braked = await add("Bromsad yakvagn", "slapvagn", "Stockholm", { minDays: 3 });
+  await add("Yakvagn i Göteborg", "slapvagn", "Göteborg");
+  await platform(
+    "INSERT INTO public.listings (owner_id, owner_name, title, description, category_slug, city, listing_type, price, status) VALUES ($1, 'Wilma', 'Yakvagn säljes', 'B', 'slapvagn', 'Stockholm', 'sale', 500, 'published')",
+    [u.wilma.id],
+  );
+  const find = (args) =>
+    as(
+      null,
+      `SELECT id FROM public.search_listings(_cities => $1, _words => $2, _category => $3,
+         _sub_words => $4, _sub_exclude_words => $5, _owner_type => $6, _start => $7, _end => $8,
+         _limit => $9, _offset => $10)`,
+      [
+        ["Stockholm"],
+        args.words ?? ["yakva"],
+        args.category ?? null,
+        args.sub ?? [],
+        args.exclude ?? [],
+        args.owner ?? null,
+        args.start ?? null,
+        args.end ?? null,
+        args.limit ?? 24,
+        args.offset ?? 0,
+      ],
+    ).then((rows) => rows.map((r) => r.id).sort());
+
+  // Only rentals in the given municipalities: not the sale listing, not Göteborg.
+  assert.deepEqual(await find({}), [unbraked, braked].sort());
+  // "Bromsad" doesn't take "Obromsad", which matches the subcategory before it.
+  const obromsad = ["obromsad", "750"];
+  assert.deepEqual(
+    await find({ category: "slapvagn", sub: ["bromsad", "1300", "1500"], exclude: obromsad }),
+    [braked],
+  );
+  assert.deepEqual(await find({ category: "slapvagn", sub: obromsad }), [unbraked]);
+  // A listing that must be rented at least 3 days isn't free for a 1-day rental.
+  assert.deepEqual(await find({ start: day(30), end: day(30) }), [unbraked]);
+  // Owner type.
+  assert.deepEqual(await find({ owner: "company" }), []);
+  // Regex characters are dropped: "ya.*kva" is the word "yakva"; odd input doesn't fail.
+  assert.deepEqual(await find({ words: ["ya.*kva"] }), [unbraked, braked].sort());
+  await find({ words: ["((", "[a-", "\\\\", "|"] });
+  // Silly limits are clamped instead of failing.
+  await find({ limit: 1_000_000, offset: -5 });
+});
+
+test("the site calls search_listings with argument names the function has", async () => {
+  const source = readFileSync(
+    new URL("../../src/lib/search/search-listings.ts", import.meta.url),
+    "utf8",
+  );
+  const call = source.slice(source.indexOf('rpc("search_listings"'));
+  const used = [...call.slice(0, call.indexOf("});")).matchAll(/(_[a-z_]+):/g)].map((m) => m[1]);
+  const [{ args }] = await platform(
+    "SELECT pg_get_function_arguments('public.search_listings'::regproc) AS args",
+  );
+  assert.ok(used.length >= 10);
+  for (const name of used) assert.ok(args.includes(`${name} `), `${name} saknas i search_listings`);
+});
+
+test("no policy calls auth.uid() or is_admin() once per row", async () => {
+  const rows = await platform(
+    "SELECT policyname, coalesce(qual, '') || ' ' || coalesce(with_check, '') AS expr FROM pg_policies WHERE schemaname = 'public'",
+  );
+  const bare = rows.filter((r) => {
+    const rest = r.expr
+      .replaceAll("SELECT auth.uid() AS uid", "")
+      .replaceAll("SELECT private.is_admin() AS is_admin", "");
+    return /auth\.uid\(\)|is_admin\(\)/.test(rest);
+  });
+  assert.deepEqual(
+    bare.map((r) => r.policyname),
+    [],
+  );
+});
+
+test("my bookings reject a negative limit", async () => {
+  await assert.rejects(as(u.olle, "SELECT id FROM public.my_bookings(-1)"));
+});

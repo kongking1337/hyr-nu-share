@@ -46,12 +46,21 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  // På servern (sidor som renderas i Workern) finns ingen inloggning: loaders läser bara det som
+  // utloggade får se. Utan inloggningsdelen delar samtidiga förfrågningar ingen sessionskö.
+  if (typeof window === "undefined") {
+    return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      global: { fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY) },
+      accessToken: async () => null,
+    });
+  }
+
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
     },
     auth: {
-      storage: typeof window !== "undefined" ? localStorage : undefined,
+      storage: localStorage,
       persistSession: true,
       autoRefreshToken: true,
     },

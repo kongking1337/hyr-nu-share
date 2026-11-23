@@ -57,15 +57,20 @@ const UPLOADED = `/storage/v1/object/public/${PHOTO_BUCKET}/`;
  */
 export function photoSources(url: string, widths: number[], sizes: string) {
   if (url.includes(UPLOADED) && /\.(webp|jpg)$/.test(url)) {
+    const original = (img: HTMLImageElement) => {
+      if (!img.srcset) return;
+      img.removeAttribute("srcset");
+      img.src = url;
+    };
     return {
       src: url,
       srcSet: `${thumbPath(url)} ${THUMB_SIDE}w, ${url} ${MAX_SIDE}w`,
       sizes,
-      onError: (e: { currentTarget: HTMLImageElement }) => {
-        const img = e.currentTarget;
-        if (!img.srcset) return;
-        img.removeAttribute("srcset");
-        img.src = url;
+      onError: (e: { currentTarget: HTMLImageElement }) => original(e.currentTarget),
+      // Bilder i serverns HTML kan ha misslyckats innan sidan startade i webbläsaren; det
+      // felet når aldrig onError, så kontrollera när bilden kopplas in.
+      ref: (img: HTMLImageElement | null) => {
+        if (img?.complete && img.naturalWidth === 0) original(img);
       },
     };
   }
@@ -128,6 +133,7 @@ async function render(image: Decoded, maxSide: number): Promise<ShrunkPhoto> {
   canvas.height = Math.round(image.height * scale);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new PhotoError("Bilden kunde inte bearbetas.");
+  ctx.imageSmoothingQuality = "high"; // den lilla kopian blir annars taggig
   ctx.fillStyle = "#fff"; // genomskinliga PNG-bilder får vit bakgrund i stället för svart
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image.source, 0, 0, canvas.width, canvas.height);
@@ -197,9 +203,13 @@ export async function removeUnusedPhotos(userId: string, candidates: string[]): 
   }
 }
 
-/** Tar bort alla användarens bilder (när kontot raderas). */
+/** Tar bort alla användarens bilder (när kontot raderas), 1000 filer i taget. */
 export async function removeAllMyPhotos(userId: string): Promise<void> {
-  const { data } = await supabase.storage.from(PHOTO_BUCKET).list(userId, { limit: 1000 });
-  const paths = (data ?? []).map((f) => `${userId}/${f.name}`);
-  if (paths.length) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
+  for (;;) {
+    const { data } = await supabase.storage.from(PHOTO_BUCKET).list(userId, { limit: 1000 });
+    const paths = (data ?? []).map((f) => `${userId}/${f.name}`);
+    if (!paths.length) return;
+    const { error } = await supabase.storage.from(PHOTO_BUCKET).remove(paths);
+    if (error || paths.length < 1000) return;
+  }
 }

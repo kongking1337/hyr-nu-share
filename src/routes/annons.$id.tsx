@@ -61,6 +61,8 @@ export const Route = createFileRoute("/annons/$id")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         ...(image ? [{ property: "og:image", content: image }] : []),
+        // Borttagna och pausade annonser ska inte hamna i sökmotorer.
+        ...(l ? [] : [{ name: "robots", content: "noindex" }]),
       ],
     };
   },
@@ -75,6 +77,7 @@ function ListingPage() {
   const {
     data: listing,
     isLoading,
+    isFetching,
     isError,
     refetch,
   } = useQuery({ ...listingQuery(id), enabled: validId });
@@ -83,7 +86,9 @@ function ListingPage() {
   const ownerId = listing && !listing.example ? listing.ownerId : null;
   const { data: owner } = useQuery({ ...publicProfileQuery(ownerId ?? ""), enabled: !!ownerId });
 
-  if (isLoading) return <ListingSkeleton />;
+  // Servern läser som utloggad: en inloggad ägares pausade annons kommer som null därifrån och
+  // hämtas om här, så visa skelettet i stället för "finns inte" medan det pågår.
+  if (isLoading || (listing === null && user && isFetching)) return <ListingSkeleton />;
   if (isError) {
     return (
       <Page width="text">

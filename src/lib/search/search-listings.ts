@@ -108,7 +108,12 @@ export const searchQuery = (params: SearchParams, center: Center) => {
   const withAttrs = Object.keys(attrs).length > 0;
   const wanted = params.page * PAGE_SIZE;
   const category = params.category === "all" ? null : params.category;
-  const sub = category ? SUBCATEGORIES[category]?.find((s) => s.slug === params.sub) : undefined;
+  const subs = category ? (SUBCATEGORIES[category] ?? []) : [];
+  const subIndex = subs.findIndex((s) => s.slug === params.sub);
+  const sub = subIndex >= 0 ? subs[subIndex] : undefined;
+  // En annons hör till den första underkategori vars ord finns i texten (som förut), så
+  // "Obromsad" hamnar inte under "Bromsad": orden från underkategorierna före utesluts.
+  const excluded = subs.slice(0, Math.max(subIndex, 0)).flatMap((s) => s.words.map(normalize));
   const dates = params.from && params.to && params.to >= params.from;
   return queryOptions({
     queryKey: [
@@ -134,7 +139,7 @@ export const searchQuery = (params: SearchParams, center: Center) => {
         _cities: CITIES.map((c) => c.name),
         _words: searchWords(params.q),
         ...(category ? { _category: category } : {}),
-        ...(sub ? { _sub_words: sub.words.map(normalize) } : {}),
+        ...(sub ? { _sub_words: sub.words.map(normalize), _sub_exclude_words: excluded } : {}),
         ...(center.wholeRegion
           ? {}
           : { _lat: center.lat, _lng: center.lng, _radius_km: params.radius }),

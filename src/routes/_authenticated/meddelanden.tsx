@@ -156,6 +156,8 @@ function MessagesPage() {
   async function showOlder() {
     if (!active) return;
     try {
+      // En pågående hämtning av nya meddelanden skulle annars skriva tillbaka den korta tråden.
+      await queryClient.cancelQueries({ queryKey: ["messages", active] });
       queryClient.setQueryData(
         ["messages", active],
         await fetchThread(active, undefined, { all: true }),
@@ -167,13 +169,15 @@ function MessagesPage() {
 
   // Öppnad konversation = läst. Uppdatera listan och räknaren i menyn.
   const lastMessageId = messages?.at(-1)?.id;
+  // Antalet också: ett meddelande som sparats lite sent hamnar mitt i tråden, inte sist.
+  const readKey = lastMessageId ? `${messages?.length}:${lastMessageId}` : null;
   useEffect(() => {
-    if (!active || !lastMessageId) return;
+    if (!active || !readKey) return;
     void supabase.rpc("mark_conversation_read", { _conversation_id: active }).then(() => {
       void queryClient.invalidateQueries({ queryKey: ["conversations"] });
       void queryClient.invalidateQueries({ queryKey: ["unread-count"] });
     });
-  }, [active, lastMessageId, queryClient]);
+  }, [active, readKey, queryClient]);
 
   // Rulla bara i tråden (inte hela sidan): till botten när en konversation öppnas, och när
   // ett nytt meddelande kommer om man redan läser längst ner.

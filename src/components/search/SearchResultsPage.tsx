@@ -73,7 +73,9 @@ export function SearchResultsPage({
   const center = useMemo(() => resolveCenter(params.location, myPos), [params.location, myPos]);
 
   // Databasen söker och delar upp i sidor; loadern har oftast redan hämtat det här på servern.
-  const { data, isPending, isError } = useQuery(searchQuery(params, center));
+  const { data, isPending, isError, isPlaceholderData } = useQuery(searchQuery(params, center));
+  // Nya filter: de förra resultaten visas (nedtonade) tills de nya har kommit.
+  const searching = isPending || isPlaceholderData;
   const visible = data?.results ?? [];
   const resultCount = data?.total ?? 0;
   const chips = activeChips(params).filter((c) => !pinned.includes(c.key as keyof SearchParams));
@@ -168,7 +170,7 @@ export function SearchResultsPage({
               aria-live="polite"
               className="mr-auto font-display text-lg font-bold"
             >
-              {isPending ? "Söker …" : resultCount === 1 ? "1 träff" : `${resultCount} träffar`}
+              {searching ? "Söker …" : resultCount === 1 ? "1 träff" : `${resultCount} träffar`}
             </p>
 
             <div className="order-last flex w-full items-center gap-2 sm:order-none sm:w-auto">
@@ -189,7 +191,11 @@ export function SearchResultsPage({
                     </SheetDescription>
                   </SheetHeader>
                   <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
-                    <FilterPanel params={draft} patch={(p) => setDraft((d) => ({ ...d, ...p }))} />
+                    <FilterPanel
+                      params={draft}
+                      patch={(p) => setDraft((d) => ({ ...d, ...p }))}
+                      immediate
+                    />
                   </div>
                   <div className="flex items-center gap-2 border-t border-border bg-background px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <Button variant="ghost" onClick={reset}>
@@ -278,6 +284,7 @@ export function SearchResultsPage({
               className={cn(
                 "mt-6 grid",
                 list ? "grid-cols-1 gap-3" : "gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3",
+                isPlaceholderData && "opacity-60 transition-opacity",
               )}
             >
               {visible.map((r) => (

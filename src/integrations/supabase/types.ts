@@ -1125,6 +1125,7 @@ export type Database = {
           _words?: string[];
           _category?: string;
           _sub_words?: string[];
+          _sub_exclude_words?: string[];
           _lat?: number;
           _lng?: number;
           _radius_km?: number;

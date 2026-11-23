@@ -129,7 +129,8 @@ export function validateSearchParams(
     availableToday: bool(search["availableToday"], DEFAULTS.availableToday),
     sort: sortKey(str(search["sort"], DEFAULTS.sort)),
     view: str(search["view"], DEFAULTS.view) as SearchParams["view"],
-    page: Math.max(1, num(search["page"], DEFAULTS.page)),
+    // Högst 42 sidor à 12 (sökningen visar högst 500 träffar), och bara hela tal.
+    page: Math.min(42, Math.max(1, Math.floor(num(search["page"], DEFAULTS.page)))),
     attrs: str(search["attrs"], DEFAULTS.attrs),
   };
 }
