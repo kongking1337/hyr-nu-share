@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const PHOTO_BUCKET = "listing-images";
 export const MAX_PHOTOS = 8;
 const MAX_SIDE = 1600;
+/** Den lilla kopian för kort, rader och miniatyrer. */
+const THUMB_SIDE = 480;
 // WebP blir ungefär en tredjedel mindre än JPEG vid samma kvalitet. Webbläsare som inte
 // kan skapa WebP (t.ex. äldre Safari på iPhone) får JPEG i stället; alla kan visa båda.
 const WEBP_QUALITY = 0.8;
@@ -40,11 +42,33 @@ export function sizedPhotoUrl(url: string, width: number): string {
   return u.toString();
 }
 
+/** Den lilla kopian som sparas bredvid varje uppladdad bild: "<uuid>.webp" → "<uuid>.thumb.webp". */
+export function thumbPath(path: string): string {
+  return path.replace(/\.(webp|jpg)$/, ".thumb.$1");
+}
+
+const UPLOADED = `/storage/v1/object/public/${PHOTO_BUCKET}/`;
+
 /**
  * src, srcSet och sizes för en <img>, så att webbläsaren hämtar en bild som passar rutan
  * (och skärmens upplösning) i stället för originalet. `sizes` beskriver hur bred rutan är.
+ * Uppladdade bilder finns i två storlekar (THUMB_SIDE och MAX_SIDE); bilder som laddades upp
+ * innan den lilla kopian fanns faller tillbaka på originalet om kopian saknas.
  */
 export function photoSources(url: string, widths: number[], sizes: string) {
+  if (url.includes(UPLOADED) && /\.(webp|jpg)$/.test(url)) {
+    return {
+      src: url,
+      srcSet: `${thumbPath(url)} ${THUMB_SIDE}w, ${url} ${MAX_SIDE}w`,
+      sizes,
+      onError: (e: { currentTarget: HTMLImageElement }) => {
+        const img = e.currentTarget;
+        if (!img.srcset) return;
+        img.removeAttribute("srcset");
+        img.src = url;
+      },
+    };
+  }
   const resized = widths.map((w) => sizedPhotoUrl(url, w));
   if (resized[0] === url) return { src: url };
   return {
@@ -96,18 +120,9 @@ async function decodePhoto(file: File): Promise<Decoded> {
 const encode = (canvas: HTMLCanvasElement, type: string, quality: number) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
 
-/**
- * Förminskar till högst 1600 px och sparar om som WebP (eller JPEG). Det gör bilderna
- * snabba på mobilen och tar bort metadata som GPS-position.
- */
-export async function shrinkPhoto(file: File): Promise<ShrunkPhoto> {
-  if (!file.type.startsWith("image/") && !/\.(heic|heif)$/i.test(file.name)) {
-    throw new PhotoError(`${file.name} är inte en bild.`);
-  }
-  if (file.size > MAX_INPUT_BYTES) throw new PhotoError(`${file.name} är för stor (max 25 MB).`);
-
-  const image = await decodePhoto(file);
-  const scale = Math.min(1, MAX_SIDE / Math.max(image.width, image.height));
+/** Ritar bilden i högst `maxSide` px och sparar som WebP (eller JPEG). */
+async function render(image: Decoded, maxSide: number): Promise<ShrunkPhoto> {
+  const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(image.width * scale);
   canvas.height = Math.round(image.height * scale);
@@ -116,7 +131,6 @@ export async function shrinkPhoto(file: File): Promise<ShrunkPhoto> {
   ctx.fillStyle = "#fff"; // genomskinliga PNG-bilder får vit bakgrund i stället för svart
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image.source, 0, 0, canvas.width, canvas.height);
-  image.done();
 
   // Webbläsare som inte kan skapa WebP lämnar tillbaka PNG, så kontrollera typen.
   const webp = await encode(canvas, "image/webp", WEBP_QUALITY);
@@ -126,14 +140,47 @@ export async function shrinkPhoto(file: File): Promise<ShrunkPhoto> {
   return { blob: jpeg, ext: "jpg" };
 }
 
-/** Förminskar och laddar upp en bild till användarens egen mapp. Returnerar sökvägen. */
+/**
+ * Förminskar till högst 1600 px och sparar om som WebP (eller JPEG), plus en liten kopia på
+ * högst 480 px för kort och listor. Det gör bilderna snabba på mobilen och tar bort metadata
+ * som GPS-position.
+ */
+export async function shrinkPhoto(file: File): Promise<{ main: ShrunkPhoto; thumb: ShrunkPhoto }> {
+  if (!file.type.startsWith("image/") && !/\.(heic|heif)$/i.test(file.name)) {
+    throw new PhotoError(`${file.name} är inte en bild.`);
+  }
+  if (file.size > MAX_INPUT_BYTES) throw new PhotoError(`${file.name} är för stor (max 25 MB).`);
+
+  const image = await decodePhoto(file);
+  try {
+    const main = await render(image, MAX_SIDE);
+    const thumb = await render(image, THUMB_SIDE);
+    return { main, thumb };
+  } finally {
+    image.done();
+  }
+}
+
+/**
+ * Förminskar och laddar upp en bild till användarens egen mapp, med den lilla kopian bredvid
+ * (thumbPath). Returnerar sökvägen till den stora bilden.
+ */
 export async function uploadPhoto(file: File, userId: string): Promise<string> {
-  const { blob, ext } = await shrinkPhoto(file);
-  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { main, thumb } = await shrinkPhoto(file);
+  const path = `${userId}/${crypto.randomUUID()}.${main.ext}`;
+  const options = { cacheControl: "31536000", upsert: false };
   const { error } = await supabase.storage
     .from(PHOTO_BUCKET)
-    .upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
+    .upload(path, main.blob, { ...options, contentType: main.blob.type });
   if (error) throw new PhotoError("Bilden kunde inte laddas upp. Försök igen.");
+  // Den lilla kopian är en genväg: misslyckas den visas den stora bilden i stället.
+  await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(thumbPath(path), thumb.blob, {
+      ...options,
+      contentType: thumb.blob.type,
+    })
+    .catch(() => undefined);
   return path;
 }
 
@@ -145,7 +192,9 @@ export async function removeUnusedPhotos(userId: string, candidates: string[]): 
   if (error) return;
   const inUse = new Set((data ?? []).flatMap((l) => l.images ?? []));
   const unused = own.filter((p) => !inUse.has(p));
-  if (unused.length) await supabase.storage.from(PHOTO_BUCKET).remove(unused);
+  if (unused.length) {
+    await supabase.storage.from(PHOTO_BUCKET).remove(unused.flatMap((p) => [p, thumbPath(p)]));
+  }
 }
 
 /** Tar bort alla användarens bilder (när kontot raderas). */

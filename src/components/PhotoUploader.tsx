@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { MAX_PHOTOS, PhotoError, photoUrl, uploadPhoto } from "@/lib/photos";
 import { cn } from "@/lib/utils";
 
+const CONCURRENT_UPLOADS = 2;
+
 /**
  * Välj bilder från mobilen eller datorn. Bilderna laddas upp direkt; den första är omslagsbild.
  * `onRemove` får sökvägen till bilder som tas bort, så att formuläret kan städa upp.
@@ -41,20 +43,31 @@ export function PhotoUploader({
     if (files.length > room)
       toast.info(`Högst ${MAX_PHOTOS} bilder. De ${files.length - room} sista hoppas över.`);
     const queue = files.slice(0, room);
-    const added: string[] = [];
+    // Sökvägarna i den ordning bilderna valdes (den första blir omslagsbild), även om de blir
+    // klara i en annan ordning.
+    const added: Array<string | null> = queue.map(() => null);
+    let next = 0;
+    let done = 0;
     onBusyChange(true);
     setProgress({ done: 0, total: queue.length });
-    for (const [i, file] of queue.entries()) {
-      try {
-        const path = await uploadPhoto(file, userId);
-        onUploaded(path);
-        added.push(path);
-        onChange([...value, ...added]);
-      } catch (e) {
-        toast.error(e instanceof PhotoError ? e.message : "Bilden kunde inte laddas upp.");
+    // Två bilder åt gången: medan en laddas upp förminskas nästa. Fler samtidigt kan få äldre
+    // mobiler att få slut på minne när stora bilder läses in.
+    const worker = async () => {
+      while (next < queue.length) {
+        const i = next++;
+        try {
+          const path = await uploadPhoto(queue[i]!, userId);
+          onUploaded(path);
+          added[i] = path;
+          onChange([...value, ...added.filter((p): p is string => p !== null)]);
+        } catch (e) {
+          toast.error(e instanceof PhotoError ? e.message : "Bilden kunde inte laddas upp.");
+        }
+        done += 1;
+        setProgress({ done, total: queue.length });
       }
-      setProgress({ done: i + 1, total: queue.length });
-    }
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENT_UPLOADS, queue.length) }, worker));
     setProgress(null);
     onBusyChange(false);
     uploading.current = false;

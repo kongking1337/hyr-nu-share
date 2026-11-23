@@ -1067,11 +1067,12 @@ export type Database = {
         Returns: Json;
       };
       my_bookings: {
-        Args: never;
+        Args: { _limit?: number };
         Returns: {
           base_price: number;
           cancellation_policy: string;
           conversation_id: string | null;
+          counterpart_id: string | null;
           counterpart_name: string;
           created_at: string;
           days: number;
@@ -1117,6 +1118,44 @@ export type Database = {
       unavailable_listings: {
         Args: { _end: string; _start: string };
         Returns: string[];
+      };
+      search_listings: {
+        Args: {
+          _cities: string[];
+          _words?: string[];
+          _category?: string;
+          _sub_words?: string[];
+          _lat?: number;
+          _lng?: number;
+          _radius_km?: number;
+          _start?: string;
+          _end?: string;
+          _price_min?: number;
+          _price_max?: number;
+          _owner_type?: string;
+          _sort?: string;
+          _limit?: number;
+          _offset?: number;
+          _with_description?: boolean;
+        };
+        Returns: {
+          id: string;
+          title: string;
+          description: string | null;
+          city: string;
+          area: string | null;
+          lat: number;
+          lng: number;
+          image: string | null;
+          price_day: number | null;
+          owner_type: string;
+          owner_id: string | null;
+          category_slug: string;
+          published_at: string;
+          min_days: number;
+          distance_km: number | null;
+          total_count: number;
+        }[];
       };
       listing_category_summary: {
         Args: { _cities: string[] };

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Grid2x2, LayoutList, Plus, SearchX, SlidersHorizontal, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,15 +26,12 @@ import { ActiveFilterChips, activeChips } from "@/components/search/ActiveFilter
 import { ListingCard } from "@/components/ListingCard";
 import { SaveSearchButton } from "@/components/SaveSearchButton";
 import { REGION, distanceKm } from "@/lib/geo";
-import { dedupe } from "@/lib/search/dedupe";
-import { filterResults, sortResults } from "@/lib/search/filter-sort";
 import { DEFAULTS, SORT_OPTIONS, type SearchParams } from "@/lib/search/params";
 import { interpretQuery } from "@/lib/search/parse-query";
 import { pushRecentSearch } from "@/lib/search/suggest";
-import { resolveCenter, useSearchResults } from "@/lib/search/useSearchResults";
+import { searchQuery } from "@/lib/search/search-listings";
+import { resolveCenter } from "@/lib/search/useSearchResults";
 import { cn } from "@/lib/utils";
-
-const PAGE_SIZE = 12;
 
 export function SearchResultsPage({
   params,
@@ -72,17 +70,12 @@ export function SearchResultsPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.location, myPos]);
 
-  const center = resolveCenter(params.location, myPos);
+  const center = useMemo(() => resolveCenter(params.location, myPos), [params.location, myPos]);
 
-  const { results, sources, internalLoading, externalLoading } = useSearchResults(params, center);
-
-  const groups = useMemo(() => {
-    const filtered = filterResults(results, params, center);
-    const sorted = sortResults(filtered, params, center);
-    return dedupe(sorted);
-  }, [results, params, center]);
-
-  const visible = groups.slice(0, params.page * PAGE_SIZE);
+  // Databasen söker och delar upp i sidor; loadern har oftast redan hämtat det här på servern.
+  const { data, isPending, isError } = useQuery(searchQuery(params, center));
+  const visible = data?.results ?? [];
+  const resultCount = data?.total ?? 0;
   const chips = activeChips(params).filter((c) => !pinned.includes(c.key as keyof SearchParams));
   const chipCount = chips.length;
   // Filter utöver sökordet, som "Rensa filter" tar bort (sökordet ligger kvar).
@@ -110,12 +103,11 @@ export function SearchResultsPage({
     });
   }
 
-  const resultCount = groups.length;
   const list = params.view === "list";
-  const loading = internalLoading || (externalLoading && !visible.length);
-  const failed = sources.some((s) => s.status === "error");
+  const loading = isPending;
+  const failed = isError;
   const draftChanged = JSON.stringify(draft) !== JSON.stringify(params);
-  const empty = !internalLoading && !externalLoading && !failed && groups.length === 0;
+  const empty = !isPending && !isError && resultCount === 0;
   const wideArea = !pinned.includes("location") && params.location !== DEFAULTS.location;
 
   return (
@@ -176,11 +168,7 @@ export function SearchResultsPage({
               aria-live="polite"
               className="mr-auto font-display text-lg font-bold"
             >
-              {internalLoading
-                ? "Söker …"
-                : resultCount === 1
-                  ? "1 träff"
-                  : `${resultCount} träffar`}
+              {isPending ? "Söker …" : resultCount === 1 ? "1 träff" : `${resultCount} träffar`}
             </p>
 
             <div className="order-last flex w-full items-center gap-2 sm:order-none sm:w-auto">
@@ -292,15 +280,13 @@ export function SearchResultsPage({
                 list ? "grid-cols-1 gap-3" : "gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3",
               )}
             >
-              {visible.map((g) => (
-                <li key={g.key}>
+              {visible.map((r) => (
+                <li key={r.id}>
                   <ListingCard
-                    result={g.primary}
+                    result={r}
                     layout={list ? "list" : "grid"}
                     distanceKm={
-                      center.wholeRegion
-                        ? null
-                        : distanceKm(center.lat, center.lng, g.primary.lat, g.primary.lng)
+                      center.wholeRegion ? null : distanceKm(center.lat, center.lng, r.lat, r.lng)
                     }
                   />
                 </li>
@@ -315,10 +301,10 @@ export function SearchResultsPage({
               <LoadingCards className="mt-6 lg:grid-cols-2 xl:grid-cols-3" />
             ))}
 
-          {visible.length < groups.length && (
+          {visible.length < resultCount && (
             <div className="mt-10 flex justify-center">
               <Button variant="outline" onClick={() => patch({ page: params.page + 1 })}>
-                Visa fler ({groups.length - visible.length} kvar)
+                Visa fler ({resultCount - visible.length} kvar)
               </Button>
             </div>
           )}

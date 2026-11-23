@@ -75,6 +75,9 @@ export const Route = createFileRoute("/_authenticated/bokningar")({
 });
 
 type Booking = Database["public"]["Functions"]["my_bookings"]["Returns"][number];
+
+/** Så många bokningar visas, de senaste först. */
+const BOOKINGS_SHOWN = 300;
 type Action = "accept" | "decline" | "cancel" | "picked_up" | "returned";
 type Role = "all" | "renter" | "owner";
 
@@ -107,22 +110,19 @@ function BookingsPage() {
     queryKey: ["my-bookings", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("my_bookings");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  // my_bookings visar bara namn; id:n behövs för länken till den andras profil.
-  const { data: counterparts = {} } = useQuery({
-    queryKey: ["booking-parties", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("bookings").select("id, owner_id, renter_id");
-      if (error) throw error;
-      return Object.fromEntries(
-        (data ?? []).map((r) => [r.id, r.owner_id === user!.id ? r.renter_id : r.owner_id]),
-      ) as Record<string, string | null>;
+      const { data, error } = await supabase.rpc("my_bookings", { _limit: BOOKINGS_SHOWN });
+      if (!error) return data ?? [];
+      // PGRST202: databasen har den gamla my_bookings (utan _limit och counterpart_id), tills
+      // migrationen 20261123130000_my_bookings.sql har körts. Då hämtas motparternas id separat.
+      if (error.code !== "PGRST202") throw error;
+      const old = await supabase.rpc("my_bookings");
+      if (old.error) throw old.error;
+      const parties = await supabase.from("bookings").select("id, owner_id, renter_id");
+      if (parties.error) throw parties.error;
+      const other = new Map(
+        (parties.data ?? []).map((r) => [r.id, r.owner_id === user!.id ? r.renter_id : r.owner_id]),
+      );
+      return (old.data ?? []).map((b) => ({ ...b, counterpart_id: other.get(b.id) ?? null }));
     },
   });
 
@@ -313,7 +313,7 @@ function BookingsPage() {
                         b={b}
                         userId={user!.id}
                         busy={busy === b.id}
-                        counterpartId={counterparts[b.id] ?? null}
+                        counterpartId={b.counterpart_id}
                         myRating={myReviews ? (myReviews[b.id] ?? null) : undefined}
                         onAction={(a) => void act(b, a)}
                         onPhotosSaved={() => void refetch()}
@@ -325,6 +325,11 @@ function BookingsPage() {
               </section>
             ))}
           </div>
+          {bookings.length >= BOOKINGS_SHOWN && (
+            <p className="mt-8 text-sm text-muted-foreground">
+              Här visas dina {BOOKINGS_SHOWN} senaste bokningar.
+            </p>
+          )}
         </>
       )}
     </Page>

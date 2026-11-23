@@ -10,7 +10,7 @@ import { EmptyState, LoadingRows, Page, PageHeader } from "@/components/layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { addDays, todayISO } from "@/lib/bookings";
-import { MAX_MESSAGE_LENGTH, sendMessage } from "@/lib/messages";
+import { MAX_MESSAGE_LENGTH, fetchThread, sendMessage, type Thread } from "@/lib/messages";
 import { photoUrl } from "@/lib/photos";
 import { userMessage } from "@/lib/db-errors";
 import { ReportDialog } from "@/components/ReportDialog";
@@ -141,23 +141,29 @@ function MessagesPage() {
   const canWrite = !iBlocked || !!ongoingRental;
 
   const {
-    data: messages,
+    data: threadData,
     refetch,
     isError: messagesFailed,
   } = useQuery({
     queryKey: ["messages", active],
     enabled: !!active,
     refetchInterval: 10_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("messages")
-        .select("id, sender_id, body, kind, booking_id, created_at")
-        .eq("conversation_id", active!)
-        .order("created_at");
-      if (error) throw error;
-      return data ?? [];
-    },
+    // Bara nya meddelanden hämtas efter första gången (se fetchThread).
+    queryFn: () => fetchThread(active!, queryClient.getQueryData<Thread>(["messages", active])),
   });
+  const messages = threadData?.messages;
+
+  async function showOlder() {
+    if (!active) return;
+    try {
+      queryClient.setQueryData(
+        ["messages", active],
+        await fetchThread(active, undefined, { all: true }),
+      );
+    } catch {
+      toast.error("Äldre meddelanden kunde inte hämtas. Försök igen.");
+    }
+  }
 
   // Öppnad konversation = läst. Uppdatera listan och räknaren i menyn.
   const lastMessageId = messages?.at(-1)?.id;
@@ -448,6 +454,13 @@ function MessagesPage() {
                     </p>
                   ) : (
                     <ol role="log" aria-label="Meddelanden" className="space-y-2">
+                      {threadData?.hasOlder && (
+                        <li className="flex justify-center pb-2">
+                          <Button variant="outline" size="sm" onClick={() => void showOlder()}>
+                            Visa äldre meddelanden
+                          </Button>
+                        </li>
+                      )}
                       {messages.map((m, i) => {
                         const mine = m.sender_id === user?.id;
                         const prev = messages[i - 1];

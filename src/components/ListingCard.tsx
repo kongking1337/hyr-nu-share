@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { memo } from "react";
 import { MapPin } from "lucide-react";
 import { ExampleBadge } from "@/components/ExampleBadge";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -9,9 +10,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * Annonskort: bilden först, sedan titel, plats och hyrlapp. Hela kortet är en länk
- * (sträckt över kortet), favoritknappen ligger ovanpå.
+ * (sträckt över kortet), favoritknappen ligger ovanpå. Memo: korten ritas inte om när bara
+ * sidan runt dem ändras (filterpanelen, menyer, mobilens filterark).
  */
-export function ListingCard({
+export const ListingCard = memo(function ListingCard({
   result: r,
   distanceKm,
   layout = "grid",
@@ -85,4 +87,4 @@ export function ListingCard({
       <FavoriteButton listingId={r.id} className="absolute right-3 top-3 z-10" />
     </article>
   );
-}
+});

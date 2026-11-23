@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -104,6 +104,45 @@ function Toggle({
 
 const TRIGGER =
   "rounded-md py-3.5 text-sm font-semibold hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+/**
+ * Prisfält: varje ändring blir en ny sökning i databasen, så värdet skickas först när man slutat
+ * skriva en halv sekund, inte vid varje tangent.
+ */
+function PriceInput({
+  id,
+  value,
+  placeholder,
+  onCommit,
+}: {
+  id: string;
+  value: number;
+  placeholder: string;
+  onCommit: (value: number) => void;
+}) {
+  const [text, setText] = useState(value ? String(value) : "");
+  const commit = useRef(onCommit);
+  commit.current = onCommit;
+
+  useEffect(() => setText(value ? String(value) : ""), [value]);
+  useEffect(() => {
+    const next = Number(text) || 0;
+    if (next === value) return;
+    const t = setTimeout(() => commit.current(next), 500);
+    return () => clearTimeout(t);
+  }, [text, value]);
+
+  return (
+    <Input
+      id={id}
+      type="number"
+      inputMode="numeric"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      placeholder={placeholder}
+    />
+  );
+}
 
 export function FilterPanel({ params, patch }: { params: SearchParams; patch: Patch }) {
   // Panelen kan finnas två gånger på sidan (sidokolumnen och mobilens filterpanel).
@@ -295,22 +334,18 @@ export function FilterPanel({ params, patch }: { params: SearchParams; patch: Pa
           <p className="text-xs text-muted-foreground">Pris per dygn.</p>
           <div className="grid grid-cols-2 gap-2">
             <Row label="Min (kr)" htmlFor={`${uid}-price-min`}>
-              <Input
+              <PriceInput
                 id={`${uid}-price-min`}
-                type="number"
-                inputMode="numeric"
-                value={params.priceMin || ""}
-                onChange={(e) => patch({ priceMin: Number(e.target.value) || 0 })}
+                value={params.priceMin}
+                onCommit={(v) => patch({ priceMin: v })}
                 placeholder="0"
               />
             </Row>
             <Row label="Max (kr)" htmlFor={`${uid}-price-max`}>
-              <Input
+              <PriceInput
                 id={`${uid}-price-max`}
-                type="number"
-                inputMode="numeric"
-                value={params.priceMax || ""}
-                onChange={(e) => patch({ priceMax: Number(e.target.value) || 0 })}
+                value={params.priceMax}
+                onCommit={(v) => patch({ priceMax: v })}
                 placeholder="Valfritt"
               />
             </Row>

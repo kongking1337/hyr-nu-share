@@ -18,6 +18,7 @@ import appCss from "../styles.css?url";
 import { BottomTabs } from "@/components/BottomTabs";
 import { Header, Wordmark } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -171,44 +172,46 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <a
-        href="#innehall"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg"
-      >
-        Hoppa till innehållet
-      </a>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Header />
-      <main id="innehall" className="min-h-[70vh]">
-        <Outlet />
-      </main>
-      <footer
-        className={`mt-20 border-t border-border pb-28 pt-10 md:pb-12 print:hidden ${inThread ? "max-md:hidden" : ""}`}
-      >
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 text-sm text-muted-foreground sm:px-6 md:grid-cols-[1fr_auto]">
-          <div className="max-w-xl">
-            <Wordmark className="text-xl text-foreground" />
-            <p className="mt-2">
-              Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är
-              under utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll
-              tar inga avgifter och förmedlar inga betalningar.
-            </p>
+      <AuthProvider>
+        <a
+          href="#innehall"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg"
+        >
+          Hoppa till innehållet
+        </a>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Header />
+        <main id="innehall" className="min-h-[70vh]">
+          <Outlet />
+        </main>
+        <footer
+          className={`mt-20 border-t border-border pb-28 pt-10 md:pb-12 print:hidden ${inThread ? "max-md:hidden" : ""}`}
+        >
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 text-sm text-muted-foreground sm:px-6 md:grid-cols-[1fr_auto]">
+            <div className="max-w-xl">
+              <Wordmark className="text-xl text-foreground" />
+              <p className="mt-2">
+                Hyr och hyr ut saker bland privatpersoner och företag i Stockholms län. Hyrkoll är
+                under utveckling: annonser märkta "Exempelannons" visar hur sajten fungerar. Hyrkoll
+                tar inga avgifter och förmedlar inga betalningar.
+              </p>
+            </div>
+            <nav className="flex flex-wrap gap-x-5 gap-y-2 md:flex-col" aria-label="Om Hyrkoll">
+              <Link to="/villkor" className="hover:text-foreground hover:underline">
+                Användarvillkor
+              </Link>
+              <Link to="/integritet" className="hover:text-foreground hover:underline">
+                Integritetspolicy
+              </Link>
+              <Link to="/kontakt" className="hover:text-foreground hover:underline">
+                Kontakt
+              </Link>
+            </nav>
           </div>
-          <nav className="flex flex-wrap gap-x-5 gap-y-2 md:flex-col" aria-label="Om Hyrkoll">
-            <Link to="/villkor" className="hover:text-foreground hover:underline">
-              Användarvillkor
-            </Link>
-            <Link to="/integritet" className="hover:text-foreground hover:underline">
-              Integritetspolicy
-            </Link>
-            <Link to="/kontakt" className="hover:text-foreground hover:underline">
-              Kontakt
-            </Link>
-          </nav>
-        </div>
-      </footer>
-      <BottomTabs />
-      <Toaster position="top-center" />
+        </footer>
+        <BottomTabs />
+        <Toaster position="top-center" />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -9,6 +9,7 @@ import { before, test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
+import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 
 const MIGRATIONS_DIR = new URL("../migrations/", import.meta.url);
 
@@ -16,6 +17,10 @@ const SUPABASE_BASE = `
   CREATE ROLE anon NOLOGIN;
   CREATE ROLE authenticated NOLOGIN;
   CREATE ROLE service_role NOLOGIN BYPASSRLS;
+
+  -- Supabase installs extensions such as pg_trgm in their own schema.
+  CREATE SCHEMA extensions;
+  GRANT USAGE ON SCHEMA extensions TO anon, authenticated, service_role;
 
   CREATE SCHEMA auth;
   GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
@@ -112,7 +117,7 @@ async function createListing(owner, title, { instantBook = false } = {}) {
 }
 
 before(async () => {
-  db = new PGlite();
+  db = new PGlite({ extensions: { pg_trgm } });
   await db.exec(SUPABASE_BASE);
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.endsWith(".sql"))
@@ -2099,4 +2104,88 @@ test("the unread count matches the inbox, and empty conversations don't count", 
   assert.equal(await count(u.alice), before);
   assert.equal(await count(u.alice), await unreadInInbox(u.alice));
   await assert.rejects(as(null, "SELECT public.unread_conversation_count()"));
+});
+
+// --- Search in the database (20261123120000_search.sql) ------------------------------------
+
+test("search finds words inside compound words, filters, sorts and pages in the database", async () => {
+  await createUser("wilma", "Wilma Wik");
+  const add = async (title, category, city, lat, lng, price, status = "published") =>
+    (
+      await as(
+        u.wilma,
+        `INSERT INTO public.listings (owner_id, owner_name, title, description, category_slug, city,
+                                      lat, lng, price_day, status, images)
+         VALUES ($1, 'Wilma', $2, 'Beskrivning', $3, $4, $5, $6, $7, $8, '{}') RETURNING id`,
+        [u.wilma.id, title, category, city, lat, lng, price, status],
+      )
+    )[0].id;
+  const drill = await add("Zebrafärgad slagborrmaskin", "verktyg", "Stockholm", 59.33, 18.07, 100);
+  const saw = await add("Zebrasåg", "verktyg", "Solna", 59.36, 18.0, 300);
+  await add("Zebratält", "fest", "Nacka", 59.31, 18.16, 200, "paused");
+  const kayak = await add("Zebrakajak", "fritid", "Norrtälje", 59.76, 18.7, 150);
+  const cities = ["Stockholm", "Solna", "Nacka", "Norrtälje"];
+  const search = (who, args = {}) =>
+    as(
+      who,
+      `SELECT id, total_count, distance_km, description FROM public.search_listings(
+         _cities => $1, _words => $2, _category => $3, _sub_words => $4, _lat => $5, _lng => $6,
+         _radius_km => $7, _start => $8, _end => $9, _price_max => $10, _sort => $11,
+         _limit => $12, _with_description => $13)`,
+      [
+        cities,
+        args.words ?? ["zebra"],
+        args.category ?? null,
+        args.sub ?? [],
+        args.lat ?? null,
+        args.lng ?? null,
+        args.radius ?? null,
+        args.start ?? null,
+        args.end ?? null,
+        args.priceMax ?? null,
+        args.sort ?? "recommended",
+        args.limit ?? 24,
+        args.withDescription ?? false,
+      ],
+    );
+  const ids = (rows) => rows.map((r) => r.id);
+
+  // Only published rentals; the paused one isn't found. Visitors and users get the same.
+  assert.deepEqual(ids(await search(null)).sort(), [drill, saw, kayak].sort());
+  assert.deepEqual(ids(await search(u.bob)).sort(), [drill, saw, kayak].sort());
+  // "borr" (a subcategory word) is found inside "slagborrmaskin".
+  const borr = ["borr", "borrmaskin", "borrhammare", "hammarborr"];
+  assert.deepEqual(ids(await search(null, { category: "verktyg", sub: borr })), [drill]);
+  // Price, sorting and paging with the total number of hits.
+  assert.deepEqual(ids(await search(null, { priceMax: 200, sort: "price" })), [drill, kayak]);
+  const page = await search(null, { sort: "price_desc", limit: 2 });
+  assert.deepEqual([ids(page), page[0].total_count], [[saw, kayak], 3]);
+  // Distance from central Stockholm: Norrtälje is about 60 km away.
+  const near = await search(null, { lat: 59.3293, lng: 18.0686, radius: 25, sort: "distance" });
+  assert.deepEqual(ids(near), [drill, saw]);
+  assert.ok(near[0].distance_km < near[1].distance_km);
+  // Free dates: a blocked period hides the listing for those days only.
+  await as(
+    u.wilma,
+    "INSERT INTO public.listing_blocked_dates (listing_id, start_date, end_date) VALUES ($1, $2, $3)",
+    [saw, day(10), day(12)],
+  );
+  assert.ok(!ids(await search(null, { start: day(11), end: day(11) })).includes(saw));
+  assert.ok(ids(await search(null, { start: day(20), end: day(21) })).includes(saw));
+  // The description only comes along when asked for.
+  assert.equal((await search(null))[0].description, null);
+  assert.equal((await search(null, { withDescription: true }))[0].description, "Beskrivning");
+});
+
+// --- Bookings page in one query (20261123130000_my_bookings.sql) ----------------------------
+
+test("my bookings name the other person's id, and can be limited", async () => {
+  const sql = "SELECT counterpart_id FROM public.my_bookings() WHERE id = $1";
+  assert.deepEqual(await as(u.rut, sql, [u.rut.trailerBooking]), [{ counterpart_id: u.olle.id }]);
+  assert.deepEqual(await as(u.olle, sql, [u.rut.trailerBooking]), [{ counterpart_id: u.rut.id }]);
+  const all = await as(u.olle, "SELECT id FROM public.my_bookings()");
+  const one = await as(u.olle, "SELECT id FROM public.my_bookings(1)");
+  assert.ok(all.length > 1);
+  assert.deepEqual(one, all.slice(0, 1));
+  await assert.rejects(as(null, "SELECT * FROM public.my_bookings()"));
 });

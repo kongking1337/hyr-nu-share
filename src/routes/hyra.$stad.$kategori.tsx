@@ -3,6 +3,7 @@ import { SearchResultsPage } from "@/components/search/SearchResultsPage";
 import { CATEGORY_SYNONYMS } from "@/lib/search-parse";
 import { cityBySlug } from "@/lib/geo";
 import { DEFAULTS, validateSearchParams } from "@/lib/search/params";
+import { prefetchSearch } from "@/lib/search/search-listings";
 import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 
 export const Route = createFileRoute("/hyra/$stad/$kategori")({
@@ -12,6 +13,13 @@ export const Route = createFileRoute("/hyra/$stad/$kategori")({
   beforeLoad: ({ params }) => {
     if (!cityBySlug(params.stad) || !CATEGORY_SYNONYMS[params.kategori]) throw notFound();
   },
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps, params, context: { queryClient } }) =>
+    prefetchSearch(queryClient, {
+      ...deps,
+      category: params.kategori,
+      location: cityBySlug(params.stad)?.slug ?? deps.location,
+    }),
   head: ({ params }) => {
     const city = cityBySlug(params.stad)?.name ?? params.stad;
     const name = CATEGORY_SYNONYMS[params.kategori]?.name ?? params.kategori;

@@ -1,11 +1,15 @@
 import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import { SearchResultsPage } from "@/components/search/SearchResultsPage";
 import { DEFAULTS, validateSearchParams } from "@/lib/search/params";
+import { prefetchSearch } from "@/lib/search/search-listings";
 import { useUrlSearchState } from "@/lib/search/useUrlSearchState";
 
 export const Route = createFileRoute("/sok")({
   validateSearch: validateSearchParams,
   search: { middlewares: [stripSearchParams(DEFAULTS)] },
+  // Sökresultaten hämtas redan på servern (och när någon pekar på en länk hit).
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps, context: { queryClient } }) => prefetchSearch(queryClient, deps),
   head: () => ({
     meta: [
       { title: "Sök annonser i Stockholm – Hyrkoll" },
